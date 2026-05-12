@@ -1,10 +1,6 @@
 import { MongoClient } from 'mongodb';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Missing MONGODB_URI environment variable');
-}
-
-const uri = process.env.MONGODB_URI;
+const uri = process.env.MONGODB_URI || '';
 const options = {
   maxPoolSize: 10,
   minPoolSize: 1,
@@ -13,8 +9,10 @@ const options = {
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
-if (process.env.NODE_ENV === 'development') {
-  // In dev, use a global variable to persist the client across HMR
+if (!uri) {
+  // If no URI, create a dummy promise that will reject when used
+  clientPromise = Promise.reject(new Error('MONGODB_URI environment variable is not set. Please add it in Vercel Environment Variables.'));
+} else if (process.env.NODE_ENV === 'development') {
   const globalWithMongo = globalThis as typeof globalThis & {
     _mongoClientPromise?: Promise<MongoClient>;
   };
@@ -24,7 +22,6 @@ if (process.env.NODE_ENV === 'development') {
   }
   clientPromise = globalWithMongo._mongoClientPromise;
 } else {
-  // In production, create a new client
   client = new MongoClient(uri, options);
   clientPromise = client.connect();
 }
