@@ -143,7 +143,7 @@ export default function Home() {
 
   // ─── PDF ─────────────────────────────────────────────────────
   const downloadPdf = async (inv: any) => {
-    const el = document.getElementById('invoicePdf');
+    const el = document.getElementById('invoicePdfContent');
     if (!el) return;
     const { jsPDF } = await import('jspdf');
     const html2canvas = (await import('html2canvas')).default;
@@ -496,6 +496,16 @@ export default function Home() {
             </div>
 
             <div className={styles.card}>
+              <h3>💰 อัตราค่าใช้จ่าย</h3>
+              <div className={styles.settingsGrid}>
+                <div className={styles.formGroup}><label>ค่าไฟต่อหน่วย (บาท)</label><input type="number" value={settings.rateElec} onChange={e => saveSettingsDelayed('rateElec', parseFloat(e.target.value) || 0)} /></div>
+                <div className={styles.formGroup}><label>ค่าน้ำต่อหน่วย (บาท)</label><input type="number" value={settings.rateWater} onChange={e => saveSettingsDelayed('rateWater', parseFloat(e.target.value) || 0)} /></div>
+                <div className={styles.formGroup}><label>ค่าส่วนกลาง/เดือน (บาท)</label><input type="number" value={settings.commonFee || 0} onChange={e => saveSettingsDelayed('commonFee', parseFloat(e.target.value) || 0)} /></div>
+                <div className={styles.formGroup}><label>ค่าอินเตอร์เน็ต/เดือน (บาท)</label><input type="number" value={settings.internetFee || 0} onChange={e => saveSettingsDelayed('internetFee', parseFloat(e.target.value) || 0)} /></div>
+              </div>
+            </div>
+
+            <div className={styles.card}>
               <h3>📱 LINE Messaging API</h3>
               <div className={styles.infoBox}>
                 📌 <strong>วิธีตั้งค่า:</strong><br />
@@ -534,9 +544,9 @@ export default function Home() {
       {/* INVOICE MODAL */}
       {modal === 'invoice' && viewInv && (
         <div className={styles.modalOverlay} onClick={() => setModal(null)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: 740 }}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: 700 }}>
             <h3>🧾 ใบแจ้งหนี้</h3>
-            <div id="invoicePdf"><InvoicePreview inv={viewInv} settings={settings} /></div>
+            <InvoicePreview inv={viewInv} settings={settings} />
             <div className={styles.modalActions}>
               <button className={styles.btnClose} onClick={() => setModal(null)}>ปิด</button>
               <button className={styles.btnPrimary} onClick={() => downloadPdf(viewInv)}>📄 PDF</button>
@@ -606,30 +616,100 @@ function RoomModal({ room, onClose, onSave }: { room: any; onClose: () => void; 
 // ─── Invoice Preview ───────────────────────────────────────────
 function InvoicePreview({ inv, settings }: { inv: any; settings: any }) {
   const lh = settings.logo ? <img src={settings.logo} style={{ height: 60, objectFit: 'contain', marginBottom: 10 }} alt="" /> : null;
+  const commonFee = settings.commonFee || 0;
+  const internetFee = settings.internetFee || 0;
+  const grandTotal = inv.total + commonFee + internetFee;
+
   return (
-    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: 40, fontFamily: 'inherit' }}>
-      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+    <div id="invoicePdfContent" style={{ background: '#fff', borderRadius: 16, padding: '40px 36px', fontFamily: 'inherit', maxWidth: 580, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
         {lh}
-        <h2 style={{ color: '#059669', fontSize: 26, margin: 0 }}>{settings.dormName}</h2>
-        <p style={{ color: '#6b7280', margin: '4px 0' }}>{settings.address}</p>
-        <p style={{ color: '#6b7280', margin: '4px 0' }}>โทร: {settings.phone}</p>
-        <hr style={{ margin: '20px 0', border: 'none', borderTop: '3px solid #10b981' }} />
-        <h3 style={{ color: '#059669', margin: 0, fontSize: 20 }}>ใบแจ้งหนี้ค่าเช่าประจำเดือน {formatMonth(inv.month)}</h3>
+        <h2 style={{ color: '#059669', fontSize: 28, margin: '8px 0 4px', fontWeight: 800 }}>{settings.dormName}</h2>
+        <p style={{ color: '#6b7280', margin: '2px 0', fontSize: 14 }}>{settings.address}</p>
+        <p style={{ color: '#6b7280', margin: '2px 0', fontSize: 14 }}>โทร: {settings.phone}</p>
+        <div style={{ height: 3, background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: 2, margin: '20px 0 0' }} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, padding: 18, background: '#f0fdf4', borderRadius: 12 }}>
-        <div><strong>ผู้พัก:</strong> {inv.tenant}<br /><strong>ห้อง:</strong> {inv.room}</div>
-        <div style={{ textAlign: 'right' }}><strong>วันที่:</strong> {new Date().toLocaleDateString('th-TH')}<br /><strong>สถานะ:</strong> รอชำระ</div>
+
+      {/* Title */}
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <h3 style={{ color: '#059669', margin: 0, fontSize: 22, fontWeight: 800 }}>ใบแจ้งหนี้ค่าเช่าประจำเดือน {formatMonth(inv.month)}</h3>
       </div>
-      <table>
-        <thead><tr><th>รายการ</th><th>รายละเอียด</th><th style={{ textAlign: 'right' }}>จำนวนเงิน (บาท)</th></tr></thead>
+
+      {/* Info Box */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, padding: '16px 20px', background: '#f0fdf4', borderRadius: 12, fontSize: 14 }}>
+        <div>
+          <div style={{ marginBottom: 4 }}><strong style={{ color: '#374151' }}>ผู้พัก:</strong> <span style={{ color: '#1f2937' }}>{inv.tenant}</span></div>
+          <div><strong style={{ color: '#374151' }}>ห้อง:</strong> <span style={{ color: '#1f2937' }}>{inv.room}</span></div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ marginBottom: 4 }}><strong style={{ color: '#374151' }}>วันที่:</strong> <span style={{ color: '#1f2937' }}>{new Date().toLocaleDateString('th-TH')}</span></div>
+          <div><strong style={{ color: '#374151' }}>สถานะ:</strong> <span style={{ color: '#f59e0b', fontWeight: 600 }}>รอชำระ</span></div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8, fontSize: 14 }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid #10b981' }}>
+            <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 700, color: '#1f2937', fontSize: 14 }}>รายการ</th>
+            <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 700, color: '#1f2937', fontSize: 14 }}>รายละเอียด</th>
+            <th style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: '#1f2937', fontSize: 14 }}>จำนวนเงิน (บาท)</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr><td>ค่าเช่าห้อง</td><td>ห้อง {inv.room}</td><td style={{ textAlign: 'right' }}>{inv.rent.toLocaleString()}</td></tr>
-          <tr><td>ค่าไฟฟ้า</td><td>{inv.elecUnits} หน่วย × {inv.rateElec} บาท</td><td style={{ textAlign: 'right' }}>{inv.elecCost.toLocaleString()}</td></tr>
-          <tr><td>ค่าน้ำประปา</td><td>{inv.waterUnits} หน่วย × {inv.rateWater} บาท</td><td style={{ textAlign: 'right' }}>{inv.waterCost.toLocaleString()}</td></tr>
+          <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+            <td style={{ padding: '10px 8px', color: '#374151' }}>ค่าเช่าห้อง</td>
+            <td style={{ padding: '10px 8px', color: '#6b7280' }}>ห้อง {inv.room}</td>
+            <td style={{ padding: '10px 8px', textAlign: 'right', color: '#1f2937', fontWeight: 600 }}>{inv.rent.toLocaleString()}</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+            <td style={{ padding: '10px 8px', color: '#374151' }}>ค่าไฟฟ้า</td>
+            <td style={{ padding: '10px 8px', color: '#6b7280' }}>{inv.elecUnits} หน่วย × {inv.rateElec} บาท</td>
+            <td style={{ padding: '10px 8px', textAlign: 'right', color: '#1f2937', fontWeight: 600 }}>{inv.elecCost.toLocaleString()}</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+            <td style={{ padding: '10px 8px', color: '#374151' }}>ค่าน้ำประปา</td>
+            <td style={{ padding: '10px 8px', color: '#6b7280' }}>{inv.waterUnits} หน่วย × {inv.rateWater} บาท</td>
+            <td style={{ padding: '10px 8px', textAlign: 'right', color: '#1f2937', fontWeight: 600 }}>{inv.waterCost.toLocaleString()}</td>
+          </tr>
+          {commonFee > 0 && (
+            <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <td style={{ padding: '10px 8px', color: '#374151' }}>ค่าส่วนกลาง</td>
+              <td style={{ padding: '10px 8px', color: '#6b7280' }}>-</td>
+              <td style={{ padding: '10px 8px', textAlign: 'right', color: '#1f2937', fontWeight: 600 }}>{commonFee.toLocaleString()}</td>
+            </tr>
+          )}
+          {internetFee > 0 && (
+            <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <td style={{ padding: '10px 8px', color: '#374151' }}>ค่าอินเตอร์เน็ต</td>
+              <td style={{ padding: '10px 8px', color: '#6b7280' }}>-</td>
+              <td style={{ padding: '10px 8px', textAlign: 'right', color: '#1f2937', fontWeight: 600 }}>{internetFee.toLocaleString()}</td>
+            </tr>
+          )}
         </tbody>
       </table>
-      <div style={{ fontSize: 22, fontWeight: 800, textAlign: 'right', paddingTop: 18, borderTop: '3px solid #10b981', color: '#059669' }}>
-        ยอดรวม: {inv.total.toLocaleString()} บาท
+
+      {/* Total */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', padding: '16px 0 8px', borderTop: '3px solid #10b981', marginBottom: 24 }}>
+        <span style={{ fontSize: 20, fontWeight: 800, color: '#059669' }}>ยอดรวม: {grandTotal.toLocaleString()} บาท</span>
+      </div>
+
+      {/* Payment Terms */}
+      <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 10, padding: '14px 18px', marginBottom: 16 }}>
+        <p style={{ margin: 0, fontSize: 13, color: '#92400e', lineHeight: 1.7, textAlign: 'center' }}>
+          <strong>กำหนดชำระภายในวันที่ 5 ของทุกเดือน</strong><br />
+          หากชำระหลังกำหนด คิดค่าปรับวันละ 50 บาท
+        </p>
+      </div>
+
+      {/* Payment Info */}
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '14px 18px' }}>
+        <p style={{ margin: 0, fontSize: 13, color: '#166534', lineHeight: 1.7, textAlign: 'center' }}>
+          <strong>ชำระเงินที่ :</strong> สำนักงานหอพัก<br />
+          <strong>หรือ โอนเข้าบัญชี</strong> พร้อมเพย์ <strong>090-243-9797</strong><br />
+          นงลักษณ์ นิพรรัมย์ ธนาคารกรุงไทย
+        </p>
       </div>
     </div>
   );
