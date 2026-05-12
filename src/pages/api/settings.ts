@@ -44,7 +44,7 @@ export default async function handler(req: any, res: any) {
       }
       
       return res.status(200).json(settings);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting settings:', error);
       return res.status(500).json({ error: 'Failed to get settings', details: error.message });
     }
@@ -59,7 +59,7 @@ export default async function handler(req: any, res: any) {
       });
       
       return res.status(200).json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving settings:', error);
       return res.status(500).json({ error: 'Failed to save settings', details: error.message });
     }

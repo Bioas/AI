@@ -36,7 +36,7 @@ export default async function handler(req: any, res: any) {
       }
       
       return res.status(200).json(rooms);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting rooms:', error);
       return res.status(500).json({ error: 'Failed to get rooms', details: error.message });
     }
@@ -72,7 +72,7 @@ export default async function handler(req: any, res: any) {
       });
 
       return res.status(200).json(req.body);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving room:', error);
       return res.status(500).json({ error: 'Failed to save room', details: error.message });
     }
@@ -112,7 +112,7 @@ export default async function handler(req: any, res: any) {
       });
 
       return res.status(200).json(req.body);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating room:', error);
       return res.status(500).json({ error: 'Failed to update room', details: error.message });
     }
@@ -148,7 +148,7 @@ export default async function handler(req: any, res: any) {
       });
 
       return res.status(200).json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting room:', error);
       return res.status(500).json({ error: 'Failed to delete room', details: error.message });
     }
