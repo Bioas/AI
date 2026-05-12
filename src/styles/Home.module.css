@@ -1,7 +1,7 @@
 /* ─── Modern Billing Dashboard ──── */
 
 /* ─── Variables ────────────────────────────────────────────────────── */
-:root {
+.billing-root {
   --primary: #059669;
   --primary-lighter: #6ee7b7;
   --primary-light: #34d399;
@@ -18,6 +18,11 @@
   --text-light: #64748b;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   --shadow-hover: 0 8px 32px rgba(5, 150, 105, 0.15);
+}
+/* Apply variables to any element in billing-root */
+.billing-root {
+  color: var(--text);
+  background: var(--bg-gradient);
 }
 
 /* ─── Sidebar ──────────────────────────────────────────────────────── */
