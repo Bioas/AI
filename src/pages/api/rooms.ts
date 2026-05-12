@@ -1,158 +1,43 @@
-export default async function handler(req: any, res: any) {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+import type { NextApiRequest, NextApiResponse } from 'next';
+import clientPromise from '../../lib/mongodb';
 
-  if (!url || !token) {
-    return res.status(500).json({ error: 'Upstash not configured' });
-  }
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const client = await clientPromise;
+    const db = client.db('dorm_billing');
+    const collection = db.collection('rooms');
 
-  const redisUrl = `${url}/pipeline`;
-
-  if (req.method === 'GET') {
-    try {
-      const fetchRes = await fetch(redisUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify([['GET', 'rooms']])
-      });
-
-      if (!fetchRes.ok) {
-        throw new Error(`HTTP ${fetchRes.status}`);
-      }
-
-      const result = await fetchRes.json();
-      
-      let rooms: any[] = [];
-      if (result.result) {
-        try {
-          const parsed = JSON.parse(result.result);
-          if (Array.isArray(parsed) && parsed[0]?.[1]) {
-            rooms = JSON.parse(parsed[0][1]);
-          }
-        } catch (e) {
-          console.error('Failed to parse rooms:', result.result);
-          rooms = [];
-        }
-      }
-      
+    if (req.method === 'GET') {
+      const rooms = await collection.find({}).toArray();
       return res.status(200).json(rooms);
-    } catch (error: any) {
-      console.error('Error getting rooms:', error);
-      return res.status(500).json({ error: 'Failed to get rooms', details: error.message });
     }
-  }
 
-  if (req.method === 'POST') {
-    try {
-      const getRes = await fetch(redisUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify([['GET', 'rooms']])
-      });
-      const getResult = await getRes.json();
-      
-      let rooms: any[] = [];
-      if (getResult.result) {
-        try {
-          const parsed = JSON.parse(getResult.result);
-          if (Array.isArray(parsed) && parsed[0]?.[1]) {
-            rooms = JSON.parse(parsed[0][1]);
-          }
-        } catch (e) {
-          rooms = [];
-        }
-      }
-
-      rooms.push(req.body);
-
-      await fetch(redisUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify([['SET', 'rooms', JSON.stringify(rooms)]])
-      });
-
-      return res.status(200).json(req.body);
-    } catch (error: any) {
-      console.error('Error saving room:', error);
-      return res.status(500).json({ error: 'Failed to save room', details: error.message });
+    if (req.method === 'POST') {
+      const result = await collection.insertOne(req.body);
+      return res.status(200).json({ ...req.body, _id: result.insertedId });
     }
-  }
 
-  if (req.method === 'PUT') {
-    try {
-      const getRes = await fetch(redisUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify([['GET', 'rooms']])
-      });
-      const getResult = await getRes.json();
-      
-      let rooms: any[] = [];
-      if (getResult.result) {
-        try {
-          const parsed = JSON.parse(getResult.result);
-          if (Array.isArray(parsed) && parsed[0]?.[1]) {
-            rooms = JSON.parse(parsed[0][1]);
-          }
-        } catch (e) {
-          rooms = [];
-        }
-      }
-
-      const index = rooms.findIndex((r: any) => r.id === req.body.id);
-      if (index === -1) {
+    if (req.method === 'PUT') {
+      const { id, ...updateData } = req.body;
+      const result = await collection.updateOne({ id }, { $set: updateData });
+      if (result.matchedCount === 0) {
         return res.status(404).json({ error: 'Room not found' });
       }
-      rooms[index] = req.body;
-
-      await fetch(redisUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify([['SET', 'rooms', JSON.stringify(rooms)]])
-      });
-
       return res.status(200).json(req.body);
-    } catch (error: any) {
-      console.error('Error updating room:', error);
-      return res.status(500).json({ error: 'Failed to update room', details: error.message });
     }
-  }
 
-  if (req.method === 'DELETE') {
-    try {
-      const getRes = await fetch(redisUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify([['GET', 'rooms']])
-      });
-      const getResult = await getRes.json();
-      
-      let rooms: any[] = [];
-      if (getResult.result) {
-        try {
-          const parsed = JSON.parse(getResult.result);
-          if (Array.isArray(parsed) && parsed[0]?.[1]) {
-            rooms = JSON.parse(parsed[0][1]);
-          }
-        } catch (e) {
-          rooms = [];
-        }
+    if (req.method === 'DELETE') {
+      const { id } = req.body;
+      const result = await collection.deleteOne({ id });
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ error: 'Room not found' });
       }
-
-      rooms = rooms.filter((r: any) => r.id !== req.body.id);
-
-      await fetch(redisUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify([['SET', 'rooms', JSON.stringify(rooms)]])
-      });
-
       return res.status(200).json({ success: true });
-    } catch (error: any) {
-      console.error('Error deleting room:', error);
-      return res.status(500).json({ error: 'Failed to delete room', details: error.message });
     }
-  }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
+  } catch (error: any) {
+    console.error('Rooms API error:', error);
+    return res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
 }
