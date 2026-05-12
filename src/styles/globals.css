@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap');
 
-:root{--primary:#10b981;--primary-light:#34d399;--primary-lighter:#a7f3d0;--primary-dark:#059669;--primary-darker:#047857;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--bg:#f0fdf4;--bg-gradient:linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 50%,#f0fdfa 100%);--card:#ffffff;--text:#1a1a2e;--text-light:#6b7280;--border:#e5e7eb;--shadow:0 4px 24px rgba(16,185,129,0.08);--shadow-hover:0 8px 32px rgba(16,185,129,0.15)}
+:root{--primary:#374151;--primary-light:#6b7280;--primary-lighter:#9ca3af;--primary-dark:#111827;--primary-darker:#030712;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--bg:#ffffff;--bg-gradient:#ffffff;--card:#ffffff;--text:#1a1a2e;--text-light:#6b7280;--border:#e5e7eb;--shadow:0 4px 24px rgba(55,65,81,0.08);--shadow-hover:0 8px 32px rgba(55,65,81,0.15)}
 *{margin:0;padding:0;box-sizing:border-box}
 body{margin:0;font-family:'Noto Sans Thai','Inter','Segoe UI',system-ui,-apple-system,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}

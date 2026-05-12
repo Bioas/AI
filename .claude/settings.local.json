@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls )",
+      "Bash(cat)",
+      "Bash(pwd)",
+      "Bash(npm )",
+      "Bash(node)",
+      "Bash(git )",
+      "Bash(docker)",
+      "Bash(kubectl )",
+      "Edit()",
+      "Read()",
+      "Write()"
+    ],
+    "deny": [
+      "Bash(rm -rf )",
+      "Bash(sudo rm)",
+      "Read(.env)",
+      "Read(.env.*)"
+    ]
+  }
+}
