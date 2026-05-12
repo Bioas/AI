@@ -4,7 +4,10 @@
       "Bash(npm install)",
       "Bash(npm run *)",
       "Bash(git init)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(npm uninstall *)",
+      "Bash(git log *)",
+      "Bash(git show *)"
     ]
   },
   "$version": 4
