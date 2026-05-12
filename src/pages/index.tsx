@@ -160,14 +160,14 @@ export default function Home() {
   const sendLineMsg = async (to: string, text: string) => {
     if (!settings.channelToken) { toast('กรุณาตั้งค่า Channel Access Token ก่อน', true); return false; }
     try {
-      const res = await fetch('https://api.line.me/v2/bot/message/push', {
+      const res = await fetch('/api/line/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.channelToken },
-        body: JSON.stringify({ to, messages: [{ type: 'text', text }] })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to, text, token: settings.channelToken })
       });
+      const data = await res.json();
       if (res.ok) { toast('ส่ง LINE สำเร็จ!'); return true; }
-      const e = await res.json();
-      toast('ส่งไม่สำเร็จ: ' + (e as any).message, true);
+      toast('ส่งไม่สำเร็จ: ' + (data.error || data.message || 'Unknown error'), true);
       return false;
     } catch (err: any) { toast('ข้อผิดพลาด: ' + err.message, true); return false; }
   };
