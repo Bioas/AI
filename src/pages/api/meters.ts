@@ -20,9 +20,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json(record);
   }
   if (req.method === 'PUT') {
-    const { id, roomId, month, ...data } = req.body;
-    await collection.updateOne({ roomId, month }, { $set: data }, { upsert: true });
-    return res.status(200).json(req.body);
+    const { roomId, month, ...data } = req.body;
+    if (!roomId || !month) {
+      return res.status(400).json({ error: 'Missing roomId or month' });
+    }
+    const result = await collection.updateOne({ roomId, month }, { $set: data }, { upsert: true });
+    return res.status(200).json({ success: true, upsertedId: result.upsertedId, modifiedCount: result.modifiedCount });
   }
   if (req.method === 'DELETE') {
     await collection.deleteOne({ id: req.body.id });

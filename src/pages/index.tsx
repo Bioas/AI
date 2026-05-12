@@ -98,28 +98,49 @@ export default function Home() {
 
   const saveAllMeters = async () => {
     let saved = 0;
+    let errors = 0;
     for (const rid of Object.keys(meterLocal)) {
       const data = meterLocal[rid];
       // Save current month
       if (data.cur.elec !== '' || data.cur.water !== '') {
         const existing = meters.find(x => x.roomId === rid && x.month === meterMonth);
         const body: any = { roomId: rid, month: meterMonth, elec: Number(data.cur.elec) || 0, water: Number(data.cur.water) || 0 };
-        if (existing) await api('/api/meters', 'PUT', { ...existing, ...body });
-        else await api('/api/meters', 'POST', body);
-        saved++;
+        try {
+          if (existing) {
+            await api('/api/meters', 'PUT', { roomId: rid, month: meterMonth, elec: body.elec, water: body.water });
+          } else {
+            await api('/api/meters', 'POST', body);
+          }
+          saved++;
+        } catch (err) {
+          errors++;
+          console.error('Error saving meter data for room', rid, err);
+        }
       }
       // Save previous month if edited
       if (data.prev.elec !== '' || data.prev.water !== '') {
         const pm = getPrevMonth(meterMonth);
         const existing = meters.find(x => x.roomId === rid && x.month === pm);
         const body: any = { roomId: rid, month: pm, elec: Number(data.prev.elec) || 0, water: Number(data.prev.water) || 0 };
-        if (existing) await api('/api/meters', 'PUT', { ...existing, ...body });
-        else await api('/api/meters', 'POST', body);
-        saved++;
+        try {
+          if (existing) {
+            await api('/api/meters', 'PUT', { roomId: rid, month: pm, elec: body.elec, water: body.water });
+          } else {
+            await api('/api/meters', 'POST', body);
+          }
+          saved++;
+        } catch (err) {
+          errors++;
+          console.error('Error saving previous meter data for room', rid, err);
+        }
       }
     }
     await fetchAll();
-    toast(`บันทึก ${saved} รายการสำเร็จ`);
+    if (errors > 0) {
+      toast(`บันทึก ${saved} รายการสำเร็จ, ${errors} รายการผิดพลาด`, errors > 0);
+    } else {
+      toast(`บันทึก ${saved} รายการสำเร็จ`);
+    }
   };
 
   // ─── Invoice Calculation ─────────────────────────────────────
