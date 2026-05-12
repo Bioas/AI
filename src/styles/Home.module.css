@@ -87,6 +87,14 @@
 .lineConnected{background:#d1fae5;color:#065f46}
 .lineDisconnected{background:#fee2e2;color:#991b1b}
 .backupActions{display:flex;gap:12px;flex-wrap:wrap}
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px}
+.spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{color:var(--text-light);font-size:14px}
+.editable{background:#fffbeb;border-color:var(--warning)!important}
+.logoUploadArea{display:flex;align-items:center;gap:20px;margin-bottom:20px;padding:20px;background:#f9fafb;border-radius:12px;border:2px dashed var(--border)}
+.logoUploadArea img{width:80px;height:80px;object-fit:contain;border-radius:12px;border:1px solid var(--border)}
+.logoPlaceholder{width:80px;height:80px;border-radius:12px;background:linear-gradient(135deg,var(--primary-lighter),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--primary-dark)}
 @media(max-width:768px){
   .sidebar{width:64px}.sidebar .logoArea h1,.sidebar .subtitle,.sidebar .navItem span:not(.navIcon),.settingSection label,.settingSection input,.settingSection button{display:none}
   .sidebar .logoArea .logoIcon{width:36px;height:36px;font-size:18px;margin-bottom:0}

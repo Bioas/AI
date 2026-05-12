@@ -1,21 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import styles from '../styles/Home.module.css';
 
-// ─── LocalStorage Helpers ──────────────────────────────────────
-const ls = {
-  get: <T,>(k: string, d: T): T => { try { return JSON.parse(localStorage.getItem(k) || '') || d; } catch { return d; } },
-  set: <T,>(k: string, v: T) => localStorage.setItem(k, JSON.stringify(v)),
+const api = async (path: string, method: string, body?: any) => {
+  const opts: any = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  return res.json();
 };
-const genId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-const getRooms = () => ls.get<any[]>('rooms', []);
-const setRooms = (d: any[]) => ls.set('rooms', d);
-const getMeters = () => ls.get<Record<string, { elec: number; water: number }>>('meters', {});
-const setMeters = (d: Record<string, { elec: number; water: number }>) => ls.set('meters', d);
-const getSettings = () => ls.get<any>('settings', {
-  dormName: 'หอพักสุขใจ', address: '123 ถ.สุขุมวิท กรุงเทพฯ', phone: '081-234-5678',
-  rateElec: 7, rateWater: 20, channelToken: '', logo: ''
-});
-const setSettings = (d: any) => ls.set('settings', d);
+
 const THAI_MONTHS = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 const formatMonth = (ym: string) => {
@@ -30,80 +22,91 @@ const getPrevMonth = (ym: string) => {
 
 export default function Home() {
   const [page, setPage] = useState('dashboard');
-  const [rooms, setRoomsState] = useState(getRooms());
-  const [meters, setMetersState] = useState(getMeters());
-  const [settings, setSettingsState] = useState(getSettings());
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [meters, setMeters] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>({ dormName: '', address: '', phone: '', rateElec: 7, rateWater: 20, channelToken: '', logo: '' });
   const [toasts, setToasts] = useState<{ id: string; msg: string; err: boolean }[]>([]);
   const [modal, setModal] = useState<'room' | 'invoice' | null>(null);
   const [editRoom, setEditRoom] = useState<any>(null);
   const [meterMonth, setMeterMonth] = useState(new Date().toISOString().slice(0, 7));
   const [invMonth, setInvMonth] = useState(new Date().toISOString().slice(0, 7));
   const [viewInv, setViewInv] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Sync
-  const sync = () => { setRoomsState(getRooms()); setMetersState(getMeters()); setSettingsState(getSettings()); };
   const toast = useCallback((msg: string, err = false) => {
-    const id = genId();
+    const id = Date.now().toString(36);
     setToasts(p => [...p, { id, msg, err }]);
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500);
   }, []);
 
+  const fetchAll = async () => {
+    setLoading(true);
+    try {
+      const [r, m, s] = await Promise.all([
+        api('/api/rooms', 'GET'),
+        api('/api/meters', 'GET'),
+        api('/api/settings', 'GET')
+      ]);
+      setRooms(r || []);
+      setMeters(m || []);
+      setSettings(s || settings);
+    } catch { toast('โหลดข้อมูลไม่สำเร็จ', true); }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchAll(); }, []);
+
   // ─── Room CRUD ───────────────────────────────────────────────
-  const saveRoom = (data: any) => {
-    const rooms = getRooms();
-    if (editRoom) {
-      const i = rooms.findIndex((r: any) => r.id === editRoom.id);
-      rooms[i] = { ...rooms[i], ...data };
-    } else {
-      rooms.push({ id: genId(), ...data });
-    }
-    setRooms(rooms); sync(); setModal(null); setEditRoom(null);
+  const saveRoom = async (data: any) => {
+    const method = editRoom ? 'PUT' : 'POST';
+    const body = editRoom ? { ...editRoom, ...data } : data;
+    await api('/api/rooms', method, body);
+    await fetchAll(); setModal(null); setEditRoom(null);
     toast(editRoom ? 'แก้ไขห้องสำเร็จ' : 'เพิ่มห้องสำเร็จ');
   };
 
-  const deleteRoom = (id: string) => {
+  const deleteRoom = async (id: string) => {
     if (!confirm('ต้องการลบห้องนี้?')) return;
-    setRooms(getRooms().filter((r: any) => r.id !== id)); sync();
-    toast('ลบห้องสำเร็จ');
+    await api('/api/rooms', 'DELETE', { id });
+    await fetchAll(); toast('ลบห้องสำเร็จ');
   };
 
   // ─── Meter ──────────────────────────────────────────────────
-  const updateMeter = (rid: string, m: string, field: string, val: string) => {
-    const meters = getMeters() as Record<string, any>;
-    const key = rid + '_' + m;
-    if (!meters[key]) meters[key] = { elec: 0, water: 0 };
-    meters[key][field] = val !== '' ? Number(val) : 0;
-    setMeters(meters as any); sync();
-    toast('บันทึกหน่วยสำเร็จ');
+  const updateMeter = async (rid: string, m: string, field: string, val: string) => {
+    const existing = meters.find(x => x.roomId === rid && x.month === m);
+    const body: any = existing ? { ...existing } : { roomId: rid, month: m, elec: 0, water: 0 };
+    body[field] = val !== '' ? Number(val) : 0;
+    if (existing) await api('/api/meters', 'PUT', body);
+    else await api('/api/meters', 'POST', body);
+    await fetchAll(); toast('บันทึกหน่วยสำเร็จ');
   };
 
-  const savePrev = (rid: string, m: string, field: string, val: string) => {
+  const savePrev = async (rid: string, m: string, field: string, val: string) => {
     const pm = getPrevMonth(m);
-    const meters = getMeters() as Record<string, any>;
-    const key = rid + '_' + pm;
-    if (!meters[key]) meters[key] = { elec: 0, water: 0 };
-    meters[key][field] = Number(val) || 0;
-    setMeters(meters as any); sync();
-    toast('แก้ไขหน่วยก่อนหน้าสำเร็จ');
+    const existing = meters.find(x => x.roomId === rid && x.month === pm);
+    const body: any = existing ? { ...existing } : { roomId: rid, month: pm, elec: 0, water: 0 };
+    body[field] = Number(val) || 0;
+    if (existing) await api('/api/meters', 'PUT', body);
+    else await api('/api/meters', 'POST', body);
+    await fetchAll(); toast('แก้ไขหน่วยก่อนหน้าสำเร็จ');
   };
 
   // ─── Invoice Calculation ─────────────────────────────────────
   const calcInv = (room: any, m: string) => {
-    const s = getSettings();
-    const meters = getMeters();
+    const cur = meters.find(x => x.roomId === room.id && x.month === m) || { elec: 0, water: 0 };
     const pm = getPrevMonth(m);
-    const cur = meters[room.id + '_' + m] || { elec: 0, water: 0 };
-    const prev = meters[room.id + '_' + pm] || { elec: 0, water: 0 };
-    const eu = Math.max(0, Number(cur.elec) - Number(prev.elec));
-    const wu = Math.max(0, Number(cur.water) - Number(prev.water));
+    const prev = meters.find(x => x.roomId === room.id && x.month === pm) || { elec: 0, water: 0 };
+    const eu = Math.max(0, Number(cur.elec || 0) - Number(prev.elec || 0));
+    const wu = Math.max(0, Number(cur.water || 0) - Number(prev.water || 0));
     return {
       room: room.number, tenant: room.tenantName, phone: room.tenantPhone,
       userId: room.tenantUserId, month: m, rent: room.rent,
-      elecUnits: eu, elecCost: eu * s.rateElec,
-      waterUnits: wu, waterCost: wu * s.rateWater,
-      prevElec: prev.elec, curElec: cur.elec, prevWater: prev.water, curWater: cur.water,
-      total: room.rent + eu * s.rateElec + wu * s.rateWater,
-      rateElec: s.rateElec, rateWater: s.rateWater
+      elecUnits: eu, elecCost: eu * settings.rateElec,
+      waterUnits: wu, waterCost: wu * settings.rateWater,
+      prevElec: prev.elec || 0, curElec: cur.elec || 0,
+      prevWater: prev.water || 0, curWater: cur.water || 0,
+      total: room.rent + eu * settings.rateElec + wu * settings.rateWater,
+      rateElec: settings.rateElec, rateWater: settings.rateWater
     };
   };
 
@@ -124,12 +127,11 @@ export default function Home() {
 
   // ─── LINE ────────────────────────────────────────────────────
   const sendLineMsg = async (to: string, text: string) => {
-    const s = getSettings();
-    if (!s.channelToken) { toast('กรุณาตั้งค่า Channel Access Token ก่อน', true); return false; }
+    if (!settings.channelToken) { toast('กรุณาตั้งค่า Channel Access Token ก่อน', true); return false; }
     try {
       const res = await fetch('https://api.line.me/v2/bot/message/push', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + s.channelToken },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.channelToken },
         body: JSON.stringify({ to, messages: [{ type: 'text', text }] })
       });
       if (res.ok) { toast('ส่ง LINE สำเร็จ!'); return true; }
@@ -146,30 +148,28 @@ export default function Home() {
     sendLineMsg(inv.userId, text);
   };
 
-  // ─── Logo ────────────────────────────────────────────────────
+  // ─── Logo ───────────────────────────────────────────────────
   const uploadLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > 2 * 1024 * 1024) { toast('ไฟล์ใหญ่เกิน 2MB', true); return; }
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const s = getSettings();
-      s.logo = ev.target?.result;
-      setSettings(s); sync();
-      toast('อัปโหลดโลโก้สำเร็จ');
+      const s = { ...settings, logo: ev.target?.result as string };
+      api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('อัปโหลดโลโก้สำเร็จ'); });
     };
     reader.readAsDataURL(f);
     e.target.value = '';
   };
 
   const removeLogo = () => {
-    const s = getSettings(); s.logo = ''; setSettings(s); sync();
-    toast('ลบโลโก้สำเร็จ');
+    const s = { ...settings, logo: '' };
+    api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('ลบโลโก้สำเร็จ'); });
   };
 
-  // ─── Backup ──────────────────────────────────────────────────
+  // ─── Backup ─────────────────────────────────────────────────
   const exportData = () => {
-    const data = { rooms: getRooms(), meters: getMeters(), settings: getSettings(), exportDate: new Date().toISOString() };
+    const data = { rooms, meters, settings, exportDate: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -178,16 +178,19 @@ export default function Home() {
     toast('Export สำเร็จ');
   };
 
-  const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const importData = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const d = JSON.parse(ev.target?.result as string);
-        if (!d.rooms || !d.meters || !d.settings) { toast('ไฟล์ JSON ไม่ถูกต้อง', true); return; }
+        if (!d.rooms || !d.settings) { toast('ไฟล์ JSON ไม่ถูกต้อง', true); return; }
         if (!confirm('⚠️ Import จะทับข้อมูลปัจจุบันทั้งหมด\nดำเนินการต่อ?')) return;
-        setRooms(d.rooms); setMeters(d.meters); setSettings(d.settings); sync();
+        for (const r of d.rooms) await api('/api/rooms', 'POST', r);
+        if (d.meters) for (const m of d.meters) await api('/api/meters', 'POST', m);
+        await api('/api/settings', 'POST', d.settings);
+        await fetchAll();
         toast('✅ Import สำเร็จ!');
       } catch (err: any) { toast('❌ ' + err.message, true); }
     };
@@ -195,34 +198,29 @@ export default function Home() {
     e.target.value = '';
   };
 
-  const clearAll = () => {
-    if (!confirm('⚠️ ล้างข้อมูลทั้งหมด?\nการกระทำนี้ไม่สามารถย้อนกลับได้')) return;
-    if (!confirm('⚠️ ยืนยันอีกครั้ง')) return;
-    localStorage.clear(); sync();
-    toast('ล้างข้อมูลสำเร็จ');
-  };
-
   // ─── Dashboard Data ──────────────────────────────────────────
   const now = new Date();
   const cm = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-  const occ = rooms.filter((r: any) => r.tenantName);
+  const occ = rooms.filter(r => r.tenantName);
   let pending = 0; let revenue = 0;
-  occ.forEach((r: any) => {
-    const key = r.id + '_' + cm;
-    if (!meters[key]) pending++; else { const inv = calcInv(r, cm); revenue += inv.total; }
+  occ.forEach(r => {
+    const hasMeter = meters.some(x => x.roomId === r.id && x.month === cm);
+    if (!hasMeter) pending++; else { const inv = calcInv(r, cm); revenue += inv.total; }
   });
 
-  const recentData = occ.map((r: any) => {
+  const recentData = occ.map(r => {
     let la: string | null = null;
     for (let y = now.getFullYear(); y >= now.getFullYear() - 1; y--) {
       for (let m = 11; m >= 0; m--) {
         const ym = y + '-' + String(m + 1).padStart(2, '0');
-        if (meters[r.id + '_' + ym]) { la = ym; break; }
+        if (meters.some(x => x.roomId === r.id && x.month === ym)) { la = ym; break; }
       }
       if (la) break;
     }
     return la ? { room: r, month: la, inv: calcInv(r, la) } : null;
   }).filter(Boolean).sort((a: any, b: any) => b.month.localeCompare(a.month)).slice(0, 10);
+
+  if (loading) return <div className={styles.wrapper}><div className={styles.loading}><div className={styles.spinner} /><p>กำลังโหลด...</p></div></div>;
 
   return (
     <div className={styles.wrapper}>
@@ -248,7 +246,7 @@ export default function Home() {
           <label>LINE Channel Access Token</label>
           <input type="text" placeholder="ใส่ Token..."
             value={settings.channelToken || ''}
-            onChange={e => { const s = getSettings(); s.channelToken = e.target.value; setSettings(s); sync(); }}
+            onChange={e => { const s = { ...settings, channelToken: e.target.value }; setSettings(s); api('/api/settings', 'POST', s); }}
           />
           <button onClick={() => toast('บันทึก Token สำเร็จ')}>💾 บันทึก</button>
         </div>
@@ -324,13 +322,13 @@ export default function Home() {
 
         {/* METERS */}
         {page === 'meters' && (() => {
-          const occRooms = rooms.filter((r: any) => r.tenantName);
+          const occRooms = rooms.filter(r => r.tenantName);
           const pm = getPrevMonth(meterMonth);
           return (
             <div className={styles.page}>
               <div className={styles.pageHeader}><h2>⚡ บันทึกหน่วย ค่าไฟ/น้ำ</h2></div>
               <div className={styles.monthSelector}>
-                <label style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>📅 เลือกเดือน:</label>
+                <label style={{ fontWeight: 700 }}>📅 เลือกเดือน:</label>
                 <input type="month" value={meterMonth} onChange={e => setMeterMonth(e.target.value)} />
               </div>
               <div className={styles.card}>
@@ -341,18 +339,16 @@ export default function Home() {
                   <tbody>
                     {occRooms.length === 0 ? <tr><td colSpan={9}><div className={styles.emptyState}><div className={styles.emptyIcon}>📝</div><p>ยังไม่มีห้องที่มีผู้พักอาศัย</p></div></td></tr> :
                       occRooms.map((r: any, i: number) => {
-                        const key = r.id + '_' + meterMonth;
-                        const prevKey = r.id + '_' + pm;
-                        const pd = meters[prevKey] || { elec: 0, water: 0 };
-                        const cur = meters[key] || { elec: 0, water: 0 };
-                        const eu = cur.elec !== 0 || pd.elec !== 0 ? Math.max(0, Number(cur.elec) - Number(pd.elec)) : '—';
-                        const wu = cur.water !== 0 || pd.water !== 0 ? Math.max(0, Number(cur.water) - Number(pd.water)) : '—';
+                        const cur = meters.find(x => x.roomId === r.id && x.month === meterMonth) || { elec: 0, water: 0 };
+                        const prev = meters.find(x => x.roomId === r.id && x.month === pm) || { elec: 0, water: 0 };
+                        const eu = (cur.elec !== 0 || prev.elec !== 0) ? Math.max(0, Number(cur.elec) - Number(prev.elec)) : '—';
+                        const wu = (cur.water !== 0 || prev.water !== 0) ? Math.max(0, Number(cur.water) - Number(prev.water)) : '—';
                         return (
                           <tr key={r.id} style={{ animationDelay: `${i * 0.05}s` }}>
                             <td><span className={styles.roomNumber}>{r.number}</span></td>
                             <td>{r.tenantName}</td>
                             <td>
-                              <input type="number" defaultValue={pd.elec}
+                              <input type="number" defaultValue={prev.elec}
                                 onChange={e => savePrev(r.id, meterMonth, 'elec', e.target.value)}
                                 className={styles.meterInput + ' ' + styles.editable}
                               />
@@ -363,7 +359,7 @@ export default function Home() {
                               className={styles.meterInput}
                             /></td>
                             <td className={styles.highlight}>{eu}</td>
-                            <td><input type="number" defaultValue={pd.water}
+                            <td><input type="number" defaultValue={prev.water}
                               onChange={e => savePrev(r.id, meterMonth, 'water', e.target.value)}
                               className={styles.meterInput + ' ' + styles.editable}
                             />
@@ -386,12 +382,12 @@ export default function Home() {
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}><label>ค่าไฟต่อหน่วย (บาท)</label>
                     <input type="number" value={settings.rateElec}
-                      onChange={e => { const s = getSettings(); s.rateElec = parseFloat(e.target.value) || 7; setSettings(s); sync(); }}
+                      onChange={e => { const s = { ...settings, rateElec: parseFloat(e.target.value) || 7 }; setSettings(s); api('/api/settings', 'POST', s); }}
                     />
                   </div>
                   <div className={styles.formGroup}><label>ค่าน้ำต่อหน่วย (บาท)</label>
                     <input type="number" value={settings.rateWater}
-                      onChange={e => { const s = getSettings(); s.rateWater = parseFloat(e.target.value) || 20; setSettings(s); sync(); }}
+                      onChange={e => { const s = { ...settings, rateWater: parseFloat(e.target.value) || 20 }; setSettings(s); api('/api/settings', 'POST', s); }}
                     />
                   </div>
                 </div>
@@ -405,16 +401,16 @@ export default function Home() {
           <div className={styles.page}>
             <div className={styles.pageHeader}><h2>🧾 ใบแจ้งหนี้</h2></div>
             <div className={styles.monthSelector}>
-              <label style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>📅 เลือกเดือน:</label>
+              <label style={{ fontWeight: 700 }}>📅 เลือกเดือน:</label>
               <input type="month" value={invMonth} onChange={e => setInvMonth(e.target.value)} />
             </div>
             <div className={styles.card}>
               <table>
                 <thead><tr><th>ห้อง</th><th>ผู้พัก</th><th>ค่าเช่า</th><th>ค่าไฟ</th><th>ค่าน้ำ</th><th>รวมทั้งหมด</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
                 <tbody>
-                  {rooms.filter((r: any) => r.tenantName).length === 0 ?
+                  {rooms.filter(r => r.tenantName).length === 0 ?
                     <tr><td colSpan={8}><div className={styles.emptyState}><div className={styles.emptyIcon}>🧾</div><p>ยังไม่มีข้อมูล</p></div></td></tr> :
-                    rooms.filter((r: any) => r.tenantName).map((r: any, i: number) => {
+                    rooms.filter(r => r.tenantName).map((r: any, i: number) => {
                       const inv = calcInv(r, invMonth);
                       const hasData = inv.elecUnits > 0 || inv.waterUnits > 0;
                       return (
@@ -448,7 +444,7 @@ export default function Home() {
             <div className={styles.pageHeader}><h2>⚙️ ตั้งค่าระบบ</h2></div>
             <div className={styles.card}>
               <h3>🏢 ข้อมูลหอพัก</h3>
-              <div className={styles.logoArea}>
+              <div className={styles.logoUploadArea}>
                 <div id="logoPreview">
                   {settings.logo ? <img src={settings.logo} alt="Logo" /> : <div className={styles.logoPlaceholder}>🏠</div>}
                 </div>
@@ -460,12 +456,12 @@ export default function Home() {
                   <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 6 }}>รองรับ PNG, JPG ขนาดไม่เกิน 2MB</p>
                 </div>
               </div>
-              <div className={styles.formGroup}><label>ชื่อหอพัก</label><input value={settings.dormName} onChange={e => { const s = getSettings(); s.dormName = e.target.value; setSettings(s); sync(); }} /></div>
-              <div className={styles.formGroup}><label>ที่อยู่</label><input value={settings.address} onChange={e => { const s = getSettings(); s.address = e.target.value; setSettings(s); sync(); }} /></div>
-              <div className={styles.formGroup}><label>เบอร์โทรศัพท์</label><input value={settings.phone} onChange={e => { const s = getSettings(); s.phone = e.target.value; setSettings(s); sync(); }} /></div>
+              <div className={styles.formGroup}><label>ชื่อหอพัก</label><input value={settings.dormName} onChange={e => { const s = { ...settings, dormName: e.target.value }; setSettings(s); api('/api/settings', 'POST', s); }} /></div>
+              <div className={styles.formGroup}><label>ที่อยู่</label><input value={settings.address} onChange={e => { const s = { ...settings, address: e.target.value }; setSettings(s); api('/api/settings', 'POST', s); }} /></div>
+              <div className={styles.formGroup}><label>เบอร์โทรศัพท์</label><input value={settings.phone} onChange={e => { const s = { ...settings, phone: e.target.value }; setSettings(s); api('/api/settings', 'POST', s); }} /></div>
               <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>ค่าไฟต่อหน่วย (บาท)</label><input type="number" value={settings.rateElec} onChange={e => { const s = getSettings(); s.rateElec = parseFloat(e.target.value) || 7; setSettings(s); sync(); }} /></div>
-                <div className={styles.formGroup}><label>ค่าน้ำต่อหน่วย (บาท)</label><input type="number" value={settings.rateWater} onChange={e => { const s = getSettings(); s.rateWater = parseFloat(e.target.value) || 20; setSettings(s); sync(); }} /></div>
+                <div className={styles.formGroup}><label>ค่าไฟต่อหน่วย (บาท)</label><input type="number" value={settings.rateElec} onChange={e => { const s = { ...settings, rateElec: parseFloat(e.target.value) || 7 }; setSettings(s); api('/api/settings', 'POST', s); }} /></div>
+                <div className={styles.formGroup}><label>ค่าน้ำต่อหน่วย (บาท)</label><input type="number" value={settings.rateWater} onChange={e => { const s = { ...settings, rateWater: parseFloat(e.target.value) || 20 }; setSettings(s); api('/api/settings', 'POST', s); }} /></div>
               </div>
             </div>
 
@@ -479,7 +475,7 @@ export default function Home() {
               </div>
               <div className={styles.lineConfigSection}>
                 <h4>🔑 Channel Access Token</h4>
-                <div className={styles.formGroup}><input type="text" placeholder="eyJhbGciOi..." value={settings.channelToken || ''} onChange={e => { const s = getSettings(); s.channelToken = e.target.value; setSettings(s); sync(); }} /></div>
+                <div className={styles.formGroup}><input type="text" placeholder="eyJhbGciOi..." value={settings.channelToken || ''} onChange={e => { const s = { ...settings, channelToken: e.target.value }; setSettings(s); api('/api/settings', 'POST', s); }} /></div>
                 <button className={styles.btnSuccess} onClick={async () => {
                   const uid = prompt('กรุณากรอก LINE User ID ของคุณเพื่อทดสอบ (ขึ้นต้นด้วย U):');
                   if (!uid || !uid.startsWith('U')) { toast('User ID ไม่ถูกต้อง', true); return; }
@@ -494,7 +490,6 @@ export default function Home() {
               <div className={styles.backupActions}>
                 <button className={styles.btnOutline} onClick={exportData}>📤 Export ข้อมูล</button>
                 <button className={styles.btnPrimary} onClick={() => document.getElementById('importFile')?.click()}>📥 Import ข้อมูล</button>
-                <button className={styles.btnDanger} onClick={clearAll}>⚠️ ล้างข้อมูลทั้งหมด</button>
               </div>
               <input type="file" id="importFile" accept=".json" style={{ display: 'none' }} onChange={importData} />
             </div>
@@ -525,8 +520,7 @@ export default function Home() {
       {/* TOASTS */}
       <div className={styles.toastContainer}>
         {toasts.map(t => (
-          <div key={t.id} className={`${styles.toast} ${t.err ? styles.toastError : ''}`}
-            style={{ animationDelay: '0s' }}>
+          <div key={t.id} className={`${styles.toast} ${t.err ? styles.toastError : ''}`}>
             <span>{t.err ? '❌' : '✅'}</span><span>{t.msg}</span>
           </div>
         ))}
@@ -594,8 +588,8 @@ function InvoicePreview({ inv, settings }: { inv: any; settings: any }) {
         <thead><tr><th>รายการ</th><th>รายละเอียด</th><th style={{ textAlign: 'right' }}>จำนวนเงิน (บาท)</th></tr></thead>
         <tbody>
           <tr><td>ค่าเช่าห้อง</td><td>ห้อง {inv.room}</td><td style={{ textAlign: 'right' }}>{inv.rent.toLocaleString()}</td></tr>
-          <tr><td>ค่าไฟฟ้า</td><td>{inv.elecUnits} หน่วย × {inv.rateElec} บาท<br /><small style={{ color: 'var(--text-light)' }}>({inv.curElec} - {inv.prevElec})</small></td><td style={{ textAlign: 'right' }}>{inv.elecCost.toLocaleString()}</td></tr>
-          <tr><td>ค่าน้ำประปา</td><td>{inv.waterUnits} หน่วย × {inv.rateWater} บาท<br /><small style={{ color: 'var(--text-light)' }}>({inv.curWater} - {inv.prevWater})</small></td><td style={{ textAlign: 'right' }}>{inv.waterCost.toLocaleString()}</td></tr>
+          <tr><td>ค่าไฟฟ้า</td><td>{inv.elecUnits} หน่วย × {inv.rateElec} บาท<br /><small>({inv.curElec} - {inv.prevElec})</small></td><td style={{ textAlign: 'right' }}>{inv.elecCost.toLocaleString()}</td></tr>
+          <tr><td>ค่าน้ำประปา</td><td>{inv.waterUnits} หน่วย × {inv.rateWater} บาท<br /><small>({inv.curWater} - {inv.prevWater})</small></td><td style={{ textAlign: 'right' }}>{inv.waterCost.toLocaleString()}</td></tr>
         </tbody>
       </table>
       <div style={{ fontSize: 22, fontWeight: 800, textAlign: 'right', paddingTop: 18, borderTop: '3px solid var(--primary)', color: 'var(--primary-dark)' }}>
