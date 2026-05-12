@@ -11,8 +11,18 @@ const defaultSettings = {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // If MongoDB not configured, return defaults for GET
+  let client;
   try {
-    const client = await clientPromise;
+    client = await clientPromise;
+  } catch (e: any) {
+    if (req.method === 'GET') {
+      return res.status(200).json(defaultSettings);
+    }
+    return res.status(500).json({ error: e.message || 'Database connection failed' });
+  }
+
+  try {
     const db = client.db('dorm_billing');
     const collection = db.collection('settings');
 

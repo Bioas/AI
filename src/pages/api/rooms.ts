@@ -2,8 +2,14 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import clientPromise from '../../lib/mongodb';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  let client;
   try {
-    const client = await clientPromise;
+    client = await clientPromise;
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message || 'Database connection failed' });
+  }
+
+  try {
     const db = client.db('dorm_billing');
     const collection = db.collection('rooms');
 
