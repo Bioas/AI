@@ -59,11 +59,11 @@ export default function Home() {
 
   // ─── Room CRUD ───────────────────────────────────────────────
   const saveRoom = async (data: any) => {
-    const method = editRoom ? 'PUT' : 'POST';
-    const body = editRoom ? { ...editRoom, ...data } : data;
+    const body = data.id ? { ...data } : data;
+    const method = body.id ? 'PUT' : 'POST';
     await api('/api/rooms', method, body);
     await fetchAll(); setModal(null); setEditRoom(null);
-    toast(editRoom ? 'แก้ไขห้องสำเร็จ' : 'เพิ่มห้องสำเร็จ');
+    toast(body.id ? 'แก้ไขห้องสำเร็จ' : 'เพิ่มห้องสำเร็จ');
   };
 
   const deleteRoom = async (id: string) => {
@@ -261,11 +261,9 @@ export default function Home() {
   }).filter(Boolean).sort((a: any, b: any) => b.month.localeCompare(a.month)).slice(0, 10);
 
   if (loading) return (
-    <div className={styles.wrapper}>
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
-        <p>กำลังโหลดข้อมูล...</p>
-      </div>
+    <div className={styles.loadingWrapper}>
+      <div className={styles.spinner} />
+      <p>กำลังโหลดข้อมูล...</p>
     </div>
   );
 
@@ -563,7 +561,7 @@ export default function Home() {
 // ─── Room Modal ────────────────────────────────────────────────
 function RoomModal({ room, onClose, onSave }: { room: any; onClose: () => void; onSave: (d: any) => void }) {
   const [num, setNum] = useState(room?.number || '');
-  const [rent, setRent] = useState(room?.rent?.toString() || '');
+  const [rent, setRent] = useState(room?.rent ? room.rent.toString() : '');
   const [name, setName] = useState(room?.tenantName || '');
   const [phone, setPhone] = useState(room?.tenantPhone || '');
   const [userId, setUserId] = useState(room?.tenantUserId || '');
@@ -571,7 +569,15 @@ function RoomModal({ room, onClose, onSave }: { room: any; onClose: () => void; 
 
   const save = () => {
     if (!num.trim()) { alert('กรุณาระบุหมายเลขห้อง'); return; }
-    onSave({ number: num.trim(), rent: parseFloat(rent) || 0, tenantName: name.trim(), tenantPhone: phone.trim(), tenantUserId: userId.trim(), note: note.trim() });
+    onSave({
+      id: room?.id || undefined,
+      number: num.trim(),
+      rent: parseFloat(rent) || 0,
+      tenantName: name.trim(),
+      tenantPhone: phone.trim(),
+      tenantUserId: userId.trim(),
+      note: note.trim()
+    });
   };
 
   return (
