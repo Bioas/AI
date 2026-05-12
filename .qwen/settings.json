@@ -8,7 +8,9 @@
       "Bash(npm uninstall *)",
       "Bash(git log *)",
       "Bash(git show *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(findstr *)",
+      "Bash(del *)"
     ]
   },
   "$version": 4

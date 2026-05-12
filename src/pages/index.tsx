@@ -1,1089 +1,577 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import styles from '../styles/Home.module.css';
 
-// ─── Interfaces ───────────────────────────────────────────────
-
-interface Tenant {
-  id: string;
-  name: string;
-  nickname?: string;
-  idCard?: string;
-  phone: string;
-  lineId?: string;
-  email?: string;
-  address?: string;
-  emergencyName?: string;
-  emergencyPhone?: string;
-  emergencyRelation?: string;
-  deposit: number;
-  checkInDate: string;
-  checkOutDate?: string;
-  note?: string;
-}
-
 interface Room {
-  id: string;
-  number: string;
-  rent: number;
-  tenantId?: string;
-  note?: string;
+  id: string; number: string; rent: number;
+  tenantName: string; tenantPhone: string; tenantLineId: string; note: string;
 }
-
+interface UtilityRecord {
+  id: string; roomId: string; month: string;
+  elecReading: number; waterReading: number;
+  prevElecReading: number; prevWaterReading: number;
+  elecUsed: number; waterUsed: number; note: string; createdAt: string;
+}
+interface Invoice {
+  id: string; roomId: string; roomNumber: string; tenantName: string; month: string;
+  rent: number; elecUnits: number; elecRate: number; elecAmount: number;
+  waterUnits: number; waterRate: number; waterAmount: number; total: number;
+  status: 'pending' | 'paid' | 'overdue'; paidDate?: string; note: string; createdAt: string;
+}
+interface PendingLineUser {
+  id: string; lineUserId: string; lineDisplayName?: string; linePictureUrl?: string;
+  roomId?: string; status: 'pending' | 'matched' | 'ignored'; createdAt: string;
+}
 interface Settings {
-  dormName: string;
-  address: string;
-  phone: string;
-  rateElec: number;
-  rateWater: number;
-  logo?: string;
+  dormName: string; address: string; phone: string;
+  rateElec: number; rateWater: number; logo: string;
 }
-
 type ToastType = 'success' | 'error' | 'info' | 'warning';
+interface Toast { id: string; message: string; type: ToastType; }
 
-interface Toast {
-  id: string;
-  message: string;
-  type: ToastType;
-}
-
-type SortField = 'number' | 'rent' | 'tenantName';
-type SortOrder = 'asc' | 'desc';
-type FilterStatus = 'all' | 'occupied' | 'vacant';
-type TenantSortField = 'name' | 'phone' | 'checkInDate' | 'deposit';
-
-// ─── Main Component ───────────────────────────────────────────
+const MONTHS = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+const THAI_MONTHS = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
 export default function Home() {
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'rooms' | 'tenants' | 'settings'>('dashboard');
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [pg, setPg] = useState('dashboard');
+  const [sb, setSb] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  // Sidebar
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Room modal
-  const [showRoomModal, setShowRoomModal] = useState(false);
-  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
-
-  // Tenant modal
-  const [showTenantModal, setShowTenantModal] = useState(false);
-  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
-
-  // Settings modal
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-
-  // Room search & filter & sort
-  const [roomSearch, setRoomSearch] = useState('');
-  const [roomFilter, setRoomFilter] = useState<FilterStatus>('all');
-  const [roomSortField, setRoomSortField] = useState<SortField>('number');
-  const [roomSortOrder, setRoomSortOrder] = useState<SortOrder>('asc');
-
-  // Tenant search & sort
-  const [tenantSearch, setTenantSearch] = useState('');
-  const [tenantSortField, setTenantSortField] = useState<TenantSortField>('name');
-  const [tenantSortOrder, setTenantSortOrder] = useState<SortOrder>('asc');
-
-  // Toast
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [utils, setUtils] = useState<UtilityRecord[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [lines, setLines] = useState<PendingLineUser[]>([]);
+  const [stg, setStg] = useState<Settings | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const toastTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const [roomM, setRoomM] = useState<Room | null | 'new'>(null);
+  const [utilM, setUtilM] = useState<{ roomId: string; month: string } | null>(null);
+  const [viewInv, setViewInv] = useState<Invoice | null>(null);
+  const [delC, setDelC] = useState<{ t: string; id: string } | null>(null);
+  const [deling, setDeling] = useState(false);
+  const [invMonth, setInvMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [utilFilter, setUtilFilter] = useState('');
+  const [invFilter, setInvFilter] = useState('all');
+  const invRef = useRef<HTMLDivElement>(null);
+  const tRef = useRef<Record<string, any>>({});
 
-  // Delete confirm
-  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'room' | 'tenant'; id: string } | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  // ─── Toast ───────────────────────────────────────────────────
-
-  const addToast = useCallback((message: string, type: ToastType = 'success') => {
-    const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    setToasts(prev => [...prev, { id, message, type }]);
-    toastTimeoutRef.current[id] = setTimeout(() => removeToast(id), 4000);
+  const toast = useCallback((m: string, t: ToastType = 'success') => {
+    const id = Date.now().toString(36);
+    setToasts(p => [...p, { id, message: m, type: t }]);
+    tRef.current[id] = setTimeout(() => { setToasts(p => p.filter(x => x.id !== id)); delete tRef.current[id]; }, 3500);
   }, []);
+  useEffect(() => () => { Object.values(tRef.current).forEach(clearTimeout); }, []);
 
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-    if (toastTimeoutRef.current[id]) {
-      clearTimeout(toastTimeoutRef.current[id]);
-      delete toastTimeoutRef.current[id];
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => { Object.values(toastTimeoutRef.current).forEach(clearTimeout); };
-  }, []);
-
-  // ─── Fetch Data ──────────────────────────────────────────────
-
-  const fetchData = async () => {
+  const fetchAll = async () => {
     setLoading(true);
     try {
-      const [roomsRes, tenantsRes, settingsRes] = await Promise.all([
-        fetch('/api/rooms'),
-        fetch('/api/tenants'),
-        fetch('/api/settings')
+      const [r, u, i, l, s] = await Promise.all([
+        fetch('/api/rooms').then(x => x.json()).catch(() => []),
+        fetch('/api/utilities').then(x => x.json()).catch(() => []),
+        fetch('/api/invoices').then(x => x.json()).catch(() => []),
+        fetch('/api/pending-lines').then(x => x.json()).catch(() => []),
+        fetch('/api/settings').then(x => x.json()).catch(() => null)
       ]);
-      setRooms(await roomsRes.json().catch(() => []));
-      setTenants(await tenantsRes.json().catch(() => []));
-      setSettings(await settingsRes.json().catch(() => null));
-    } catch (e) {
-      console.error('Fetch error:', e);
-      addToast('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
-    }
+      setRooms(r); setUtils(u); setInvoices(i); setLines(l); setStg(s);
+    } catch { toast('โหลดข้อมูลไม่สําเร็จ', 'error'); }
     setLoading(false);
   };
+  useEffect(() => { fetchAll(); }, []);
 
-  useEffect(() => { fetchData(); }, []);
-
-  // ─── Room CRUD ───────────────────────────────────────────────
-
-  const handleSaveRoom = async (room: Room) => {
-    const isEdit = !!room.id && rooms.some(r => r.id === room.id);
-    try {
-      const res = await fetch('/api/rooms', {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(room)
-      });
-      if (res.ok) {
-        await fetchData();
-        setShowRoomModal(false);
-        setEditingRoom(null);
-        addToast(isEdit ? `แก้ไขห้อง ${room.number} สำเร็จ` : `เพิ่มห้อง ${room.number} สำเร็จ`, 'success');
-      } else {
-        addToast('เกิดข้อผิดพลาด', 'error');
-      }
-    } catch { addToast('เกิดข้อผิดพลาด', 'error'); }
+  const api = async (path: string, method: string, body?: any) => {
+    const opts: any = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(path, opts);
   };
 
-  const handleDeleteRoom = async (id: string) => {
-    const room = rooms.find(r => r.id === id);
-    setDeleting(true);
-    try {
-      const res = await fetch('/api/rooms', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      if (res.ok) {
-        await fetchData();
-        addToast(`ลบห้อง ${room?.number} สำเร็จ`, 'success');
-      } else {
-        addToast('เกิดข้อผิดพลาด', 'error');
-      }
-    } catch { addToast('เกิดข้อผิดพลาด', 'error'); }
-    setDeleting(false);
-    setDeleteConfirm(null);
+  const saveRoom = async (room: Room) => {
+    const m = rooms.some(r => r.id === room.id) ? 'PUT' : 'POST';
+    const r = await api('/api/rooms', m, room);
+    if (r.ok) { await fetchAll(); setRoomM(null); toast('บันทึกห้องสําเร็จ'); }
+    else toast('เกิดข้อผิดพลาด', 'error');
+  };
+  const deleteRoom = async (id: string) => {
+    setDeling(true);
+    const r = await api('/api/rooms', 'DELETE', { id });
+    if (r.ok) { await fetchAll(); toast('ลบห้องสําเร็จ'); }
+    else toast('เกิดข้อผิดพลาด', 'error');
+    setDeling(false); setDelC(null);
   };
 
-  // ─── Tenant CRUD ─────────────────────────────────────────────
-
-  const handleSaveTenant = async (tenant: Tenant) => {
-    const isEdit = !!tenant.id && tenants.some(t => t.id === tenant.id);
-    try {
-      const res = await fetch('/api/tenants', {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(tenant)
-      });
-      if (res.ok) {
-        await fetchData();
-        setShowTenantModal(false);
-        setEditingTenant(null);
-        addToast(isEdit ? `แก้ไขข้อมูล ${tenant.name} สำเร็จ` : `เพิ่มผู้พัก ${tenant.name} สำเร็จ`, 'success');
-      } else {
-        addToast('เกิดข้อผิดพลาด', 'error');
-      }
-    } catch { addToast('เกิดข้อผิดพลาด', 'error'); }
-  };
-
-  const handleDeleteTenant = async (id: string) => {
-    const tenant = tenants.find(t => t.id === id);
-    const isOccupying = rooms.some(r => r.tenantId === id);
-    if (isOccupying) {
-      addToast('ผู้พักนี้กำลังพักอยู่ในห้อง ไม่สามารถลบได้', 'warning');
-      setDeleteConfirm(null);
-      return;
+  const saveUtil = async (rec: UtilityRecord) => {
+    const prev = utils.filter(u => u.roomId === rec.roomId && u.month < rec.month).sort((a, b) => b.month.localeCompare(a.month))[0];
+    if (prev) {
+      rec.prevElecReading = prev.elecReading; rec.prevWaterReading = prev.waterReading;
+      rec.elecUsed = rec.elecReading - prev.elecReading; rec.waterUsed = rec.waterReading - prev.waterReading;
     }
-    setDeleting(true);
-    try {
-      const res = await fetch('/api/tenants', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      if (res.ok) {
-        await fetchData();
-        addToast(`ลบผู้พัก ${tenant?.name} สำเร็จ`, 'success');
-      } else {
-        addToast('เกิดข้อผิดพลาด', 'error');
+    rec.id = rec.id || Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    rec.createdAt = new Date().toISOString();
+    const m = utils.some(u => u.id === rec.id) ? 'PUT' : 'POST';
+    const r = await api('/api/utilities', m, rec);
+    if (r.ok) { await fetchAll(); setUtilM(null); toast('บันทึกหน่วยสําเร็จ'); }
+    else toast('เกิดข้อผิดพลาด', 'error');
+  };
+
+  const genInvoices = async (month: string) => {
+    if (!stg) return;
+    const ex = invoices.filter(i => i.month === month);
+    if (ex.length && !confirm('ใบแจ้งหนี้เดือนนี้มีอยู่แล้ว ต้องการสร้างใหม่?')) return;
+    for (const inv of ex) await api('/api/invoices', 'DELETE', { id: inv.id });
+    for (const room of rooms) {
+      const u = utils.filter(x => x.roomId === room.id && x.month === month).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      const inv: Invoice = {
+        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+        roomId: room.id, roomNumber: room.number, tenantName: room.tenantName, month,
+        rent: room.rent,
+        elecUnits: u?.elecUsed || 0, elecRate: stg.rateElec, elecAmount: (u?.elecUsed || 0) * stg.rateElec,
+        waterUnits: u?.waterUsed || 0, waterRate: stg.rateWater, waterAmount: (u?.waterUsed || 0) * stg.rateWater,
+        total: room.rent + (u?.elecUsed || 0) * stg.rateElec + (u?.waterUsed || 0) * stg.rateWater,
+        status: 'pending', note: '', createdAt: new Date().toISOString(),
+      };
+      await api('/api/invoices', 'POST', inv);
+    }
+    await fetchAll(); toast('สร้างใบแจ้งหนี้สําเร็จ');
+  };
+
+  const updateInvStatus = async (inv: Invoice, status: Invoice['status']) => {
+    const u = { ...inv, status, paidDate: status === 'paid' ? new Date().toISOString() : undefined };
+    await api('/api/invoices', 'PUT', u); await fetchAll();
+    toast(status === 'paid' ? 'ยืนยันชําระสําเร็จ' : 'อัปเดตสถานะสําเร็จ');
+  };
+
+  const exportPDF = async (inv: Invoice) => {
+    if (typeof window === 'undefined') return;
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text('ใบแจ้งหนี้', 105, 30, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text(`ห้อง ${inv.roomNumber} - เดือน ${THAI_MONTHS[parseInt(inv.month.split('-')[1])]} ${parseInt(inv.month.split('-')[0]) + 543}`, 105, 45, { align: 'center' });
+    doc.setFontSize(12);
+    const y0 = 65;
+    doc.text(`ชื่อผู้พัก: ${inv.tenantName}`, 20, y0);
+    doc.text(`ค่าเช่า: ${inv.rent.toLocaleString()} บาท`, 20, y0 + 10);
+    doc.text(`ค่าไฟ: ${inv.elecUnits} หน่วย x ${inv.elecRate} = ${inv.elecAmount.toLocaleString()} บาท`, 20, y0 + 20);
+    doc.text(`ค่าน้ำ: ${inv.waterUnits} หน่วย x ${inv.waterRate} = ${inv.waterAmount.toLocaleString()} บาท`, 20, y0 + 30);
+    doc.setFontSize(16);
+    doc.text(`รวมทั้งหมด: ${inv.total.toLocaleString()} บาท`, 20, y0 + 50);
+    doc.setFontSize(10);
+    doc.text(`สถานะ: ${inv.status === 'paid' ? 'ชำระแล้ว' : inv.status === 'overdue' ? 'ค้างชำระ' : 'รอชำระ'}`, 20, y0 + 60);
+    doc.save(`invoice_${inv.roomNumber}_${inv.month}.pdf`);
+    toast('สร้าง PDF สำเร็จ');
+  };
+
+  const matchLine = async (lineId: string, roomId: string) => {
+    const line = lines.find(l => l.lineUserId === lineId);
+    if (line) {
+      await api('/api/pending-lines', 'PUT', { ...line, roomId, status: 'matched' });
+      const room = rooms.find(r => r.id === roomId);
+      if (room) {
+        await api('/api/rooms', 'PUT', { ...room, tenantLineId: lineId });
       }
-    } catch { addToast('เกิดข้อผิดพลาด', 'error'); }
-    setDeleting(false);
-    setDeleteConfirm(null);
+      await fetchAll(); toast('จับคู่ LINE สำเร็จ');
+    }
   };
 
-  // ─── Settings ────────────────────────────────────────────────
-
-  const handleSaveSettings = async (s: Settings) => {
-    try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(s)
-      });
-      if (res.ok) {
-        setSettings(s);
-        setShowSettingsModal(false);
-        addToast('บันทึกการตั้งค่าสำเร็จ', 'success');
-      } else { addToast('เกิดข้อผิดพลาด', 'error'); }
-    } catch { addToast('เกิดข้อผิดพลาด', 'error'); }
+  const migrateData = async () => {
+    const ls = {
+      rooms: JSON.parse(localStorage.getItem('dorm_rooms') || '[]'),
+      utilities: JSON.parse(localStorage.getItem('dorm_utilities') || '[]'),
+      invoices: JSON.parse(localStorage.getItem('dorm_invoices') || '[]'),
+      pendingLines: JSON.parse(localStorage.getItem('dorm_pending_lines') || '[]'),
+    };
+    const hasData = Object.values(ls).some((a: any) => a.length > 0);
+    if (!hasData) { toast('ไม่มีข้อมูลใน LocalStorage', 'warning'); return; }
+    const r = await api('/api/migrate', 'POST', ls);
+    if (r.ok) { await fetchAll(); toast('ย้ายข้อมูลสำเร็จ'); }
+    else toast('เกิดข้อผิดพลาด', 'error');
   };
 
-  // ─── Helpers ─────────────────────────────────────────────────
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const occupied = rooms.filter(r => r.tenantName).length;
+  const vacant = rooms.length - occupied;
+  const totalRent = rooms.reduce((s, r) => s + r.rent, 0);
+  const pendingInvoices = invoices.filter(i => i.status === 'pending');
+  const totalPending = pendingInvoices.reduce((s, i) => s + i.total, 0);
 
-  const getTenantById = (id?: string) => tenants.find(t => t.id === id);
+  const filteredUtils = utils.filter(u => {
+    if (!utilFilter) return true;
+    const room = rooms.find(r => r.id === u.roomId);
+    return room?.number.includes(utilFilter) || room?.tenantName.includes(utilFilter);
+  });
 
-  const occupiedRooms = rooms.filter(r => r.tenantId).length;
-  const vacantRooms = rooms.length - occupiedRooms;
-  const totalRent = rooms.filter(r => r.tenantId).reduce((sum, r) => sum + r.rent, 0);
-  const totalDeposit = tenants.reduce((sum, t) => sum + t.deposit, 0);
-  const occupancyRate = rooms.length > 0 ? Math.round((occupiedRooms / rooms.length) * 100) : 0;
+  const filteredInvoices = invoices.filter(i => {
+    if (invFilter === 'all') return true;
+    return i.status === invFilter;
+  });
 
-  // Room filter & sort
-  const filteredRooms = rooms
-    .filter(r => {
-      if (roomFilter === 'occupied') return !!r.tenantId;
-      if (roomFilter === 'vacant') return !r.tenantId;
-      return true;
-    })
-    .filter(r => {
-      if (!roomSearch.trim()) return true;
-      const q = roomSearch.toLowerCase();
-      const tenant = getTenantById(r.tenantId);
-      return (
-        r.number.toLowerCase().includes(q) ||
-        (tenant?.name.toLowerCase().includes(q)) ||
-        (tenant?.phone.includes(q)) ||
-        (r.note?.toLowerCase().includes(q))
-      );
-    })
-    .sort((a, b) => {
-      let c = 0;
-      if (roomSortField === 'number') c = a.number.localeCompare(b.number, undefined, { numeric: true });
-      else if (roomSortField === 'rent') c = a.rent - b.rent;
-      else if (roomSortField === 'tenantName') c = (getTenantById(a.tenantId)?.name || '').localeCompare(getTenantById(b.tenantId)?.name || '');
-      return roomSortOrder === 'asc' ? c : -c;
-    });
-
-  // Tenant filter & sort
-  const filteredTenants = tenants
-    .filter(t => {
-      if (!tenantSearch.trim()) return true;
-      const q = tenantSearch.toLowerCase();
-      return (
-        t.name.toLowerCase().includes(q) ||
-        t.phone.includes(q) ||
-        (t.idCard?.includes(q)) ||
-        (t.email?.toLowerCase().includes(q)) ||
-        (t.note?.toLowerCase().includes(q))
-      );
-    })
-    .sort((a, b) => {
-      let c = 0;
-      if (tenantSortField === 'name') c = a.name.localeCompare(b.name);
-      else if (tenantSortField === 'phone') c = a.phone.localeCompare(b.phone);
-      else if (tenantSortField === 'checkInDate') c = a.checkInDate.localeCompare(b.checkInDate);
-      else if (tenantSortField === 'deposit') c = a.deposit - b.deposit;
-      return tenantSortOrder === 'asc' ? c : -c;
-    });
-
-  const toggleRoomSort = (field: SortField) => {
-    if (roomSortField === field) setRoomSortOrder(p => p === 'asc' ? 'desc' : 'asc');
-    else { setRoomSortField(field); setRoomSortOrder('asc'); }
-  };
-
-  const toggleTenantSort = (field: TenantSortField) => {
-    if (tenantSortField === field) setTenantSortOrder(p => p === 'asc' ? 'desc' : 'asc');
-    else { setTenantSortField(field); setTenantSortOrder('asc'); }
-  };
-
-  // ─── Loading Screen ──────────────────────────────────────────
-
-  if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loading}>
-          <div className={styles.spinner} />
-          <p>กำลังโหลด...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Render ──────────────────────────────────────────────────
+  if (loading) return <div className={styles.container}><div className={styles.loading}><div className={styles.spinner} /><p>กำลังโหลด...</p></div></div>;
 
   return (
     <div className={styles.container}>
-      {sidebarOpen && <div className={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
-
-      {/* Sidebar */}
-      <nav className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
-        <button className={styles.sidebarClose} onClick={() => setSidebarOpen(false)}>✕</button>
-        <div className={styles.logo}>
-          <span className={styles.logoIcon}>🏠</span>
-          <div>
-            <h1>{settings?.dormName || 'หอพัก Billing'}</h1>
-            <p className={styles.logoSubtitle}>ระบบจัดการหอพัก</p>
-          </div>
-        </div>
-        <div className={styles.navSection}>เมนูหลัก</div>
-        {([
-          ['dashboard', '📊', 'แดชบอร์ด'],
-          ['rooms', '🚪', 'จัดการห้อง'],
-          ['tenants', '👥', 'จัดการผู้พัก'],
-          ['settings', '⚙️', 'ตั้งค่า']
-        ] as const).map(([page, icon, label]) => (
-          <button
-            key={page}
-            className={`${styles.navItem} ${currentPage === page ? styles.active : ''}`}
-            onClick={() => { setCurrentPage(page); setSidebarOpen(false); }}
-          >
-            <span className={styles.navIcon}>{icon}</span>
-            <span>{label}</span>
+      {sb && <div className={styles.overlay} onClick={() => setSb(false)} />}
+      <nav className={`${styles.sidebar} ${sb ? styles.open : ''}`}>
+        <button className={styles.closeBtn} onClick={() => setSb(false)}>✕</button>
+        <div className={styles.logo}><span className={styles.logoIcon}>🏠</span><div><h1>{stg?.dormName || 'หอพัก Billing'}</h1><p className={styles.logoSub}>ระบบจัดการหอพัก</p></div></div>
+        <div className={styles.navLabel}>เมนูหลัก</div>
+        {([['dashboard','📊','แดชบอร์ด'],['rooms','🚪','จัดการห้อง'],['utilities','⚡','บันทึกหน่วย'],['billing','💰','ใบแจ้งหนี้'],['lines','💬','LINE Admin'],['settings','⚙️','ตั้งค่า']] as const).map(([p,icon,label]) => (
+          <button key={p} className={`${styles.navItem} ${pg===p?styles.active:''}`} onClick={()=>{setPg(p);setSb(false);}}>
+            <span className={styles.navIcon}>{icon}</span><span>{label}</span>
           </button>
         ))}
-        <div className={styles.sidebarFooter}>
-          <div className={styles.quickStats}>
-            <div className={styles.quickStat}>
-              <span className={styles.quickStatValue}>{rooms.length}</span>
-              <span className={styles.quickStatLabel}>ห้องทั้งหมด</span>
-            </div>
-            <div className={styles.quickStat}>
-              <span className={styles.quickStatValue}>{occupiedRooms}</span>
-              <span className={styles.quickStatLabel}>มีผู้พัก</span>
-            </div>
-          </div>
+        <div className={styles.sideFooter}>
+          <div className={styles.quickStat}><span className={styles.qsVal}>{rooms.length}</span><span className={styles.qsLbl}>ห้อง</span></div>
+          <div className={styles.quickStat}><span className={styles.qsVal}>{occupied}</span><span className={styles.qsLbl}>มีผู้พัก</span></div>
         </div>
       </nav>
-
-      {/* Main */}
       <main className={styles.main}>
         <header className={styles.header}>
-          <div className={styles.headerLeft}>
-            <button className={styles.menuToggle} onClick={() => setSidebarOpen(true)}>☰</button>
+          <div className={styles.hdrLeft}>
+            <button className={styles.menuBtn} onClick={()=>setSb(true)}>☰</button>
             <div>
-              <h2 className={styles.pageTitle}>
-                {currentPage === 'dashboard' && '📊 ภาพรวม'}
-                {currentPage === 'rooms' && '🚪 จัดการห้อง'}
-                {currentPage === 'tenants' && '👥 จัดการผู้พัก'}
-                {currentPage === 'settings' && '⚙️ ตั้งค่า'}
-              </h2>
-              <p className={styles.pageSubtitle}>
-                {currentPage === 'dashboard' && 'ติดตามสถานะหอพักของคุณ'}
-                {currentPage === 'rooms' && 'จัดการข้อมูลห้องและผู้พัก'}
-                {currentPage === 'tenants' && 'จัดการข้อมูลผู้เข้าพักทั้งหมด'}
-                {currentPage === 'settings' && 'ตั้งค่าระบบและข้อมูลหอพัก'}
-              </p>
+              <h2 className={styles.title}>{pg==='dashboard'?'📊 ภาพรวม':pg==='rooms'?'🚪 จัดการห้อง':pg==='utilities'?'⚡ บันทึกหน่วย':pg==='billing'?'💰 ใบแจ้งหนี้':pg==='lines'?'💬 LINE Admin':'⚙️ ตั้งค่า'}</h2>
+              <p className={styles.subtitle}>{pg==='dashboard'?'ติดตามสถานะหอพัก':pg==='rooms'?'จัดการข้อมูลห้องและผู้พัก':pg==='utilities'?'บันทึกหน่วยไฟ/น้ำรายเดือน':pg==='billing'?'จัดการใบแจ้งหนี้':pg==='lines'?'จัดการ LINE User ID':'ตั้งค่าระบบ'}</p>
             </div>
           </div>
-          <div className={styles.headerDate}>
-            {new Date().toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </div>
+          <div className={styles.hdrDate}>{new Date().toLocaleDateString('th-TH',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
         </header>
 
-        {/* ═══════════ DASHBOARD ═══════════ */}
-        {currentPage === 'dashboard' && (
-          <div className={styles.dashboardContent}>
-            <div className={styles.statsGrid}>
-              <div className={`${styles.statCard} ${styles.statBlue}`}>
-                <div className={styles.statIcon}>🏢</div>
-                <div className={styles.statInfo}>
-                  <div className={styles.statValue}>{rooms.length}</div>
-                  <div className={styles.statLabel}>ห้องทั้งหมด</div>
-                </div>
-              </div>
-              <div className={`${styles.statCard} ${styles.statGreen}`}>
-                <div className={styles.statIcon}>✅</div>
-                <div className={styles.statInfo}>
-                  <div className={styles.statValue}>{occupiedRooms}</div>
-                  <div className={styles.statLabel}>มีผู้พักอาศัย</div>
-                </div>
-              </div>
-              <div className={`${styles.statCard} ${styles.statOrange}`}>
-                <div className={styles.statIcon}>🔑</div>
-                <div className={styles.statInfo}>
-                  <div className={styles.statValue}>{vacantRooms}</div>
-                  <div className={styles.statLabel}>ห้องว่าง</div>
-                </div>
-              </div>
-              <div className={`${styles.statCard} ${styles.statPurple}`}>
-                <div className={styles.statIcon}>💰</div>
-                <div className={styles.statInfo}>
-                  <div className={styles.statValue}>{totalRent.toLocaleString()}</div>
-                  <div className={styles.statLabel}>ค่าเช่ารวม (บาท)</div>
-                </div>
-              </div>
-              <div className={`${styles.statCard} ${styles.statTeal}`}>
-                <div className={styles.statIcon}>👥</div>
-                <div className={styles.statInfo}>
-                  <div className={styles.statValue}>{tenants.length}</div>
-                  <div className={styles.statLabel}>ผู้พักทั้งหมด</div>
-                </div>
-              </div>
-              <div className={`${styles.statCard} ${styles.statPink}`}>
-                <div className={styles.statIcon}>🏦</div>
-                <div className={styles.statInfo}>
-                  <div className={styles.statValue}>{totalDeposit.toLocaleString()}</div>
-                  <div className={styles.statLabel}>เงินมัดจำรวม (บาท)</div>
-                </div>
-              </div>
-            </div>
+        {/* DASHBOARD */}
+        {pg==='dashboard' && <Dashboard rooms={rooms} occupied={occupied} vacant={vacant} totalRent={totalRent} pendingInvoices={pendingInvoices.length} totalPending={totalPending} utils={utils} invoices={invoices} setPg={setPg} />}
 
-            {/* Occupancy Rate */}
-            <div className={styles.occupancyCard}>
-              <div className={styles.occupancyHeader}>
-                <h3 className={styles.occupancyTitle}>อัตราการเข้าพัก</h3>
-                <span className={styles.occupancyPercent}>{occupancyRate}%</span>
-              </div>
-              <div className={styles.occupancyBar}>
-                <div className={styles.occupancyFill} style={{ width: `${occupancyRate}%` }} />
-              </div>
-              <div className={styles.occupancyLabels}>
-                <span className={styles.occupancyLabel}>ว่าง {vacantRooms} ห้อง</span>
-                <span className={styles.occupancyLabel}>มีผู้พัก {occupiedRooms} ห้อง</span>
-              </div>
-            </div>
+        {/* ROOMS */}
+        {pg==='rooms' && <RoomsPage rooms={rooms} onAdd={()=>setRoomM('new')} onEdit={r=>setRoomM(r)} onDelete={id=>setDelC({t:'room',id})} delC={delC} deling={deling} onDeleteConfirm={deleteRoom} setDelC={setDelC} />}
 
-            {/* Recent Rooms */}
-            <div className={styles.recentRooms}>
-              <h3 className={styles.sectionTitle}>ห้องล่าสุด</h3>
-              <div className={styles.roomsList}>
-                {rooms.length === 0 ? (
-                  <div className={styles.emptyState}>
-                    <span className={styles.emptyIcon}>📭</span>
-                    <p>ยังไม่มีข้อมูลห้อง</p>
-                    <button onClick={() => setCurrentPage('rooms')} className={styles.primaryBtn}>➕ เพิ่มห้องแรก</button>
-                  </div>
-                ) : (
-                  rooms.slice(0, 6).map((room, idx) => {
-                    const tenant = getTenantById(room.tenantId);
-                    return (
-                      <div key={room.id} className={styles.roomCard} style={{ animationDelay: `${idx * 0.1}s` }}>
-                        <div className={styles.roomCardHeader}>
-                          <span className={styles.roomBadge}>{room.number}</span>
-                          <span className={tenant ? styles.statusOccupied : styles.statusVacant}>
-                            {tenant ? 'มีผู้พัก' : 'ว่าง'}
-                          </span>
-                        </div>
-                        <div className={styles.roomCardInfo}>
-                          {tenant ? (
-                            <>
-                              <div className={styles.tenantName}>{tenant.name}</div>
-                              <div className={styles.tenantPhone}>{tenant.phone}</div>
-                              {tenant.checkInDate && (
-                                <div className={styles.tenantCheckIn}>
-                                  เข้าพัก: {new Date(tenant.checkInDate).toLocaleDateString('th-TH')}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className={styles.vacantHint}>พร้อมให้ผู้พักใหม่</div>
-                          )}
-                        </div>
-                        <div className={styles.roomCardFooter}>
-                          <span className={styles.rentAmount}>{room.rent.toLocaleString()} ฿</span>
-                          {room.note && <span className={styles.roomNote} title={room.note}>📝</span>}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* UTILITIES */}
+        {pg==='utilities' && <UtilitiesPage rooms={rooms} utils={utils} settings={stg} filter={utilFilter} setFilter={setUtilFilter} onAdd={rm=>setUtilM({roomId:rm,month:currentMonth})} onSave={saveUtil} />}
 
-        {/* ═══════════ ROOMS ═══════════ */}
-        {currentPage === 'rooms' && (
-          <div className={styles.roomsContent}>
-            <div className={styles.actionBar}>
-              <div className={styles.searchBox}>
-                <span className={styles.searchIcon}>🔍</span>
-                <input
-                  type="text" value={roomSearch} onChange={e => setRoomSearch(e.target.value)}
-                  placeholder="ค้นหาห้อง, ผู้พัก, เบอร์โทร..."
-                  className={styles.searchInput}
-                />
-                {roomSearch && <button className={styles.searchClear} onClick={() => setRoomSearch('')}>✕</button>}
-              </div>
-              <button onClick={() => { setEditingRoom(null); setShowRoomModal(true); }} className={styles.primaryBtn}>
-                <span>➕</span> เพิ่มห้อง
-              </button>
-            </div>
+        {/* BILLING */}
+        {pg==='billing' && <BillingPage invoices={invoices} settings={stg} filter={invFilter} setFilter={setInvFilter} month={invMonth} setMonth={setInvMonth} onGenerate={genInvoices} onStatusUpdate={updateInvStatus} onExportPDF={exportPDF} viewInv={viewInv} setViewInv={setViewInv} invRef={invRef} />}
 
-            <div className={styles.filterTabs}>
-              {([['all', `ทั้งหมด ${rooms.length}`], ['occupied', `มีผู้พัก ${occupiedRooms}`], ['vacant', `ว่าง ${vacantRooms}`]] as const).map(([val, label]) => (
-                <button
-                  key={val}
-                  className={`${styles.filterTab} ${roomFilter === val ? styles.filterTabActive : ''}`}
-                  onClick={() => setRoomFilter(val)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+        {/* LINE ADMIN */}
+        {pg==='lines' && <LinesPage lines={lines} rooms={rooms} onMatch={matchLine} onMigrate={migrateData} />}
 
-            <div className={styles.sortControls}>
-              <span className={styles.sortLabel}>เรียงตาม:</span>
-              {([['number', 'ห้อง'], ['rent', 'ค่าเช่า'], ['tenantName', 'ชื่อ']] as const).map(([field, label]) => (
-                <button
-                  key={field}
-                  className={`${styles.sortBtn} ${roomSortField === field ? styles.sortBtnActive : ''}`}
-                  onClick={() => toggleRoomSort(field)}
-                >
-                  {label} {roomSortField === field && (roomSortOrder === 'asc' ? '↑' : '↓')}
-                </button>
-              ))}
-            </div>
-
-            {(roomSearch || roomFilter !== 'all') && (
-              <div className={styles.resultsInfo}>พบ {filteredRooms.length} ห้อง จากทั้งหมด {rooms.length} ห้อง</div>
-            )}
-
-            <div className={styles.tableContainer}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>ห้อง</th>
-                    <th>ค่าเช่า</th>
-                    <th>ผู้พัก</th>
-                    <th>เบอร์โทร</th>
-                    <th>สถานะ</th>
-                    <th>จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRooms.length === 0 ? (
-                    <tr>
-                      <td colSpan={6}>
-                        <div className={styles.emptyState}>
-                          <span className={styles.emptyIcon}>🔍</span>
-                          <p>ไม่พบข้อมูลที่ค้นหา</p>
-                          <button onClick={() => { setRoomSearch(''); setRoomFilter('all'); }} className={styles.secondaryBtn}>ล้างการค้นหา</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredRooms.map((room, idx) => {
-                      const tenant = getTenantById(room.tenantId);
-                      return (
-                        <tr key={room.id} style={{ animationDelay: `${idx * 0.05}s` }}>
-                          <td><span className={styles.roomNumber}>{room.number}</span></td>
-                          <td><span className={styles.rentCell}>{room.rent.toLocaleString()} ฿</span></td>
-                          <td>{tenant ? <span className={styles.tenantCell}>{tenant.name}</span> : <span className={styles.vacantCell}>— ว่าง —</span>}</td>
-                          <td>{tenant?.phone || <span className={styles.emptyText}>—</span>}</td>
-                          <td><span className={tenant ? styles.statusBadgeOccupied : styles.statusBadgeVacant}>{tenant ? 'มีผู้พัก' : 'ว่าง'}</span></td>
-                          <td>
-                            <div className={styles.actionButtons}>
-                              <button onClick={() => { setEditingRoom(room); setShowRoomModal(true); }} className={styles.editBtn} title="แก้ไข">✏️</button>
-                              {deleteConfirm?.type === 'room' && deleteConfirm.id === room.id ? (
-                                <div className={styles.deleteConfirm}>
-                                  <span>ยืนยันลบ?</span>
-                                  <button onClick={() => handleDeleteRoom(room.id)} className={styles.confirmYes} disabled={deleting}>{deleting ? '⏳' : '✓'}</button>
-                                  <button onClick={() => setDeleteConfirm(null)} className={styles.confirmNo} disabled={deleting}>✕</button>
-                                </div>
-                              ) : (
-                                <button onClick={() => setDeleteConfirm({ type: 'room', id: room.id })} className={styles.deleteBtn} title="ลบ">🗑️</button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ═══════════ TENANTS ═══════════ */}
-        {currentPage === 'tenants' && (
-          <div className={styles.tenantsContent}>
-            <div className={styles.actionBar}>
-              <div className={styles.searchBox}>
-                <span className={styles.searchIcon}>🔍</span>
-                <input
-                  type="text" value={tenantSearch} onChange={e => setTenantSearch(e.target.value)}
-                  placeholder="ค้นหาชื่อ, เบอร์โทร, บัตร ปชช., อีเมล..."
-                  className={styles.searchInput}
-                />
-                {tenantSearch && <button className={styles.searchClear} onClick={() => setTenantSearch('')}>✕</button>}
-              </div>
-              <button onClick={() => { setEditingTenant(null); setShowTenantModal(true); }} className={styles.primaryBtn}>
-                <span>➕</span> เพิ่มผู้พัก
-              </button>
-            </div>
-
-            <div className={styles.sortControls}>
-              <span className={styles.sortLabel}>เรียงตาม:</span>
-              {([['name', 'ชื่อ'], ['phone', 'เบอร์โทร'], ['checkInDate', 'วันที่เข้าพัก'], ['deposit', 'เงินมัดจำ']] as const).map(([field, label]) => (
-                <button
-                  key={field}
-                  className={`${styles.sortBtn} ${tenantSortField === field ? styles.sortBtnActive : ''}`}
-                  onClick={() => toggleTenantSort(field)}
-                >
-                  {label} {tenantSortField === field && (tenantSortOrder === 'asc' ? '↑' : '↓')}
-                </button>
-              ))}
-            </div>
-
-            {tenantSearch && <div className={styles.resultsInfo}>พบ {filteredTenants.length} คน จากทั้งหมด {tenants.length} คน</div>}
-
-            {/* Tenant Cards Grid */}
-            <div className={styles.tenantGrid}>
-              {filteredTenants.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <span className={styles.emptyIcon}>👤</span>
-                  <p>{tenantSearch ? 'ไม่พบข้อมูลที่ค้นหา' : 'ยังไม่มีข้อมูลผู้พัก'}</p>
-                  {!tenantSearch && (
-                    <button onClick={() => setShowTenantModal(true)} className={styles.primaryBtn}>➕ เพิ่มผู้พักแรก</button>
-                  )}
-                </div>
-              ) : (
-                filteredTenants.map((tenant, idx) => {
-                  const occupyingRoom = rooms.find(r => r.tenantId === tenant.id);
-                  return (
-                    <div key={tenant.id} className={styles.tenantCard} style={{ animationDelay: `${idx * 0.08}s` }}>
-                      <div className={styles.tenantCardHeader}>
-                        <div>
-                          <div className={styles.tenantCardName}>{tenant.name}</div>
-                          {tenant.nickname && <div className={styles.tenantCardNickname}>"{tenant.nickname}"</div>}
-                        </div>
-                        <span className={occupyingRoom ? styles.tenantStatusIn : styles.tenantStatusOut}>
-                          {occupyingRoom ? `ห้อง ${occupyingRoom.number}` : 'ไม่มีห้อง'}
-                        </span>
-                      </div>
-                      <div className={styles.tenantCardInfo}>
-                        <div className={styles.tenantInfoRow}>
-                          <span className={styles.tenantInfoIcon}>📱</span>
-                          <span>{tenant.phone}</span>
-                        </div>
-                        {tenant.idCard && (
-                          <div className={styles.tenantInfoRow}>
-                            <span className={styles.tenantInfoIcon}>🪪</span>
-                            <span>{tenant.idCard.replace(/(\d{1})(\d{4})(\d{5})(\d{2})/, '$1-XXXX-XXXXX-$4')}</span>
-                          </div>
-                        )}
-                        {tenant.email && (
-                          <div className={styles.tenantInfoRow}>
-                            <span className={styles.tenantInfoIcon}>📧</span>
-                            <span>{tenant.email}</span>
-                          </div>
-                        )}
-                        <div className={styles.tenantInfoRow}>
-                          <span className={styles.tenantInfoIcon}>📅</span>
-                          <span>เข้าพัก: {new Date(tenant.checkInDate).toLocaleDateString('th-TH')}</span>
-                        </div>
-                        {tenant.checkOutDate && (
-                          <div className={styles.tenantInfoRow}>
-                            <span className={styles.tenantInfoIcon}>🚪</span>
-                            <span>ออก: {new Date(tenant.checkOutDate).toLocaleDateString('th-TH')}</span>
-                          </div>
-                        )}
-                        <div className={styles.tenantInfoRow}>
-                          <span className={styles.tenantInfoIcon}>🏦</span>
-                          <span>มัดจำ: {tenant.deposit.toLocaleString()} ฿</span>
-                        </div>
-                        {tenant.emergencyName && (
-                          <div className={styles.tenantInfoRow}>
-                            <span className={styles.tenantInfoIcon}>🆘</span>
-                            <span>{tenant.emergencyName} ({tenant.emergencyRelation}) - {tenant.emergencyPhone}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className={styles.tenantCardFooter}>
-                        {tenant.note && <span className={styles.tenantNote} title={tenant.note}>📝 {tenant.note}</span>}
-                        <div className={styles.actionButtons}>
-                          <button onClick={() => { setEditingTenant(tenant); setShowTenantModal(true); }} className={styles.editBtn} title="แก้ไข">✏️</button>
-                          {deleteConfirm?.type === 'tenant' && deleteConfirm.id === tenant.id ? (
-                            <div className={styles.deleteConfirm}>
-                              <button onClick={() => handleDeleteTenant(tenant.id)} className={styles.confirmYes} disabled={deleting}>{deleting ? '⏳' : '✓'}</button>
-                              <button onClick={() => setDeleteConfirm(null)} className={styles.confirmNo} disabled={deleting}>✕</button>
-                            </div>
-                          ) : (
-                            <button onClick={() => setDeleteConfirm({ type: 'tenant', id: tenant.id })} className={styles.deleteBtn} title="ลบ">🗑️</button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ═══════════ SETTINGS ═══════════ */}
-        {currentPage === 'settings' && settings && (
-          <div className={styles.settingsContent}>
-            <div className={styles.settingsCard}>
-              <div className={styles.settingsHeader}>
-                <div>
-                  <h3 className={styles.settingsTitle}>ข้อมูลหอพัก</h3>
-                  <p className={styles.settingsSubtitle}>ข้อมูลพื้นฐานของหอพัก</p>
-                </div>
-                <button onClick={() => setShowSettingsModal(true)} className={styles.primaryBtn}>✏️ แก้ไข</button>
-              </div>
-              <div className={styles.settingsGrid}>
-                {([
-                  ['🏠', 'ชื่อหอพัก', settings.dormName],
-                  ['📍', 'ที่อยู่', settings.address],
-                  ['📞', 'เบอร์โทรศัพท์', settings.phone],
-                  ['⚡', 'ค่าไฟฟ้า', `${settings.rateElec} บาท/หน่วย`],
-                  ['💧', 'ค่าน้ำประปา', `${settings.rateWater} บาท/หน่วย`]
-                ]).map(([icon, label, value]) => (
-                  <div key={label} className={styles.settingItem}>
-                    <div className={styles.settingIcon}>{icon}</div>
-                    <div className={styles.settingInfo}>
-                      <div className={styles.settingLabel}>{label}</div>
-                      <div className={styles.settingValue}>{value}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className={styles.infoCard}>
-              <h4 className={styles.infoTitle}>💡 เคล็ดลับ</h4>
-              <p>การตั้งค่าค่าไฟฟ้าและค่าน้ำประปาจะถูกใช้ในการคำนวณบิลรายเดือนของผู้พักอาศัยแต่ละห้อง</p>
-            </div>
-          </div>
-        )}
+        {/* SETTINGS */}
+        {pg==='settings' && <SettingsPage settings={stg} onSave={async s=>{const r=await api('/api/settings','POST',s);if(r.ok){setStg(s);toast('บันทึกสำเร็จ');}else toast('เกิดข้อผิดพลาด','error');}} />}
       </main>
 
-      {/* ═══════════ MODALS ═══════════ */}
+      {roomM!==null && <RoomModal room={roomM==='new'?null:roomM} onClose={()=>setRoomM(null)} onSave={saveRoom} />}
+      {utilM && <UtilModal roomId={utilM.roomId} month={utilM.month} rooms={rooms} utils={utils} onClose={()=>setUtilM(null)} onSave={saveUtil} />}
+      <Toasts toasts={toasts} remove={(id)=>{setToasts(p=>p.filter(t=>t.id!==id));clearTimeout(tRef.current[id]);delete tRef.current[id];}} />
+    </div>
+  );
+}
 
-      {showRoomModal && (
-        <RoomModal
-          room={editingRoom}
-          tenants={tenants}
-          onClose={() => { setShowRoomModal(false); setEditingRoom(null); }}
-          onSave={handleSaveRoom}
-        />
-      )}
-
-      {showTenantModal && (
-        <TenantModal
-          tenant={editingTenant}
-          onClose={() => { setShowTenantModal(false); setEditingTenant(null); }}
-          onSave={handleSaveTenant}
-        />
-      )}
-
-      {showSettingsModal && settings && (
-        <SettingsModal
-          settings={settings}
-          onClose={() => setShowSettingsModal(false)}
-          onSave={handleSaveSettings}
-        />
-      )}
-
-      {/* Toast */}
-      <div className={styles.toastContainer}>
-        {toasts.map((toast, idx) => (
-          <div
-            key={toast.id}
-            className={`${styles.toast} ${styles[`toast${toast.type.charAt(0).toUpperCase() + toast.type.slice(1)}`]}`}
-            style={{ animationDelay: `${idx * 0.1}s` }}
-          >
-            <span className={styles.toastIcon}>
-              {toast.type === 'success' && '✅'}{toast.type === 'error' && '❌'}{toast.type === 'info' && 'ℹ️'}{toast.type === 'warning' && '⚠️'}
-            </span>
-            <span className={styles.toastMessage}>{toast.message}</span>
-            <button className={styles.toastClose} onClick={() => removeToast(toast.id)}>✕</button>
+// ─── Dashboard ─────────────────────────────────────────────────
+function Dashboard({rooms,occupied,vacant,totalRent,pendingInvoices,totalPending,utils,invoices,setPg}:{
+  rooms:Room[];occupied:number;vacant:number;totalRent:number;
+  pendingInvoices:number;totalPending:number;utils:UtilityRecord[];invoices:Invoice[];setPg:(p:string)=>void;
+}) {
+  const occ = rooms.length ? Math.round(occupied/rooms.length*100) : 0;
+  const paid = invoices.filter(i=>i.status==='paid').length;
+  return (
+    <div className={styles.content}>
+      <div className={styles.stats}>
+        {[
+          ['🏢',`${rooms.length}`,'ห้องทั้งหมด','blue'],
+          ['✅',`${occupied}`,'มีผู้พัก','green'],
+          ['🔑',`${vacant}`,'ห้องว่าง','orange'],
+          ['💰',`${totalRent.toLocaleString()}`,'ค่าเช่ารวม','purple'],
+          ['📋',`${pendingInvoices}`,'รอชำระ','pink'],
+          ['💵',`${totalPending.toLocaleString()}`,'ยอดค้างชำระ','teal'],
+        ].map(([icon,val,label,color],i) => (
+          <div key={i} className={`${styles.stat} ${styles[color]}`}>
+            <div className={styles.statIcon}>{icon}</div>
+            <div className={styles.statVal}>{val}</div>
+            <div className={styles.statLbl}>{label}</div>
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-// ─── Room Modal ─────────────────────────────────────────────────
-
-function RoomModal({ room, tenants, onClose, onSave }: {
-  room: Room | null;
-  tenants: Tenant[];
-  onClose: () => void;
-  onSave: (room: Room) => void;
-}) {
-  const [number, setNumber] = useState(room?.number || '');
-  const [rent, setRent] = useState(room?.rent.toString() || '');
-  const [tenantId, setTenantId] = useState(room?.tenantId || '');
-  const [note, setNote] = useState(room?.note || '');
-
-  // Available tenants (not already in another room)
-  const currentTenant = room?.tenantId ? tenants.find(t => t.id === room.tenantId) : null;
-  const availableTenants = tenants.filter(t => {
-    if (t.id === room?.tenantId) return true;
-    return true; // show all, will handle in save
-  });
-
-  const handleSubmit = () => {
-    if (!number.trim()) { alert('กรุณาระบุหมายเลขห้อง'); return; }
-    onSave({
-      id: room?.id || Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
-      number: number.trim(),
-      rent: parseFloat(rent) || 0,
-      tenantId: tenantId || undefined,
-      note: note.trim()
-    });
-  };
-
-  return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h3>{room ? '✏️ แก้ไขห้อง' : '➕ เพิ่มห้องใหม่'}</h3>
-          <button onClick={onClose} className={styles.closeBtn}>✕</button>
-        </div>
-        <div className={styles.modalBody}>
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}><span className={styles.labelIcon}>🏷️</span> หมายเลขห้อง</label>
-              <input type="text" value={number} onChange={e => setNumber(e.target.value)} placeholder="เช่น 101, A201" className={styles.input} />
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}><span className={styles.labelIcon}>💰</span> ค่าเช่าต่อเดือน (บาท)</label>
-              <input type="number" value={rent} onChange={e => setRent(e.target.value)} placeholder="3500" className={styles.input} />
-            </div>
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>อัตราการเข้าพัก</h3>
+        <div className={styles.bar}><div className={styles.barFill} style={{width:`${occ}%`}}/></div>
+        <div className={styles.barLbls}><span>ว่าง {vacant}</span><span>มีผู้พัก {occupied} ({occ}%)</span></div>
+      </div>
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>ห้องล่าสุด</h3>
+        {rooms.length===0 ? <p className={styles.empty}>ยังไม่มีห้อง <button className={styles.btnSm} onClick={()=>setPg('rooms')}>➕ เพิ่มห้อง</button></p> :
+          <div className={styles.grid}>
+            {rooms.slice(0,6).map(r=>(
+              <div key={r.id} className={styles.rCard}>
+                <div className={styles.rHead}><span className={styles.rBadge}>{r.number}</span>
+                  <span className={r.tenantName?styles.sOcc:styles.sVac}>{r.tenantName?'มีผู้พัก':'ว่าง'}</span></div>
+                <div className={styles.rBody}>{r.tenantName?<><div className={styles.rName}>{r.tenantName}</div><div className={styles.rPhone}>{r.tenantPhone}</div></>:<div className={styles.rEmpty}>พร้อมให้ผู้พักใหม่</div>}</div>
+                <div className={styles.rFoot}><span className={styles.rRent}>{r.rent.toLocaleString()} ฿</span>{r.tenantLineId&&<span className={styles.rLine}>💬</span>}</div>
+              </div>
+            ))}
           </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}><span className={styles.labelIcon}>👤</span> ผู้พักอาศัย</label>
-            <select
-              value={tenantId}
-              onChange={e => setTenantId(e.target.value)}
-              className={styles.input}
-            >
-              <option value="">— ว่าง —</option>
-              {availableTenants.map(t => (
-                <option key={t.id} value={t.id}>{t.name} ({t.phone})</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}><span className={styles.labelIcon}>📝</span> หมายเหตุ</label>
-            <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="เช่น รวมค่าเน็ต, มีแอร์" className={styles.input} />
-          </div>
-        </div>
-        <div className={styles.modalFooter}>
-          <button onClick={onClose} className={styles.btnCancel}>ยกเลิก</button>
-          <button onClick={handleSubmit} className={styles.btnSave}>💾 บันทึก</button>
-        </div>
+        }
       </div>
     </div>
   );
 }
 
-// ─── Tenant Modal ───────────────────────────────────────────────
-
-function TenantModal({ tenant, onClose, onSave }: {
-  tenant: Tenant | null;
-  onClose: () => void;
-  onSave: (tenant: Tenant) => void;
+// ─── Rooms Page ────────────────────────────────────────────────
+function RoomsPage({rooms,onAdd,onEdit,onDelete,delC,deling,onDeleteConfirm,setDelC}:{
+  rooms:Room[];onAdd:()=>void;onEdit:(r:Room)=>void;onDelete:(id:string)=>void;
+  delC:{t:string;id:string}|null;deling:boolean;onDeleteConfirm:(id:string)=>void;setDelC:(d:{t:string;id:string}|null)=>void;
 }) {
-  const [name, setName] = useState(tenant?.name || '');
-  const [nickname, setNickname] = useState(tenant?.nickname || '');
-  const [idCard, setIdCard] = useState(tenant?.idCard || '');
-  const [phone, setPhone] = useState(tenant?.phone || '');
-  const [lineId, setLineId] = useState(tenant?.lineId || '');
-  const [email, setEmail] = useState(tenant?.email || '');
-  const [address, setAddress] = useState(tenant?.address || '');
-  const [emergencyName, setEmergencyName] = useState(tenant?.emergencyName || '');
-  const [emergencyPhone, setEmergencyPhone] = useState(tenant?.emergencyPhone || '');
-  const [emergencyRelation, setEmergencyRelation] = useState(tenant?.emergencyRelation || '');
-  const [deposit, setDeposit] = useState(tenant?.deposit.toString() || '0');
-  const [checkInDate, setCheckInDate] = useState(tenant?.checkInDate || new Date().toISOString().split('T')[0]);
-  const [checkOutDate, setCheckOutDate] = useState(tenant?.checkOutDate || '');
-  const [note, setNote] = useState(tenant?.note || '');
-
-  const handleSubmit = () => {
-    if (!name.trim()) { alert('กรุณาระบุชื่อ-นามสกุล'); return; }
-    if (!phone.trim()) { alert('กรุณาระบุเบอร์โทรศัพท์'); return; }
-    onSave({
-      id: tenant?.id || Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
-      name: name.trim(),
-      nickname: nickname.trim() || undefined,
-      idCard: idCard.trim() || undefined,
-      phone: phone.trim(),
-      lineId: lineId.trim() || undefined,
-      email: email.trim() || undefined,
-      address: address.trim() || undefined,
-      emergencyName: emergencyName.trim() || undefined,
-      emergencyPhone: emergencyPhone.trim() || undefined,
-      emergencyRelation: emergencyRelation.trim() || undefined,
-      deposit: parseFloat(deposit) || 0,
-      checkInDate: checkInDate || new Date().toISOString().split('T')[0],
-      checkOutDate: checkOutDate || undefined,
-      note: note.trim() || undefined
-    });
-  };
-
+  const [search,setSearch] = useState('');
+  const filtered = rooms.filter(r => !search || r.number.toLowerCase().includes(search.toLowerCase()) || r.tenantName.toLowerCase().includes(search.toLowerCase()));
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={`${styles.modal} ${styles.modalLarge}`} onClick={e => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h3>{tenant ? '✏️ แก้ไขข้อมูลผู้พัก' : '➕ เพิ่มผู้พักใหม่'}</h3>
-          <button onClick={onClose} className={styles.closeBtn}>✕</button>
+    <div className={styles.content}>
+      <div className={styles.topBar}>
+        <div className={styles.search}>
+          <span>🔍</span>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ค้นหาห้อง, ชื่อผู้พัก..." />
+          {search && <button className={styles.sClear} onClick={()=>setSearch('')}>✕</button>}
         </div>
-        <div className={styles.modalBody}>
-          {/* Section: ข้อมูลส่วนตัว */}
-          <div className={styles.formSection}>
-            <h4 className={styles.formSectionTitle}>👤 ข้อมูลส่วนตัว</h4>
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>ชื่อ-นามสกุล <span className={styles.required}>*</span></label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="สมชาย ใจดี" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>ชื่อเล่น</label>
-                <input type="text" value={nickname} onChange={e => setNickname(e.target.value)} placeholder="ชาย" className={styles.input} />
-              </div>
-            </div>
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>เลขบัตรประชาชน</label>
-                <input type="text" value={idCard} onChange={e => setIdCard(e.target.value.replace(/\D/g, '').slice(0, 13))} placeholder="13 หลัก" maxLength={13} className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>เบอร์โทรศัพท์ <span className={styles.required}>*</span></label>
-                <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="081-234-5678" className={styles.input} />
-              </div>
-            </div>
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>LINE ID</label>
-                <input type="text" value={lineId} onChange={e => setLineId(e.target.value)} placeholder="line_user_id" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>อีเมล</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" className={styles.input} />
-              </div>
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>ที่อยู่ตามทะเบียน</label>
-              <textarea value={address} onChange={e => setAddress(e.target.value)} placeholder="บ้านเลขที่... หมู่... ตำบล... อำเภอ... จังหวัด..." className={`${styles.input} ${styles.textarea}`} rows={2} />
-            </div>
-          </div>
-
-          {/* Section: ข้อมูลฉุกเฉิน */}
-          <div className={styles.formSection}>
-            <h4 className={styles.formSectionTitle}>🆘 ข้อมูลผู้ติดต่อฉุกเฉิน</h4>
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>ชื่อ-นามสกุล</label>
-                <input type="text" value={emergencyName} onChange={e => setEmergencyName(e.target.value)} placeholder="สมหญิง ใจดี" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>ความสัมพันธ์</label>
-                <input type="text" value={emergencyRelation} onChange={e => setEmergencyRelation(e.target.value)} placeholder="เช่น พี่สาว, ภรรยา" className={styles.input} />
-              </div>
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>เบอร์โทรศัพท์ฉุกเฉิน</label>
-              <input type="text" value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)} placeholder="089-876-5432" className={styles.input} />
-            </div>
-          </div>
-
-          {/* Section: ข้อมูลการเข้าพัก */}
-          <div className={styles.formSection}>
-            <h4 className={styles.formSectionTitle}>🏠 ข้อมูลการเข้าพัก</h4>
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>วันที่เข้าพัก <span className={styles.required}>*</span></label>
-                <input type="date" value={checkInDate} onChange={e => setCheckInDate(e.target.value)} className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>วันที่ออกจากห้อง</label>
-                <input type="date" value={checkOutDate} onChange={e => setCheckOutDate(e.target.value)} className={styles.input} />
-              </div>
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>เงินมัดจำ (บาท)</label>
-              <input type="number" value={deposit} onChange={e => setDeposit(e.target.value)} placeholder="0" className={styles.input} />
-            </div>
-          </div>
-
-          {/* Section: หมายเหตุ */}
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>📝 หมายเหตุ</label>
-            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="เช่น แพ้อาหาร, ชอบ安静, ต้องการห้องชั้นล่าง" className={`${styles.input} ${styles.textarea}`} rows={2} />
-          </div>
-        </div>
-        <div className={styles.modalFooter}>
-          <button onClick={onClose} className={styles.btnCancel}>ยกเลิก</button>
-          <button onClick={handleSubmit} className={styles.btnSave}>💾 บันทึก</button>
-        </div>
+        <button className={styles.btn} onClick={onAdd}>➕ เพิ่มห้อง</button>
+      </div>
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead><tr><th>ห้อง</th><th>ค่าเช่า</th><th>ผู้พัก</th><th>เบอร์โทร</th><th>LINE</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+          <tbody>
+            {filtered.length===0 ? <tr><td colSpan={7}><div className={styles.emptyState}><span>🔍</span><p>ไม่พบข้อมูล</p></div></td></tr> :
+              filtered.map(r=>(
+                <tr key={r.id}>
+                  <td><span className={styles.rNum}>{r.number}</span></td>
+                  <td>{r.rent.toLocaleString()} ฿</td>
+                  <td>{r.tenantName||<span className={styles.muted}>— ว่าง —</span>}</td>
+                  <td>{r.tenantPhone||<span className={styles.muted}>—</span>}</td>
+                  <td>{r.tenantLineId||<span className={styles.muted}>—</span>}</td>
+                  <td><span className={r.tenantName?styles.badgeOcc:styles.badgeVac}>{r.tenantName?'มีผู้พัก':'ว่าง'}</span></td>
+                  <td>
+                    <div className={styles.actBtns}>
+                      <button className={styles.editB} onClick={()=>onEdit(r)}>✏️</button>
+                      {delC?.t==='room'&&delC?.id===r.id ?
+                        <div className={styles.delConf}><button className={styles.delYes} disabled={deling} onClick={()=>onDeleteConfirm(r.id)}>{deling?'⏳':'✓'}</button><button className={styles.delNo} disabled={deling} onClick={()=>setDelC(null)}>✕</button></div> :
+                        <button className={styles.delB} onClick={()=>setDelC({t:'room',id:r.id})}>🗑️</button>}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-// ─── Settings Modal ─────────────────────────────────────────────
-
-function SettingsModal({ settings, onClose, onSave }: {
-  settings: Settings;
-  onClose: () => void;
-  onSave: (s: Settings) => void;
+// ─── Utilities Page ────────────────────────────────────────────
+function UtilitiesPage({rooms,utils,settings,filter,setFilter,onAdd,onSave}:{
+  rooms:Room[];utils:UtilityRecord[];settings:Settings|null;filter:string;setFilter:(s:string)=>void;onAdd:(rm:string)=>void;onSave:(r:UtilityRecord)=>void;
 }) {
-  const [dormName, setDormName] = useState(settings.dormName);
-  const [address, setAddress] = useState(settings.address);
-  const [phone, setPhone] = useState(settings.phone);
-  const [rateElec, setRateElec] = useState(settings.rateElec.toString());
-  const [rateWater, setRateWater] = useState(settings.rateWater.toString());
-
-  const handleSubmit = () => {
-    onSave({ ...settings, dormName, address, phone, rateElec: parseFloat(rateElec) || 0, rateWater: parseFloat(rateWater) || 0 });
-  };
-
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h3>⚙️ แก้ไขตั้งค่า</h3>
-          <button onClick={onClose} className={styles.closeBtn}>✕</button>
-        </div>
-        <div className={styles.modalBody}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}><span className={styles.labelIcon}>🏠</span> ชื่อหอพัก</label>
-            <input type="text" value={dormName} onChange={e => setDormName(e.target.value)} className={styles.input} />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}><span className={styles.labelIcon}>📍</span> ที่อยู่</label>
-            <input type="text" value={address} onChange={e => setAddress(e.target.value)} className={styles.input} />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}><span className={styles.labelIcon}>📞</span> เบอร์โทรศัพท์</label>
-            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className={styles.input} />
-          </div>
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}><span className={styles.labelIcon}>⚡</span> ค่าไฟฟ้า (บาท/หน่วย)</label>
-              <input type="number" value={rateElec} onChange={e => setRateElec(e.target.value)} className={styles.input} />
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}><span className={styles.labelIcon}>💧</span> ค่าน้ำประปา (บาท/หน่วย)</label>
-              <input type="number" value={rateWater} onChange={e => setRateWater(e.target.value)} className={styles.input} />
-            </div>
-          </div>
-        </div>
-        <div className={styles.modalFooter}>
-          <button onClick={onClose} className={styles.btnCancel}>ยกเลิก</button>
-          <button onClick={handleSubmit} className={styles.btnSave}>💾 บันทึก</button>
+    <div className={styles.content}>
+      <div className={styles.topBar}>
+        <div className={styles.search}>
+          <span>🔍</span>
+          <input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="ค้นหาห้อง, ชื่อ..." />
         </div>
       </div>
+      {rooms.filter(r=>!filter||r.number.includes(filter)||r.tenantName.includes(filter)).length===0 ?
+        <div className={styles.emptyState}><span>🏠</span><p>ยังไม่มีห้อง</p></div> :
+        <div className={styles.utilGrid}>
+          {rooms.filter(r=>!filter||r.number.includes(filter)||r.tenantName.includes(filter)).map(room=>{
+            const latest = utils.filter(u=>u.roomId===room.id).sort((a,b)=>b.month.localeCompare(a.month))[0];
+            return (
+              <div key={room.id} className={styles.utilCard}>
+                <div className={styles.utilHead}>
+                  <span className={styles.utilBadge}>{room.number}</span>
+                  <span>{room.tenantName||'ว่าง'}</span>
+                </div>
+                {latest ? (
+                  <div className={styles.utilInfo}>
+                    <div>เดือน: {latest.month}</div>
+                    <div>ไฟ: {latest.elecUsed} หน่วย (อ่าน {latest.elecReading})</div>
+                    <div>น้ำ: {latest.waterUsed} หน่วย (อ่าน {latest.waterReading})</div>
+                  </div>
+                ) : <div className={styles.utilNone}>ยังไม่มีข้อมูล</div>}
+                <button className={styles.btnSm} onClick={()=>onAdd(room.id)}>➕ บันทึกหน่วย</button>
+              </div>
+            );
+          })}
+        </div>
+      }
+    </div>
+  );
+}
+
+// ─── Billing Page ──────────────────────────────────────────────
+function BillingPage({invoices,settings,filter,setFilter,month,setMonth,onGenerate,onStatusUpdate,onExportPDF,viewInv,setViewInv,invRef}:{
+  invoices:Invoice[];settings:Settings|null;filter:string;setFilter:(s:string)=>void;
+  month:string;setMonth:(s:string)=>void;onGenerate:(m:string)=>void;
+  onStatusUpdate:(inv:Invoice,s:Invoice['status'])=>void;onExportPDF:(inv:Invoice)=>void;
+  viewInv:Invoice|null;setViewInv:(inv:Invoice|null)=>void;invRef:React.RefObject<HTMLDivElement>;
+}) {
+  const filtered = invoices.filter(i => filter==='all' || i.status===filter);
+  return (
+    <div className={styles.content}>
+      <div className={styles.topBar}>
+        <div className={styles.genRow}>
+          <input type="month" value={month} onChange={e=>setMonth(e.target.value)} className={styles.monthInput} />
+          <button className={styles.btn} onClick={()=>onGenerate(month)}>📄 สร้างใบแจ้งหนี้</button>
+        </div>
+        <div className={styles.filterTabs}>
+          {(['all','pending','paid','overdue'] as const).map(f=>(
+            <button key={f} className={`${styles.fTab} ${filter===f?styles.fActive:''}`} onClick={()=>setFilter(f)}>
+              {f==='all'?'ทั้งหมด':f==='pending'?'รอชำระ':f==='paid'?'ชำระแล้ว':'ค้างชำระ'}
+              {f!=='all'&&<span className={styles.fCnt}>{invoices.filter(i=>i.status===f).length}</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+      {filtered.length===0 ? <div className={styles.emptyState}><span>📋</span><p>ไม่มีใบแจ้งหนี้</p></div> :
+        <div className={styles.invGrid}>
+          {filtered.map(inv=>(
+            <div key={inv.id} className={`${styles.invCard} ${styles[`st${inv.status}`]}`}>
+              <div className={styles.invHead}>
+                <span className={styles.invRoom}>{inv.roomNumber}</span>
+                <span className={`${styles.invStatus} ${styles[`st${inv.status}`]}`}>{inv.status==='paid'?'ชำระแล้ว':inv.status==='overdue'?'ค้างชำระ':'รอชำระ'}</span>
+              </div>
+              <div className={styles.invName}>{inv.tenantName}</div>
+              <div className={styles.invMonth}>เดือน {THAI_MONTHS[parseInt(inv.month.split('-')[1])]} {parseInt(inv.month.split('-')[0])+543}</div>
+              <div className={styles.invBreakdown}>
+                <span>เช่า: {inv.rent.toLocaleString()}</span>
+                <span>ไฟ: {inv.elecAmount.toLocaleString()}</span>
+                <span>น้ำ: {inv.waterAmount.toLocaleString()}</span>
+              </div>
+              <div className={styles.invTotal}>{inv.total.toLocaleString()} ฿</div>
+              <div className={styles.invActs}>
+                <button className={styles.btnSm} onClick={()=>{setViewInv(inv);setTimeout(()=>{if(invRef.current)onExportPDF(inv);},100);}}>📄 PDF</button>
+                {inv.status==='pending'&&<button className={`${styles.btnSm} ${styles.btnGreen}`} onClick={()=>onStatusUpdate(inv,'paid')}>✓ ชำระแล้ว</button>}
+                {inv.status==='pending'&&<button className={`${styles.btnSm} ${styles.btnRed}`} onClick={()=>onStatusUpdate(inv,'overdue')}>⚠ ค้างชำระ</button>}
+              </div>
+            </div>
+          ))}
+        </div>
+      }
+    </div>
+  );
+}
+
+// ─── Lines Page ────────────────────────────────────────────────
+function LinesPage({lines,rooms,onMatch,onMigrate}:{
+  lines:PendingLineUser[];rooms:Room[];onMatch:(lineId:string,roomId:string)=>void;onMigrate:()=>void;
+}) {
+  const pending = lines.filter(l=>l.status==='pending');
+  const matched = lines.filter(l=>l.status==='matched');
+  return (
+    <div className={styles.content}>
+      <div className={styles.topBar}>
+        <h3 className={styles.cardTitle}>LINE User ID ที่รอจับคู่ ({pending.length})</h3>
+        <button className={styles.btn} onClick={onMigrate}>📦 ย้ายข้อมูลจาก LocalStorage</button>
+      </div>
+      {pending.length===0 ? <div className={styles.emptyState}><span>💬</span><p>ยังไม่มี LINE User ID ใหม่</p></div> :
+        <div className={styles.lineGrid}>
+          {pending.map(l=>(
+            <div key={l.id} className={styles.lineCard}>
+              {l.linePictureUrl && <img src={l.linePictureUrl} alt="" className={styles.linePic} />}
+              <div className={styles.lineName}>{l.lineDisplayName||l.lineUserId}</div>
+              <div className={styles.lineId}>{l.lineUserId}</div>
+              <select className={styles.lineSelect} onChange={e=>{if(e.target.value)onMatch(l.lineUserId,e.target.value);}}>
+                <option value="">— เลือกห้อง —</option>
+                {rooms.map(r=><option key={r.id} value={r.id}>{r.number} {r.tenantName?`(${r.tenantName})`:''}</option>)}
+              </select>
+            </div>
+          ))}
+        </div>
+      }
+      {matched.length>0 && <>
+        <h3 className={styles.cardTitle}>จับคู่แล้ว ({matched.length})</h3>
+        <div className={styles.lineGrid}>
+          {matched.map(l=>{
+            const room = rooms.find(r=>r.id===l.roomId);
+            return (
+              <div key={l.id} className={`${styles.lineCard} ${styles.lineMatched}`}>
+                {l.linePictureUrl && <img src={l.linePictureUrl} alt="" className={styles.linePic} />}
+                <div className={styles.lineName}>{l.lineDisplayName||l.lineUserId}</div>
+                <div className={styles.lineRoom}>→ {room?.number||'ไม่พบห้อง'}</div>
+              </div>
+            );
+          })}
+        </div>
+      </>}
+    </div>
+  );
+}
+
+// ─── Settings Page ─────────────────────────────────────────────
+function SettingsPage({settings,onSave}:{settings:Settings|null;onSave:(s:Settings)=>void;}) {
+  const [s,setS] = useState<Settings>(settings||{dormName:'',address:'',phone:'',rateElec:7,rateWater:20,logo:''});
+  const save = () => onSave(s);
+  return (
+    <div className={styles.content}>
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>ข้อมูลหอพัก</h3>
+        <div className={styles.formRow}><div className={styles.fg}><label>ชื่อหอพัก</label><input value={s.dormName} onChange={e=>setS({...s,dormName:e.target.value})}/></div>
+        <div className={styles.fg}><label>เบอร์โทรศัพท์</label><input value={s.phone} onChange={e=>setS({...s,phone:e.target.value})}/></div></div>
+        <div className={styles.fg}><label>ที่อยู่</label><input value={s.address} onChange={e=>setS({...s,address:e.target.value})}/></div>
+        <div className={styles.formRow}><div className={styles.fg}><label>ค่าไฟฟ้า (บาท/หน่วย)</label><input type="number" value={s.rateElec} onChange={e=>setS({...s,rateElec:+e.target.value})}/></div>
+        <div className={styles.fg}><label>ค่าน้ำประปา (บาท/หน่วย)</label><input type="number" value={s.rateWater} onChange={e=>setS({...s,rateWater:+e.target.value})}/></div></div>
+        <button className={styles.btn} onClick={save}>💾 บันทึก</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Room Modal ────────────────────────────────────────────────
+function RoomModal({room,onClose,onSave}:{room:Room|null;onClose:()=>void;onSave:(r:Room)=>void;}) {
+  const [r,setR] = useState<Room>(room||{id:'',number:'',rent:0,tenantName:'',tenantPhone:'',tenantLineId:'',note:''});
+  return (
+    <div className={styles.modalBg} onClick={onClose}>
+      <div className={styles.modal} onClick={e=>e.stopPropagation()}>
+        <div className={styles.modalHead}><h3>{room?'✏️ แก้ไขห้อง':'➕ เพิ่มห้อง'}</h3><button onClick={onClose}>✕</button></div>
+        <div className={styles.modalBody}>
+          <div className={styles.formRow}><div className={styles.fg}><label>หมายเลขห้อง</label><input value={r.number} onChange={e=>setR({...r,number:e.target.value})}/></div>
+          <div className={styles.fg}><label>ค่าเช่า (บาท)</label><input type="number" value={r.rent} onChange={e=>setR({...r,rent:+e.target.value})}/></div></div>
+          <div className={styles.fg}><label>ชื่อผู้พัก</label><input value={r.tenantName} onChange={e=>setR({...r,tenantName:e.target.value})}/></div>
+          <div className={styles.formRow}><div className={styles.fg}><label>เบอร์โทร</label><input value={r.tenantPhone} onChange={e=>setR({...r,tenantPhone:e.target.value})}/></div>
+          <div className={styles.fg}><label>LINE User ID</label><input value={r.tenantLineId} onChange={e=>setR({...r,tenantLineId:e.target.value})}/></div></div>
+          <div className={styles.fg}><label>หมายเหตุ</label><input value={r.note} onChange={e=>setR({...r,note:e.target.value})}/></div>
+        </div>
+        <div className={styles.modalFoot}><button className={styles.cancelBtn} onClick={onClose}>ยกเลิก</button><button className={styles.btn} onClick={()=>{if(!r.number)return alert('กรุณาระบุหมายเลขห้อง');onSave(r);}}>💾 บันทึก</button></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Utility Modal ─────────────────────────────────────────────
+function UtilModal({roomId,month,rooms,utils,onClose,onSave}:{roomId:string;month:string;rooms:Room[];utils:UtilityRecord[];onClose:()=>void;onSave:(r:UtilityRecord)=>void;}) {
+  const [elec,setElec] = useState(0);
+  const [water,setWater] = useState(0);
+  const [note,setNote] = useState('');
+  const room = rooms.find(r=>r.id===roomId);
+  const prev = utils.filter(u=>u.roomId===roomId&&u.month<month).sort((a,b)=>b.month.localeCompare(a.month))[0];
+  return (
+    <div className={styles.modalBg} onClick={onClose}>
+      <div className={styles.modal} onClick={e=>e.stopPropagation()}>
+        <div className={styles.modalHead}><h3>⚡ บันทึกหน่วย — ห้อง {room?.number}</h3><button onClick={onClose}>✕</button></div>
+        <div className={styles.modalBody}>
+          <p className={styles.muted}>เดือน: {month}</p>
+          {prev && <p className={styles.muted}>เดือนก่อนหน้า — ไฟ: {prev.elecReading}, น้ำ: {prev.waterReading}</p>}
+          <div className={styles.formRow}><div className={styles.fg}><label>หน่วยไฟ (อ่าน)</label><input type="number" value={elec} onChange={e=>setElec(+e.target.value)}/></div>
+          <div className={styles.fg}><label>หน่วยน้ำ (อ่าน)</label><input type="number" value={water} onChange={e=>setWater(+e.target.value)}/></div></div>
+          {prev && <div className={styles.formRow}><div className={styles.fg}><label>ไฟใช้จริง</label><input disabled value={Math.max(0,elec-prev.elecReading)}/></div>
+          <div className={styles.fg}><label>น้ำใช้จริง</label><input disabled value={Math.max(0,water-prev.waterReading)}/></div></div>}
+          <div className={styles.fg}><label>หมายเหตุ</label><input value={note} onChange={e=>setNote(e.target.value)}/></div>
+        </div>
+        <div className={styles.modalFoot}><button className={styles.cancelBtn} onClick={onClose}>ยกเลิก</button><button className={styles.btn} onClick={()=>{onSave({id:'',roomId,month,elecReading:elec,waterReading:water,prevElecReading:prev?.elecReading||0,prevWaterReading:prev?.waterReading||0,elecUsed:prev?Math.max(0,elec-prev.elecReading):elec,waterUsed:prev?Math.max(0,water-prev.waterReading):water,note,createdAt:''});}}>💾 บันทึก</button></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Toasts ────────────────────────────────────────────────────
+function Toasts({toasts,remove}:{toasts:Toast[];remove:(id:string)=>void;}) {
+  return (
+    <div className={styles.toastBox}>
+      {toasts.map(t=>(
+        <div key={t.id} className={`${styles.toast} ${styles[t.type]}`}>
+          <span>{t.type==='success'?'✅':t.type==='error'?'❌':t.type==='warning'?'⚠️':'ℹ️'}</span>
+          <span>{t.message}</span>
+          <button onClick={()=>remove(t.id)}>✕</button>
+        </div>
+      ))}
     </div>
   );
 }

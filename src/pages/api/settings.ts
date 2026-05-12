@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import clientPromise from '../../lib/mongodb';
+import { connectDB } from '../../lib/mongodb';
 
 const defaultSettings = {
   dormName: 'หอพักสุขใจ',
@@ -10,39 +10,39 @@ const defaultSettings = {
   logo: ''
 };
 
+export interface Settings {
+  dormName: string;
+  address: string;
+  phone: string;
+  rateElec: number;
+  rateWater: number;
+  logo: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // If MongoDB not configured, return defaults for GET
-  let client;
-  try {
-    client = await clientPromise;
-  } catch (e: any) {
-    if (req.method === 'GET') {
-      return res.status(200).json(defaultSettings);
-    }
-    return res.status(500).json({ error: e.message || 'Database connection failed' });
-  }
+  if (req.method === 'GET') {
+    let client;
+    try { client = await connectDB(); }
+    catch { return res.status(200).json(defaultSettings); }
 
-  try {
     const db = client.db('dorm_billing');
-    const collection = db.collection('settings');
-
-    if (req.method === 'GET') {
-      const settings = await collection.findOne({ _id: 'default' } as any);
-      return res.status(200).json(settings || defaultSettings);
-    }
-
-    if (req.method === 'POST') {
-      await collection.updateOne(
-        { _id: 'default' } as any,
-        { $set: req.body },
-        { upsert: true }
-      );
-      return res.status(200).json(req.body);
-    }
-
-    return res.status(405).json({ error: 'Method not allowed' });
-  } catch (error: any) {
-    console.error('Settings API error:', error);
-    return res.status(500).json({ error: 'Internal server error', details: error.message });
+    const settings = await db.collection<Settings>('settings').findOne({ _id: 'default' } as any);
+    return res.status(200).json(settings || defaultSettings);
   }
+
+  if (req.method === 'POST') {
+    let client;
+    try { client = await connectDB(); }
+    catch (e: any) { return res.status(500).json({ error: e.message }); }
+
+    const db = client.db('dorm_billing');
+    await db.collection('settings').updateOne(
+      { _id: 'default' } as any,
+      { $set: req.body },
+      { upsert: true }
+    );
+    return res.status(200).json(req.body);
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
 }

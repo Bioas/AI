@@ -1,14 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { connectDB } from '../../lib/mongodb';
 
-export interface Room {
+export interface PendingLineUser {
   id: string;
-  number: string;
-  rent: number;
-  tenantName: string;
-  tenantPhone: string;
-  tenantLineId: string;
-  note: string;
+  lineUserId: string;
+  lineDisplayName?: string;
+  linePictureUrl?: string;
+  roomId?: string;
+  status: 'pending' | 'matched' | 'ignored';
+  createdAt: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -17,22 +17,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   catch (e: any) { return res.status(500).json({ error: e.message }); }
 
   const db = client.db('dorm_billing');
-  const collection = db.collection<Room>('rooms');
+  const collection = db.collection<PendingLineUser>('pending_lines');
 
   if (req.method === 'GET') {
-    const rooms = await collection.find({}).toArray();
-    return res.status(200).json(rooms);
+    const users = await collection.find({}).toArray();
+    return res.status(200).json(users);
   }
 
   if (req.method === 'POST') {
-    const room = req.body as Room;
-    if (!room.id) room.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    await collection.insertOne(room);
-    return res.status(200).json(room);
+    const user = req.body as PendingLineUser;
+    if (!user.id) user.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    await collection.insertOne(user);
+    return res.status(200).json(user);
   }
 
   if (req.method === 'PUT') {
-    const { id, ...data } = req.body as Room;
+    const { id, ...data } = req.body as PendingLineUser;
     await collection.updateOne({ id }, { $set: data });
     return res.status(200).json(req.body);
   }

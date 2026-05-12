@@ -1,14 +1,24 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { connectDB } from '../../lib/mongodb';
 
-export interface Room {
+export interface Invoice {
   id: string;
-  number: string;
-  rent: number;
+  roomId: string;
+  roomNumber: string;
   tenantName: string;
-  tenantPhone: string;
-  tenantLineId: string;
+  month: string;
+  rent: number;
+  elecUnits: number;
+  elecRate: number;
+  elecAmount: number;
+  waterUnits: number;
+  waterRate: number;
+  waterAmount: number;
+  total: number;
+  status: 'pending' | 'paid' | 'overdue';
+  paidDate?: string;
   note: string;
+  createdAt: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -17,22 +27,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   catch (e: any) { return res.status(500).json({ error: e.message }); }
 
   const db = client.db('dorm_billing');
-  const collection = db.collection<Room>('rooms');
+  const collection = db.collection<Invoice>('invoices');
 
   if (req.method === 'GET') {
-    const rooms = await collection.find({}).toArray();
-    return res.status(200).json(rooms);
+    const invoices = await collection.find({}).toArray();
+    return res.status(200).json(invoices);
   }
 
   if (req.method === 'POST') {
-    const room = req.body as Room;
-    if (!room.id) room.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    await collection.insertOne(room);
-    return res.status(200).json(room);
+    const invoice = req.body as Invoice;
+    if (!invoice.id) invoice.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    await collection.insertOne(invoice);
+    return res.status(200).json(invoice);
   }
 
   if (req.method === 'PUT') {
-    const { id, ...data } = req.body as Room;
+    const { id, ...data } = req.body as Invoice;
     await collection.updateOne({ id }, { $set: data });
     return res.status(200).json(req.body);
   }

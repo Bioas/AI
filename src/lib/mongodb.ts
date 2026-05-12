@@ -1,29 +1,18 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, ServerApiVersion } from 'mongodb';
 
 const uri = process.env.MONGODB_URI || '';
-const options = {
-  maxPoolSize: 10,
-  minPoolSize: 1,
-};
+let client: MongoClient | null = null;
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-if (!uri) {
-  // If no URI, create a dummy promise that will reject when used
-  clientPromise = Promise.reject(new Error('MONGODB_URI environment variable is not set. Please add it in Vercel Environment Variables.'));
-} else if (process.env.NODE_ENV === 'development') {
-  const globalWithMongo = globalThis as typeof globalThis & {
-    _mongoClientPromise?: Promise<MongoClient>;
-  };
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
+export async function connectDB(): Promise<MongoClient> {
+  if (!uri) throw new Error('MONGODB_URI not configured');
+  if (!client) {
+    client = new MongoClient(uri, {
+      serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
+      maxPoolSize: 1,
+    });
   }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+  await client.connect();
+  return client;
 }
 
-export default clientPromise;
+export default connectDB;

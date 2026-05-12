@@ -1,1 +1,1 @@
-// Type declarations for mongodb module
+// Type declarations
