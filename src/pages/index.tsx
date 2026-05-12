@@ -54,6 +54,7 @@ export default function Home() {
   // Delete confirm
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const toastTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
@@ -148,7 +149,7 @@ export default function Home() {
 
   const handleDeleteRoom = async (id: string) => {
     const room = rooms.find(r => r.id === id);
-    setActionLoading({ delete: id });
+    setDeletingId(id);
     try {
       const res = await fetch('/api/rooms', {
         method: 'DELETE',
@@ -165,7 +166,7 @@ export default function Home() {
       addToast('เกิดข้อผิดพลาดในการลบห้อง', 'error');
     }
     setShowDeleteConfirm(null);
-    setActionLoading({});
+    setDeletingId(null);
   };
 
   const handleSaveSettings = async (newSettings: Settings) => {
@@ -565,14 +566,14 @@ export default function Home() {
                                 <button
                                   onClick={() => handleDeleteRoom(room.id)}
                                   className={styles.confirmYes}
-                                  disabled={actionLoading.delete === room.id}
+                                  disabled={deletingId === room.id}
                                 >
-                                  {actionLoading.delete === room.id ? '⏳' : '✓'}
+                                  {deletingId === room.id ? '⏳' : '✓'}
                                 </button>
                                 <button
                                   onClick={() => setShowDeleteConfirm(null)}
                                   className={styles.confirmNo}
-                                  disabled={actionLoading.delete === room.id}
+                                  disabled={deletingId === room.id}
                                 >
                                   ✕
                                 </button>
