@@ -1,9 +1,9 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
 const uri = process.env.MONGODB_URI || '';
-let client: MongoClient | null = null;
+let client = null;
 
-export async function connectDB(): Promise<MongoClient> {
+export async function connectDB() {
   if (!uri) throw new Error('MONGODB_URI not configured');
   if (!client) {
     client = new MongoClient(uri, {
