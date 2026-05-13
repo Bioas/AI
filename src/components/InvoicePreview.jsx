@@ -28,17 +28,14 @@ export default function InvoicePreview({ inv }) {
         <div className="flex items-center gap-3">
           {settings.logo && <img src={settings.logo} alt="" className="h-20 w-20 object-contain shrink-0" />}
           <div>
-            <div className="flex items-center gap-3">
-              <span className="text-base font-bold text-amber-800">{settings.dormName || 'หอพัก'}</span>
-              <span className="text-amber-300 font-light">|</span>
-              <span className="text-base font-bold text-amber-700">ใบแจ้งหนี้</span>
-            </div>
+            <div className="text-base font-bold text-amber-800">{settings.dormName || 'หอพัก'}</div>
             <div className="text-[10px] text-neutral-400 mt-0.5">{settings.address}</div>
             <div className="text-[10px] text-neutral-400">โทร {settings.phone}</div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-base font-bold text-amber-800">{issueDate}</div>
+        <div className="text-right pt-1">
+          <div className="text-base font-bold text-amber-700">ใบแจ้งหนี้</div>
+          <div className="text-[10px] text-neutral-400 mt-0.5">{issueDate}</div>
         </div>
       </div>
 
