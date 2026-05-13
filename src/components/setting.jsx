@@ -15,7 +15,7 @@ export default function Setting() {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="ตั้งค่าระบบ" description="จัดการข้อมูลหอพัก อัตราค่าใช้จ่าย และการเชื่อมต่อ LINE" />
 
-      <div className="space-y-5">
+      <div className="space-y-6">
         <Card><CardContent className="pt-6">
           <div className="flex items-start justify-between mb-4">
             <h3 className="text-sm font-semibold text-neutral-800">🏢 ข้อมูลหอพัก</h3>

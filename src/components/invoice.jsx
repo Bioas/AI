@@ -13,7 +13,7 @@ export default function Invoice() {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="ใบแจ้งหนี้" description="ดูและจัดการใบแจ้งหนี้ประจำเดือน" />
 
-      <div className="flex items-center gap-3 mb-6 bg-white rounded-2xl shadow-card border border-lime-100/40 px-5 py-3 w-fit">
+      <div className="flex items-center gap-3 mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-6 py-4 w-fit">
         <label className="text-sm font-medium text-neutral-600">เดือน:</label>
         <input type="month" value={invMonth} onChange={e => setInvMonth(e.target.value)}
           className="h-9 px-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />

@@ -16,7 +16,7 @@ export default function Meters() {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="บันทึกมิเตอร์" description="บันทึกเลขมาตรไฟฟ้าและน้ำประปารายเดือน" />
 
-      <div className="flex items-center gap-3 mb-6 bg-white rounded-2xl shadow-card border border-lime-100/40 px-5 py-3 w-fit">
+      <div className="flex items-center gap-3 mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-6 py-4 w-fit">
         <label className="text-sm font-medium text-neutral-600">เดือน:</label>
         <input type="month" value={meterMonth} onChange={e => setMeterMonth(e.target.value)}
           className="h-9 px-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
@@ -28,7 +28,7 @@ export default function Meters() {
             <div className="w-2 h-2 rounded-full bg-lime-400" />
             <h3 className="text-sm font-semibold text-neutral-800">ข้อมูลมิเตอร์ — {formatMonth(meterMonth)}</h3>
           </div>
-          <p className="text-xs text-neutral-400 mb-5 ml-4">กดปุ่ม "แก้ไข" เพื่อบันทึกเลขมาตรแต่ละห้อง</p>
+          <p className="text-xs text-neutral-400 mb-6 ml-5">กดปุ่ม "แก้ไข" เพื่อบันทึกเลขมาตรแต่ละห้อง</p>
 
           {occRooms.length === 0 ? (
             <EmptyState icon="📝" title="ไม่มีห้องที่มีผู้พัก" description="เพิ่มผู้พักในห้องก่อนจึงจะบันทึกเลขมิเตอร์ได้" />
@@ -69,7 +69,7 @@ export default function Meters() {
         </CardContent>
       </Card>
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3 mb-3">

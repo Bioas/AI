@@ -10,7 +10,7 @@ export default function InvoicePreview({ inv }) {
   return (
     <div id="invoicePdfContent" className="bg-white rounded-xl p-6 max-w-md mx-auto font-sans text-sm">
       <div className="text-center mb-5 border-b border-neutral-100 pb-4">
-        {settings.logo && <img src={settings.logo} alt="โลโก้" className="h-10 object-contain mx-auto mb-2" />}
+        {settings.logo && <img src={settings.logo} alt="โลโก้" className="h-16 object-contain mx-auto mb-3" />}
         <h2 className="text-lime-700 text-lg font-bold mb-0.5">{settings.dormName}</h2>
         <p className="text-neutral-400 text-xs">{settings.address}</p>
         <p className="text-neutral-400 text-xs">โทร: {settings.phone}</p>
