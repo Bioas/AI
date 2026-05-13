@@ -88,21 +88,6 @@ export default function Setting() {
         </CardContent></Card>
 
         <Card><CardContent className="pt-6">
-          <div className="flex items-start justify-between mb-4">
-            <h3 className="text-sm font-semibold text-neutral-800">📱 QR Code สำหรับชำระเงิน</h3>
-            <Button size="sm" variant="secondary" onClick={() => setActiveSection('qr')}>จัดการ</Button>
-          </div>
-          <div className="flex items-center gap-4">
-            {settings.qrCode ? (
-              <img src={settings.qrCode} alt="QR Code" className="w-20 h-20 object-contain rounded-xl border border-neutral-200 shadow-sm" />
-            ) : (
-              <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl border border-dashed border-lime-200">📱</div>
-            )}
-            <div className="text-xs text-neutral-500">{settings.qrCode ? 'มี QR Code' : 'ยังไม่มี QR Code'}</div>
-          </div>
-        </CardContent></Card>
-
-        <Card><CardContent className="pt-6">
           <h3 className="text-sm font-semibold text-neutral-800 mb-1">🗂️ สำรองและกู้คืนข้อมูล</h3>
           <p className="text-xs text-neutral-400 mb-5">ส่งออกข้อมูลเพื่อสำรอง หรือนำเข้าจากไฟล์สำรอง</p>
           <div className="flex gap-3">
