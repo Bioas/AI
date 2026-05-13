@@ -1,15 +1,20 @@
-export default function Card({ className = '', children, hover = false, ...props }) {
-  const base = 'bg-white rounded-2xl border border-zinc-100 shadow-sm shadow-zinc-200/50'
-  const hoverStyles = 'hover:shadow-md hover:shadow-zinc-200/60 hover:border-zinc-200 transition-all duration-300'
+import { motion } from 'framer-motion'
+
+export default function Card({ className = '', children, hover = false, delay = 0 }) {
   return (
-    <div className={`${base} ${hover ? hoverStyles : ''} ${className}`} {...props}>
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay }}
+      className={`bg-white rounded-2xl shadow-card border border-blue-100/40 ${hover ? 'hover:shadow-card-hover hover:border-blue-200/60 transition-all duration-300 hover:-translate-y-0.5' : ''} ${className}`}
+    >
       {children}
-    </div>
+    </motion.div>
   )
 }
 
 export function CardHeader({ className = '', children }) {
-  return <div className={`px-6 pt-6 pb-4 ${className}`}>{children}</div>
+  return <div className={`px-6 pt-6 pb-3 ${className}`}>{children}</div>
 }
 
 export function CardContent({ className = '', children }) {

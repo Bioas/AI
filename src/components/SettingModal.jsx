@@ -1,9 +1,29 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import Modal from './Modal'
+import Modal from './ui/modal'
 import Button from './ui/button'
 import Input from './ui/input'
-import Card, { CardContent } from './ui/card'
+
+function SettingModalFrame({ title, subtitle, icon, onClose, children, onSave, saving }) {
+  return (
+    <Modal open={true} onClose={onClose}>
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white text-base shadow-sm">{icon}</div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-800">{title}</h3>
+            {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
+          </div>
+        </div>
+        <div className="space-y-4">{children}</div>
+        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-slate-100">
+          <Button variant="ghost" onClick={onClose} disabled={saving}>ยกเลิก</Button>
+          <Button onClick={onSave} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'บันทึก'}</Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
 
 export function DormInfoModal({ onClose }) {
   const { settings, fetchAll, toast } = useApp()
@@ -18,54 +38,47 @@ export function DormInfoModal({ onClose }) {
       const { api } = await import('../lib/api')
       await api('/api/settings', 'POST', { ...settings, dormName, phone, address })
       await fetchAll()
-      toast('บันทึกข้อมูลหอพักเรียบร้อย')
-      onClose()
-    } catch (e) {
-      toast(`บันทึกไม่สำเร็จ: ${e.message}`, true)
-    }
+      toast('บันทึกข้อมูลหอพักเรียบร้อย'); onClose()
+    } catch (e) { toast(`บันทึกไม่สำเร็จ: ${e.message}`, true) }
     setSaving(false)
   }
 
   return (
-    <Modal onClose={onClose}>
-      <div className="p-6">
-        <h3 className="text-lg font-semibold text-zinc-900 mb-6">🏢 แก้ไขข้อมูลหอพัก</h3>
-        <div className="space-y-4">
-          <Input label="ชื่อหอพัก" value={dormName} onChange={e => setDormName(e.target.value)} placeholder="ชื่อหอพัก" />
-          <Input label="เบอร์โทรศัพท์" value={phone} onChange={e => setPhone(e.target.value)} placeholder="081-234-5678" />
-          <Input label="ที่อยู่" value={address} onChange={e => setAddress(e.target.value)} placeholder="123 ถนนสุขุมวิท กรุงเทพฯ" />
-        </div>
-        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-zinc-100">
-          <Button variant="ghost" onClick={onClose} disabled={saving}>ยกเลิก</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'บันทึก'}</Button>
-        </div>
-      </div>
-    </Modal>
+    <SettingModalFrame title="แก้ไขข้อมูลหอพัก" subtitle="แก้ไขชื่อหอพัก เบอร์โทร และที่อยู่" icon="🏢" onClose={onClose} onSave={handleSave} saving={saving}>
+      <Input label="ชื่อหอพัก" value={dormName} onChange={e => setDormName(e.target.value)} placeholder="ชื่อหอพัก" />
+      <Input label="เบอร์โทรศัพท์" value={phone} onChange={e => setPhone(e.target.value)} placeholder="081-234-5678" />
+      <Input label="ที่อยู่" value={address} onChange={e => setAddress(e.target.value)} placeholder="123 ถนนสุขุมวิท กรุงเทพฯ" />
+    </SettingModalFrame>
   )
 }
 
 export function LogoModal({ onClose }) {
-  const { settings, uploadLogo, removeLogo, toast } = useApp()
+  const { settings, uploadLogo, removeLogo } = useApp()
 
   return (
-    <Modal onClose={onClose}>
+    <Modal open={true} onClose={onClose}>
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-zinc-900 mb-6">🖼️ จัดการโลโก้</h3>
-        <div className="flex flex-col items-center gap-4 p-6 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white text-base shadow-sm">🖼️</div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-800">จัดการโลโก้</h3>
+            <p className="text-xs text-slate-400">อัปโหลดหรือลบโลโก้หอพัก</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-4 p-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
           {settings.logo ? (
-            <img src={settings.logo} alt="Logo" className="w-24 h-24 object-contain rounded-xl border border-zinc-200" />
+            <img src={settings.logo} alt="โลโก้" className="w-24 h-24 object-contain rounded-xl border border-slate-200 shadow-sm" />
           ) : (
-            <div className="w-24 h-24 rounded-xl bg-zinc-200 flex items-center justify-center text-3xl">🏠</div>
+            <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-3xl">🏠</div>
           )}
           <div className="flex gap-2">
             <Button size="sm" onClick={() => document.getElementById('modalLogoInput')?.click()}>อัปโหลดรูป</Button>
             <Button variant="danger" size="sm" onClick={() => { removeLogo(); onClose() }}>ลบโลโก้</Button>
           </div>
-          <input type="file" id="modalLogoInput" accept="image/*" style={{ display: 'none' }}
-            onChange={e => { uploadLogo(e); onClose() }} />
-          <p className="text-xs text-zinc-400">รองรับ PNG, JPG ขนาดไม่เกิน 2MB</p>
+          <input type="file" id="modalLogoInput" accept="image/*" style={{ display: 'none' }} onChange={e => { uploadLogo(e); onClose() }} />
+          <p className="text-xs text-slate-400">รองรับ PNG, JPG ขนาดไม่เกิน 2MB</p>
         </div>
-        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-zinc-100">
+        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-slate-100">
           <Button variant="ghost" onClick={onClose}>ปิด</Button>
         </div>
       </div>
@@ -85,38 +98,21 @@ export function RatesModal({ onClose }) {
     setSaving(true)
     try {
       const { api } = await import('../lib/api')
-      await api('/api/settings', 'POST', {
-        ...settings,
-        rateElec: parseFloat(rateElec) || 7,
-        rateWater: parseFloat(rateWater) || 20,
-        commonFee: parseFloat(commonFee) || 0,
-        internetFee: parseFloat(internetFee) || 0,
-      })
-      await fetchAll()
-      toast('บันทึกอัตราค่าใช้จ่ายเรียบร้อย')
-      onClose()
-    } catch (e) {
-      toast(`บันทึกไม่สำเร็จ: ${e.message}`, true)
-    }
+      await api('/api/settings', 'POST', { ...settings, rateElec: parseFloat(rateElec) || 7, rateWater: parseFloat(rateWater) || 20, commonFee: parseFloat(commonFee) || 0, internetFee: parseFloat(internetFee) || 0 })
+      await fetchAll(); toast('บันทึกอัตราค่าใช้จ่ายเรียบร้อย'); onClose()
+    } catch (e) { toast(`บันทึกไม่สำเร็จ: ${e.message}`, true) }
     setSaving(false)
   }
 
   return (
-    <Modal onClose={onClose}>
-      <div className="p-6">
-        <h3 className="text-lg font-semibold text-zinc-900 mb-6">💰 แก้ไขอัตราค่าใช้จ่าย</h3>
-        <div className="space-y-4">
-          <Input label="ค่าไฟ (บาท/หน่วย)" type="number" value={rateElec} onChange={e => setRateElec(e.target.value)} />
-          <Input label="ค่าน้ำ (บาท/หน่วย)" type="number" value={rateWater} onChange={e => setRateWater(e.target.value)} />
-          <Input label="ค่าส่วนกลาง (บาท/เดือน)" type="number" value={commonFee} onChange={e => setCommonFee(e.target.value)} />
-          <Input label="ค่าอินเทอร์เน็ต (บาท/เดือน)" type="number" value={internetFee} onChange={e => setInternetFee(e.target.value)} />
-        </div>
-        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-zinc-100">
-          <Button variant="ghost" onClick={onClose} disabled={saving}>ยกเลิก</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'บันทึก'}</Button>
-        </div>
+    <SettingModalFrame title="แก้ไขอัตราค่าใช้จ่าย" subtitle="แก้ไขอัตราค่าไฟ ค่าน้ำ ค่าส่วนกลาง และค่าอินเทอร์เน็ต" icon="💰" onClose={onClose} onSave={handleSave} saving={saving}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Input label="ค่าไฟ (บาท/หน่วย)" type="number" value={rateElec} onChange={e => setRateElec(e.target.value)} />
+        <Input label="ค่าน้ำ (บาท/หน่วย)" type="number" value={rateWater} onChange={e => setRateWater(e.target.value)} />
+        <Input label="ค่าส่วนกลาง (บาท/เดือน)" type="number" value={commonFee} onChange={e => setCommonFee(e.target.value)} />
+        <Input label="ค่าอินเทอร์เน็ต (บาท/เดือน)" type="number" value={internetFee} onChange={e => setInternetFee(e.target.value)} />
       </div>
-    </Modal>
+    </SettingModalFrame>
   )
 }
 
@@ -130,48 +126,39 @@ export function LineModal({ onClose }) {
     try {
       const { api } = await import('../lib/api')
       await api('/api/settings', 'POST', { ...settings, channelToken: token })
-      await fetchAll()
-      toast('บันทึก LINE Token เรียบร้อย')
-      onClose()
-    } catch (e) {
-      toast(`บันทึกไม่สำเร็จ: ${e.message}`, true)
-    }
+      await fetchAll(); toast('บันทึก LINE Token เรียบร้อย'); onClose()
+    } catch (e) { toast(`บันทึกไม่สำเร็จ: ${e.message}`, true) }
     setSaving(false)
   }
 
   return (
-    <Modal onClose={onClose} maxWidth="max-w-md">
+    <Modal open={true} onClose={onClose} maxWidth="max-w-md">
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-zinc-900 mb-1">📱 ตั้งค่า LINE Messaging</h3>
-        <p className="text-xs text-zinc-500 mb-5">ส่งใบแจ้งหนี้ให้ผู้พักผ่าน LINE</p>
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white text-base shadow-sm">📱</div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-800">ตั้งค่า LINE Messaging</h3>
+            <p className="text-xs text-slate-400">ส่งใบแจ้งหนี้ให้ผู้พักผ่าน LINE</p>
+          </div>
+        </div>
 
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-5 text-xs text-blue-800 leading-relaxed">
+        <div className="bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-100 rounded-xl p-4 mb-5 text-xs text-blue-700 leading-relaxed">
           <strong>วิธีตั้งค่า:</strong> ไปที่ LINE Developers Console → สร้าง Channel → เปิด Messaging API → คัดลอก Channel Access Token → วางด้านล่าง
         </div>
 
-        <Input
-          label="Channel Access Token"
-          type="text"
-          placeholder="วาง Token ที่นี่..."
-          value={token}
-          onChange={e => setToken(e.target.value)}
-        />
+        <Input label="Channel Access Token" type="text" placeholder="วาง Token ที่นี่..." value={token} onChange={e => setToken(e.target.value)} />
 
         <div className="mt-4">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={async () => {
-              const uid = prompt('กรอก LINE User ID (ขึ้นต้นด้วย U):')
-              if (!uid || !uid.startsWith('U')) { toast('User ID ไม่ถูกต้อง', true); return }
-              await sendLineMsg(uid, `🧪 ข้อความทดสอบ\nเวลา: ${new Date().toLocaleString('th-TH')}\n✅ ระบบพร้อมใช้งาน!`)
-            }}
-          >
+          <Button variant="secondary" size="sm" onClick={async () => {
+            const uid = prompt('กรอก LINE User ID (ขึ้นต้นด้วย U):')
+            if (!uid || !uid.startsWith('U')) { toast('User ID ไม่ถูกต้อง', true); return }
+            await sendLineMsg(uid, `🧪 ข้อความทดสอบ\nเวลา: ${new Date().toLocaleString('th-TH')}\n✅ ระบบพร้อมใช้งาน!`)
+          }}>
             🧪 ทดสอบส่งข้อความ
           </Button>
         </div>
 
-        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-zinc-100">
+        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-slate-100">
           <Button variant="ghost" onClick={onClose} disabled={saving}>ยกเลิก</Button>
           <Button onClick={handleSave} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'บันทึก'}</Button>
         </div>

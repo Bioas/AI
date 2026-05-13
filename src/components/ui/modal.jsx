@@ -22,15 +22,15 @@ export default function Modal({ open, onClose, children, maxWidth = 'max-w-lg' }
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 20 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`relative bg-white rounded-2xl shadow-xl shadow-black/10 w-full ${maxWidth} max-h-[85vh] overflow-y-auto border border-zinc-100`}
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            className={`relative bg-white rounded-2xl shadow-xl shadow-slate-900/10 w-full ${maxWidth} max-h-[85vh] overflow-y-auto`}
             onClick={e => e.stopPropagation()}
           >
             {children}

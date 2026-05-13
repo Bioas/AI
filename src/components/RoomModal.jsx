@@ -29,9 +29,13 @@ export default function RoomModal() {
   return (
     <Modal onClose={() => setModal(null)}>
       <div className="p-6">
-        <h3 className="text-base font-semibold text-zinc-900 mb-6">
-          {editRoom ? '✏️ แก้ไขห้อง' : '➕ เพิ่มห้อง'}
-        </h3>
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-base shadow-sm">🚪</div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-800">{editRoom ? 'แก้ไขห้อง' : 'เพิ่มห้อง'}</h3>
+            <p className="text-xs text-slate-400">{editRoom ? 'แก้ไขข้อมูลห้องพัก' : 'เพิ่มห้องพักใหม่ในระบบ'}</p>
+          </div>
+        </div>
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -46,7 +50,7 @@ export default function RoomModal() {
           <Input label="หมายเหตุ" value={note} onChange={e => setNote(e.target.value)} placeholder="หมายเหตุเพิ่มเติม" />
         </div>
 
-        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-zinc-100">
+        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-slate-100">
           <Button variant="ghost" onClick={() => setModal(null)}>ยกเลิก</Button>
           <Button onClick={handleSave}>{editRoom ? 'บันทึกการเปลี่ยนแปลง' : 'เพิ่มห้อง'}</Button>
         </div>

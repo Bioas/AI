@@ -5,22 +5,26 @@ export default function ToastContainer() {
   const { toasts } = useApp()
 
   return (
-    <div className="fixed top-4 right-4 z-[300] flex flex-col gap-2 pointer-events-none">
+    <div className="fixed top-4 right-4 z-[300] flex flex-col gap-2.5 pointer-events-none">
       <AnimatePresence>
         {toasts.map(t => (
           <motion.div
             key={t.id}
-            initial={{ opacity: 0, x: 80, scale: 0.95 }}
+            initial={{ opacity: 0, x: 60, scale: 0.95 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 80, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg shadow-black/5 backdrop-blur-xl text-sm font-medium border ${
+            exit={{ opacity: 0, x: 60, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className={`pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg shadow-slate-900/5 border text-sm font-medium ${
               t.err
-                ? 'bg-white/95 border-red-200 text-red-800'
-                : 'bg-white/95 border-emerald-200 text-emerald-800'
+                ? 'bg-white border-rose-200 text-rose-700'
+                : 'bg-white border-emerald-200 text-emerald-700'
             }`}
           >
-            <span className="shrink-0 text-base">{t.err ? '⚠️' : '✓'}</span>
+            <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${
+              t.err ? 'bg-rose-50 text-rose-500' : 'bg-emerald-50 text-emerald-500'
+            }`}>
+              {t.err ? '✕' : '✓'}
+            </span>
             <span>{t.msg}</span>
           </motion.div>
         ))}
