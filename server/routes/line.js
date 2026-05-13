@@ -40,7 +40,9 @@ router.post('/send', async (req, res) => {
 })
 
 router.post('/send-image', async (req, res) => {
-  const { to, token, invoiceImageUrl, qrCodeUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate } = req.body
+  const { to, token, invoiceImageUrl, qrCodeUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate, roomFee, waterBill, electricBill } = req.body
+
+  console.log('QR_URL:', qrCodeUrl ? qrCodeUrl.substring(0, 50) : 'EMPTY')
 
   if (!to || !token || !invoiceImageUrl) {
     return res.status(400).json({ error: 'Missing required fields: to, token, invoiceImageUrl' })
@@ -54,44 +56,62 @@ router.post('/send-image', async (req, res) => {
     { type: 'text', text: 'ใบแจ้งหนี้ค่าเช่า', weight: 'bold', size: 'xl', color: '#1a1a2e', wrap: true },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
-        { type: 'text', text: 'ชื่อผู้เช่า', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: tenantName || '', wrap: true, color: '#666666', size: 'sm', flex: 4, align: 'end' }
+        { type: 'text', text: 'ผู้พัก', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
+        { type: 'text', text: tenantName || '', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
       ]
     },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
-        { type: 'text', text: 'ห้อง', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: roomNumber || '', wrap: true, color: '#1a1a2e', size: 'sm', flex: 4, align: 'end' }
+        { type: 'text', text: 'ห้อง', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
+        { type: 'text', text: roomNumber || '', wrap: true, color: '#1a1a2e', size: 'sm', flex: 3, align: 'end' }
       ]
     },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
-        { type: 'text', text: 'เดือน', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: billingMonth || '', wrap: true, color: '#666666', size: 'sm', flex: 4, align: 'end' }
+        { type: 'text', text: 'เดือน', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
+        { type: 'text', text: billingMonth || '', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
       ]
     },
     { type: 'separator', color: '#e5e7eb', margin: 'xl' },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
-        { type: 'text', text: 'จำนวนเงิน', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'sm', flex: 4, align: 'end' }
+        { type: 'text', text: 'ค่าเช่าห้อง', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
+        { type: 'text', text: (roomFee || '0') + ' บาท', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
       ]
     },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
-        { type: 'text', text: 'กำหนดชำระ', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'sm', flex: 4, align: 'end' }
+        { type: 'text', text: 'ค่าไฟฟ้า', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
+        { type: 'text', text: (electricBill || '0') + ' บาท', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
+      ]
+    },
+    { type: 'box', layout: 'baseline', spacing: 'sm',
+      contents: [
+        { type: 'text', text: 'ค่าน้ำประปา', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
+        { type: 'text', text: (waterBill || '0') + ' บาท', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
+      ]
+    },
+    { type: 'box', layout: 'baseline', spacing: 'sm',
+      contents: [
+        { type: 'text', text: 'รวมทั้งสิ้น', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
+        { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'sm', flex: 3, align: 'end' }
+      ]
+    },
+    { type: 'box', layout: 'baseline', spacing: 'sm',
+      contents: [
+        { type: 'text', text: 'กำหนดชำระ', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
+        { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'sm', flex: 3, align: 'end' }
       ]
     }
   ]
 
-  if (qrCodeUrl) {
+  if (qrCodeUrl && qrCodeUrl.length > 0) {
     bodyContents.push({
       type: 'box', layout: 'vertical', margin: 'xxl',
       contents: [
-        { type: 'spacer' },
-        { type: 'image', url: qrCodeUrl, size: 'xl', aspectMode: 'cover' },
-        { type: 'text', text: 'Scan QR code เพื่อชำาระเงิน', color: '#aaaaaa', size: 'xs', wrap: true, margin: 'xxl' }
+        { type: 'text', text: 'QR CODE', color: '#aaaaaa', size: 'xs' },
+        { type: 'image', url: qrCodeUrl, size: 'xl', aspectMode: 'fit' },
+        { type: 'text', text: 'Scan QR code เพื่อชำระเงิน', color: '#aaaaaa', size: 'xs', wrap: true, margin: 'md' }
       ]
     })
   }
