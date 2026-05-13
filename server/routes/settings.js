@@ -33,4 +33,23 @@ router.post('/', async (req, res) => {
   }
 })
 
+router.get('/qr', async (req, res) => {
+  try {
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+    const s = await db.collection('settings').findOne({ _id: 'default' })
+    if (s?.qrCode) {
+      const match = s.qrCode.match(/^data:([^;]+);base64,(.+)$/)
+      if (match) {
+        res.set('Content-Type', match[1])
+        res.send(Buffer.from(match[2], 'base64'))
+        return
+      }
+    }
+    res.status(404).json({ error: 'QR code not found' })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 export default router
