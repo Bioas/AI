@@ -1,25 +1,21 @@
 import { Router } from 'express'
-import path from 'path'
-import fs from 'fs'
-import { fileURLToPath } from 'url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const isVercel = process.env.VERCEL === '1'
-const uploadDir = isVercel ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads')
-
-let dirReady = false
-function ensureDir() {
-  if (!dirReady) {
-    try {
-      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
-      dirReady = true
-    } catch (e) {
-      console.warn('Upload dir error:', e.message)
-    }
-  }
-}
+import { connectDB } from '../lib/mongodb.js'
 
 const router = Router()
+
+async function ensureIndex() {
+  try {
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+    await db.collection('uploads').createIndex(
+      { createdAt: 1 },
+      { expireAfterSeconds: 3600, background: true }
+    )
+  } catch (e) {
+    console.warn('TTL index may already exist:', e.message)
+  }
+}
+ensureIndex()
 
 router.post('/', async (req, res) => {
   try {
@@ -30,10 +26,20 @@ router.post('/', async (req, res) => {
     const match = file.match(/^data:[^;]+;base64,(.+)$/)
     if (match) base64 = match[1]
 
+    const buffer = Buffer.from(base64, 'base64')
     const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_')
-    ensureDir()
-    const filePath = path.join(uploadDir, safeName)
-    fs.writeFileSync(filePath, Buffer.from(base64, 'base64'))
+    const contentType = filename.endsWith('.jpg') || filename.endsWith('.jpeg') ? 'image/jpeg' : 'application/octet-stream'
+
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+
+    await db.collection('uploads').deleteMany({ createdAt: { $lt: new Date(Date.now() - 3600000) } })
+
+    await db.collection('uploads').updateOne(
+      { filename: safeName },
+      { $set: { filename: safeName, data: buffer, contentType, createdAt: new Date() } },
+      { upsert: true }
+    )
 
     const host = process.env.VERCEL_URL || req.get('host')
     const protocol = host?.includes('localhost') ? 'http' : 'https'
@@ -44,10 +50,20 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.get('/:name', (req, res) => {
-  const filePath = path.join(uploadDir, req.params.name)
-  if (fs.existsSync(filePath)) return res.sendFile(filePath)
-  res.status(404).json({ error: 'File not found' })
+router.get('/:name', async (req, res) => {
+  try {
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+    const doc = await db.collection('uploads').findOne({ filename: req.params.name })
+    if (!doc) return res.status(404).json({ error: 'File not found' })
+
+    res.set('Content-Type', doc.contentType)
+    res.set('Cache-Control', 'public, max-age=86400')
+    res.send(doc.data.buffer || doc.data)
+  } catch (e) {
+    console.error('File serve error:', e.message)
+    res.status(500).json({ error: e.message })
+  }
 })
 
 export default router
