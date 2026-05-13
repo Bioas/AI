@@ -1,157 +1,108 @@
 import { useApp } from '../context/AppContext'
 import { formatMonth } from '../lib/constants'
 
-export default function InvoicePreview({ inv, qrImage }) {
+export default function InvoicePreview({ inv }) {
   const { settings } = useApp()
   const cf = settings.commonFee || 0
   const inf = settings.internetFee || 0
-  const promptpay = settings.promptpayNumber || '090-243-9797'
   const items = [
-    ...(inv.rent > 0 ? [{ desc: 'ค่าเช่าห้อง', amount: inv.rent }] : []),
-    ...(inv.elecCost > 0 ? [{ desc: 'ค่าไฟฟ้า', amount: inv.elecCost, unit: `${inv.elecUnits} หน่วย` }] : []),
-    ...(inv.waterCost > 0 ? [{ desc: 'ค่าน้ำประปา', amount: inv.waterCost, unit: `${inv.waterUnits} หน่วย` }] : []),
-    ...(cf > 0 ? [{ desc: 'ค่าส่วนกลาง', amount: cf }] : []),
-    ...(inf > 0 ? [{ desc: 'ค่าอินเทอร์เน็ต', amount: inf }] : []),
+    { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
+    { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
+    { desc: 'ค่าน้ำประปา', detail: `${inv.waterUnits} หน่วย × ${inv.rateWater} บาท`, amount: inv.waterCost },
+    ...(cf > 0 ? [{ desc: 'ค่าส่วนกลาง', detail: '', amount: cf }] : []),
+    ...(inf > 0 ? [{ desc: 'ค่าอินเทอร์เน็ต', detail: '', amount: inf }] : []),
   ]
   const total = items.reduce((s, i) => s + i.amount, 0)
-
   const now = new Date()
-  const dueD = new Date(now.getFullYear(), now.getMonth(), 5)
-  if (dueD < now) dueD.setMonth(dueD.getMonth() + 1)
-  const dueStr = dueD.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+  const y = now.getFullYear() + 543
+  const m = now.toLocaleDateString('th-TH', { month: 'short' })
+  const issueDate = `30 ${m} ${y}`
 
   return (
-    <div id="invoicePdfContent" style={{
-      width: 720,
-      padding: 0,
-      fontFamily: "'Sarabun', 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      background: '#f5f7fa',
-    }}>
-      {/* Outer card container */}
-      <div style={{
-        width: 640,
-        margin: '40px auto',
-        borderRadius: 24,
-        overflow: 'hidden',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
-        background: '#ffffff',
-      }}>
-        {/* ── Gradient Header ── */}
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: '32px 36px 28px',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
-          <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-          <div style={{ position: 'absolute', bottom: -20, left: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, letterSpacing: 1, marginBottom: 4 }}>INVOICE</div>
-                <div style={{ color: '#ffffff', fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>ใบแจ้งหนี้</div>
-              </div>
-              {settings.logo && (
-                <img src={settings.logo} alt="" style={{ height: 40, width: 40, borderRadius: 12, objectFit: 'contain', background: 'rgba(255,255,255,0.2)', padding: 4 }} />
-              )}
-            </div>
-            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 16, lineHeight: 1.6 }}>
-              {settings.dormName || 'หอพัก'} • {settings.phone}
-            </div>
+    <div id="invoicePdfContent" className="bg-white mx-auto font-sans text-[11px] text-neutral-700 leading-relaxed" style={{ padding: 40 }}>
+      {/* Top accent bar */}
+      <div className="h-1.5 bg-gradient-to-r from-amber-600 to-amber-400 rounded-full mb-6" />
+
+      {/* Header */}
+      <div className="flex justify-between items-start pb-6 mb-6 border-b border-amber-200/60">
+        <div className="flex items-center gap-3">
+          {settings.logo && <img src={settings.logo} alt="" className="h-16 w-16 object-contain shrink-0" />}
+          <div>
+            <div className="text-base font-bold text-amber-800">{settings.dormName || 'หอพัก'}</div>
+            <div className="text-[10px] text-neutral-400 mt-0.5">{settings.address}</div>
+            <div className="text-[10px] text-neutral-400">โทร {settings.phone}</div>
           </div>
         </div>
-
-        {/* ── Customer Info ── */}
-        <div style={{ padding: '24px 36px', borderBottom: '1px solid #f0f0f0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div>
-              <div style={{ color: '#9ca3af', fontSize: 11, marginBottom: 2 }}>ผู้เช่า</div>
-              <div style={{ color: '#1f2937', fontSize: 15, fontWeight: 600 }}>{inv.tenant}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ color: '#9ca3af', fontSize: 11, marginBottom: 2 }}>ห้อง</div>
-              <div style={{ color: '#1f2937', fontSize: 15, fontWeight: 600 }}>{inv.room}</div>
-            </div>
-            <div>
-              <div style={{ color: '#9ca3af', fontSize: 11, marginBottom: 2 }}>เดือน</div>
-              <div style={{ color: '#1f2937', fontSize: 15, fontWeight: 600 }}>{formatMonth(inv.month)}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ color: '#9ca3af', fontSize: 11, marginBottom: 2 }}>กำหนดชำระ</div>
-              <div style={{ color: '#ef4444', fontSize: 15, fontWeight: 600 }}>{dueStr}</div>
-            </div>
-          </div>
+        <div className="text-right pt-1">
+          <div className="text-base font-bold text-amber-700">ใบแจ้งหนี้</div>
+          <div className="text-[10px] text-neutral-400 mt-0.5">{issueDate}</div>
         </div>
+      </div>
 
-        {/* ── Fee Items ── */}
-        <div style={{ padding: '20px 36px 12px' }}>
+      {/* Bill To */}
+      <div className="mb-6 px-4 py-3 bg-gradient-to-r from-amber-50/80 to-amber-50/30 rounded-lg border border-amber-100/60">
+        <div className="grid grid-cols-2 gap-y-1.5 text-[11px]">
+          <div><span className="text-amber-500">ผู้พัก</span> <span className="font-medium text-neutral-800 ml-2">{inv.tenant}</span></div>
+          <div className="text-right"><span className="text-amber-500">ห้อง</span> <span className="font-medium text-neutral-800 ml-2">{inv.room}</span></div>
+          <div><span className="text-amber-500">เดือน</span> <span className="font-medium text-neutral-800 ml-2">{formatMonth(inv.month)}</span></div>
+          <div className="text-right"><span className="text-amber-500">วันที่</span> <span className="font-medium text-neutral-800 ml-2">{issueDate}</span></div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <table className="w-full mb-6">
+        <thead>
+          <tr className="border-b-2 border-amber-200/60">
+            <th className="text-left pb-2 font-semibold text-[10px] text-amber-700 uppercase tracking-wider">รายการ</th>
+            <th className="text-left pb-2 font-semibold text-[10px] text-amber-700 uppercase tracking-wider">รายละเอียด</th>
+            <th className="text-right pb-2 font-semibold text-[10px] text-amber-700 uppercase tracking-wider">จำนวนเงิน</th>
+          </tr>
+        </thead>
+        <tbody>
           {items.map((item, i) => (
-            <div key={i} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '10px 0',
-              borderBottom: i < items.length - 1 ? '1px solid #f5f5f5' : 'none',
-            }}>
-              <div>
-                <div style={{ color: '#374151', fontSize: 14, fontWeight: 500 }}>{item.desc}</div>
-                {item.unit && <div style={{ color: '#9ca3af', fontSize: 11, marginTop: 1 }}>{item.unit}</div>}
-              </div>
-              <div style={{ color: '#1f2937', fontSize: 14, fontWeight: 600 }}>
-                {item.amount.toLocaleString()} <span style={{ fontSize: 11, color: '#9ca3af' }}>฿</span>
-              </div>
-            </div>
+            <tr key={i} className="border-b border-amber-50">
+              <td className="py-2 pr-2 text-[11px] text-neutral-800">{item.desc}</td>
+              <td className="py-2 pr-2 text-[10px] text-neutral-400">{item.detail}</td>
+              <td className="py-2 text-right text-[11px] font-medium text-neutral-800">{item.amount.toLocaleString()}</td>
+            </tr>
           ))}
-        </div>
+        </tbody>
+      </table>
 
-        {/* ── Total ── */}
-        <div style={{
-          margin: '16px 36px',
-          padding: '16px 20px',
-          borderRadius: 16,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        }}>
-          <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 500 }}>รวมทั้งสิ้น</div>
-          <div style={{ color: '#ffffff', fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
-            {total.toLocaleString()} <span style={{ fontSize: 13, fontWeight: 500 }}>บาท</span>
-          </div>
+      {/* Total */}
+      <div className="flex justify-end pb-6 mb-6 border-b border-amber-200/60">
+        <div className="flex items-baseline gap-6">
+          <span className="text-sm font-bold text-amber-700">รวมทั้งสิ้น</span>
+          <span className="text-base font-bold text-amber-700">{total.toLocaleString()} บาท</span>
         </div>
+      </div>
 
-        {/* ── QR Payment Section ── */}
-        <div style={{
-          margin: '20px 36px',
-          padding: '24px',
-          borderRadius: 16,
-          background: '#fafbff',
-          border: '1px solid #e8eaff',
-          textAlign: 'center',
-        }}>
-          <div style={{ color: '#4b5563', fontSize: 12, fontWeight: 600, marginBottom: 16, letterSpacing: 0.5 }}>
-            ชำระเงินด้วย PromptPay
+      {/* Payment */}
+      <div className="flex gap-6">
+        <div className="flex-1 space-y-2">
+          <div className="text-[10px] text-neutral-500 leading-snug">
+            <div className="font-semibold text-amber-700 mb-0.5">💳 ช่องทางการชำระเงิน</div>
+            พร้อมเพย์ <span className="font-semibold text-neutral-700">0902439797</span><br />
+            นงลักษณ์ นิพรรัมย์ — ธนาคารกรุงไทย
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-            {qrImage ? (
-              <img src={qrImage} alt="QR PromptPay" style={{ width: 180, height: 180, borderRadius: 12 }} />
-            ) : (
-              <div style={{ width: 180, height: 180, borderRadius: 12, background: '#f0f0f5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 12 }}>
-                กำลังโหลด QR...
-              </div>
-            )}
-          </div>
-          <div style={{ color: '#6b7280', fontSize: 12 }}>
-            พร้อมเพย์ • <span style={{ fontWeight: 600, color: '#374151' }}>{promptpay}</span>
-          </div>
-          <div style={{ color: '#ef4444', fontSize: 11, marginTop: 8, opacity: 0.7 }}>
-            หลังจากชำระแล้ว กรุณาแจ้งผู้ดูแลหอพัก
+          <div className="text-[10px] text-amber-600/70 leading-snug pt-2 border-t border-amber-100">
+            ⚠️ กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
+            หากชำระหลังกำหนด คิดค่าปรับวันละ 50 บาท
           </div>
         </div>
+        {settings.qrCode && (
+          <div className="shrink-0 flex flex-col items-center justify-center">
+            <div className="p-2 border-2 border-dashed border-amber-200 rounded-xl">
+              <img src={settings.qrCode} alt="QR" className="w-20 h-20 object-contain" />
+            </div>
+            <span className="text-[8px] text-amber-400 mt-1">สแกนชำระเงิน</span>
+          </div>
+        )}
+      </div>
 
-        {/* ── Footer ── */}
-        <div style={{ padding: '20px 36px 28px', borderTop: '1px solid #f0f0f0' }}>
-          <div style={{ color: '#9ca3af', fontSize: 10, textAlign: 'center', lineHeight: 1.6 }}>
-            {settings.dormName || 'หอพัก'} • โทร {settings.phone}<br />
-            ใบแจ้งหนี้ฉบับนี้จัดทำโดยระบบอัตโนมัติ
-          </div>
-        </div>
+      {/* Footer */}
+      <div className="text-center mt-6 pt-4 border-t border-amber-100">
+        <p className="text-[9px] text-amber-400">{settings.dormName || 'หอพัก'} • โทร {settings.phone}</p>
       </div>
     </div>
   )

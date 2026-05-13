@@ -6,7 +6,7 @@ const router = Router()
 const defaults = {
   dormName: 'หอพักสุขใจ', address: '123 ถ.สุขุมวิท กรุงเทพฯ', phone: '081-234-5678',
   rateElec: 7, rateWater: 20, commonFee: 0, internetFee: 0,
-  channelToken: '', logo: '', promptpayNumber: '090-243-9797',
+  channelToken: '', logo: '',
 }
 
 router.get('/', async (req, res) => {

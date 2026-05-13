@@ -9,7 +9,7 @@ export function AppProvider({ children }) {
   const [meters, setMeters] = useState([])
   const [settings, setSettings] = useState({
     dormName: '', address: '', phone: '', rateElec: 7, rateWater: 20,
-    channelToken: '', logo: '', commonFee: 0, internetFee: 0, promptpayNumber: '',
+    channelToken: '', logo: '', commonFee: 0, internetFee: 0,
   })
   const [toasts, setToasts] = useState([])
   const [modal, setModal] = useState(null)
@@ -20,7 +20,6 @@ export function AppProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [meterLocal, setMeterLocal] = useState({})
-  const [sendingQrImage, setSendingQrImage] = useState(null)
 
   const toast = useCallback((msg, err = false) => {
     const id = Date.now().toString(36)
@@ -232,21 +231,9 @@ export function AppProvider({ children }) {
     }
 
     try {
-      toast('กำลังสร้าง QR Code...')
-      const qrRes = await fetch('/api/qr/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ promptpayNumber: settings.promptpayNumber, amount: inv.total }),
-      })
-      const qrData = await qrRes.json()
-      if (!qrRes.ok) throw new Error(qrData.error || 'QR generation failed')
-
-      setSendingQrImage(qrData.qrImage)
-      await new Promise(r => setTimeout(r, 250))
-
       toast('กำลังสร้างรูปภาพใบแจ้งหนี้...')
       const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#f5f7fa' })
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
 
       const MAX = 1024
       let outCanvas = canvas
@@ -260,19 +247,31 @@ export function AppProvider({ children }) {
         outCanvas = c
       }
 
-      const jpegBase64 = outCanvas.toDataURL('image/jpeg', 0.9)
-      const base = `invoice_${inv.room}_${inv.month.replace('/', '-')}`
+      const PV_MAX = 240
+      const pvRatio = Math.min(PV_MAX / outCanvas.width, PV_MAX / outCanvas.height)
+      const pvC = document.createElement('canvas')
+      pvC.width = Math.round(outCanvas.width * pvRatio)
+      pvC.height = Math.round(outCanvas.height * pvRatio)
+      const pvCtx = pvC.getContext('2d')
+      pvCtx.drawImage(outCanvas, 0, 0, pvC.width, pvC.height)
 
       toast('กำลังอัปโหลด...')
-      const origRes = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: jpegBase64, filename: `${base}.jpg` }),
-      })
+      const jpegBase64 = outCanvas.toDataURL('image/jpeg', 0.85)
+      const previewBase64 = pvC.toDataURL('image/jpeg', 0.8)
+      const base = `invoice_${inv.room}_${inv.month.replace('/', '-')}`
+
+      const origRes = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: jpegBase64, filename: `${base}.jpg` }) })
       const origData = await origRes.json()
       if (!origRes.ok) throw new Error(origData.error || 'Upload failed')
 
       toast('กำลังส่งรูปภาพทาง LINE...')
+
+      const md = formatMonth(inv.month)
+      const due = new Date()
+      const dueD = new Date(due.getFullYear(), due.getMonth(), 5)
+      if (dueD < due) dueD.setMonth(dueD.getMonth() + 1)
+      const dueStr = dueD.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      const bm = inv.month
 
       const lineRes = await fetch('/api/line/send-image', {
         method: 'POST',
@@ -280,20 +279,26 @@ export function AppProvider({ children }) {
         body: JSON.stringify({
           to: inv.userId,
           token: settings.channelToken,
-          imageUrl: origData.url,
+          invoiceImageUrl: origData.url,
+          tenantName: inv.tenant,
+          roomNumber: inv.room,
+          billingMonth: bm,
+          totalAmount: inv.total,
+          dueDate: dueStr,
+          roomFee: inv.rent,
+          waterBill: inv.waterCost,
+          electricBill: inv.elecCost,
         }),
       })
       const lineData = await lineRes.json()
-      setSendingQrImage(null)
-      if (lineRes.ok) { toast('ส่ง Invoice ทาง LINE สำเร็จ!'); return true }
+      if (lineRes.ok) { toast('ส่งรูปภาพInvoice ทาง LINE สำเร็จ!'); return true }
       toast('ส่งไม่สำเร็จ: ' + (lineData.error || 'Unknown error'), true)
       return false
     } catch (e) {
-      setSendingQrImage(null)
       toast(`ส่ง Invoice ไม่สำเร็จ: ${e.message}`, true)
       return false
     }
-  }, [settings.channelToken, settings.promptpayNumber, toast])
+  }, [settings.channelToken, toast])
 
   const saveSettingsDelayed = useCallback((() => {
     let timer
@@ -388,7 +393,7 @@ export function AppProvider({ children }) {
     fetchAll, toast,
     calcInv, saveAllMeters, initMeterLocal,
     saveRoom, deleteRoom,
-    downloadPdf, sendLineMsg, sendInvLine, sendPdfToLine, sendingQrImage,
+    downloadPdf, sendLineMsg, sendInvLine, sendPdfToLine,
     saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr,
     exportData, importData,
   }
