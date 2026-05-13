@@ -264,6 +264,18 @@ export function AppProvider({ children }) {
       const origData = await origRes.json()
       if (!origRes.ok) throw new Error(origData.error || 'Upload failed')
 
+      toast('กำลังอัปโหลด QR Code...')
+      let qrImageUrl = null
+      if (settings.qrCode) {
+        const qrRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: settings.qrCode, filename: `qr_${Date.now()}.png` })
+        })
+        const qrData = await qrRes.json()
+        if (qrRes.ok) qrImageUrl = qrData.url
+      }
+
       toast('กำลังส่งรูปภาพทาง LINE...')
 
       const md = formatMonth(inv.month)
@@ -280,6 +292,7 @@ export function AppProvider({ children }) {
           to: inv.userId,
           token: settings.channelToken,
           invoiceImageUrl: origData.url,
+          qrImageUrl,
           tenantName: inv.tenant,
           roomNumber: inv.room,
           billingMonth: bm,
@@ -298,7 +311,7 @@ export function AppProvider({ children }) {
       toast(`ส่ง Invoice ไม่สำเร็จ: ${e.message}`, true)
       return false
     }
-  }, [settings.channelToken, toast])
+  }, [settings.channelToken, settings.qrCode, toast])
 
   const saveSettingsDelayed = useCallback((() => {
     let timer

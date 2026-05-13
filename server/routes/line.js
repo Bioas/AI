@@ -41,7 +41,7 @@ router.post('/send', async (req, res) => {
 })
 
 router.post('/send-image', async (req, res) => {
-  const { to, token, invoiceImageUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate, roomFee, waterBill, electricBill } = req.body
+  const { to, token, invoiceImageUrl, qrImageUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate, roomFee, waterBill, electricBill } = req.body
 
   if (!to || !token || !invoiceImageUrl) {
     return res.status(400).json({ error: 'Missing required fields: to, token, invoiceImageUrl' })
@@ -104,18 +104,16 @@ router.post('/send-image', async (req, res) => {
     }
   ]
 
-  const host = process.env.VERCEL_URL || req.get('host')
-  const protocol = host?.includes('localhost') ? 'http' : 'https'
-  const qrImgUrl = `${protocol}://${host}/api/settings/qr`
-
-  bodyContents.push({
-    type: 'box', layout: 'vertical', margin: 'xxl',
-    contents: [
-      { type: 'text', text: 'QR CODE', color: '#aaaaaa', size: 'xs' },
-      { type: 'image', url: qrImgUrl, size: 'xl', aspectMode: 'fit' },
-      { type: 'text', text: 'Scan QR code เพื่อชำระเงิน', color: '#aaaaaa', size: 'xs', wrap: true, margin: 'md' }
-    ]
-  })
+  if (qrImageUrl) {
+    bodyContents.push({
+      type: 'box', layout: 'vertical', margin: 'xxl',
+      contents: [
+        { type: 'text', text: 'QR CODE', color: '#aaaaaa', size: 'xs' },
+        { type: 'image', url: qrImageUrl, size: 'xl', aspectMode: 'fit' },
+        { type: 'text', text: 'Scan QR code เพื่อชำระเงิน', color: '#aaaaaa', size: 'xs', wrap: true, margin: 'md' }
+      ]
+    })
+  }
 
   const flex = {
     type: 'flex',
