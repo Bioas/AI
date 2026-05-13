@@ -38,9 +38,13 @@ export default function InvoicePreview({ inv }) {
       </div>
 
       {/* Bill To */}
-      <div className="mb-6">
-        <div className="text-[10px] text-neutral-500 mb-2">{inv.tenant}</div>
-        <div className="text-[10px] text-neutral-400">ห้อง {inv.room} • {formatMonth(inv.month)}</div>
+      <div className="mb-6 px-4 py-3 bg-neutral-50 rounded-lg border border-neutral-100">
+        <div className="grid grid-cols-2 gap-y-1.5 text-[11px]">
+          <div><span className="text-neutral-400">ผู้พัก</span> <span className="font-medium text-neutral-800 ml-2">{inv.tenant}</span></div>
+          <div className="text-right"><span className="text-neutral-400">ห้อง</span> <span className="font-medium text-neutral-800 ml-2">{inv.room}</span></div>
+          <div><span className="text-neutral-400">เดือน</span> <span className="font-medium text-neutral-800 ml-2">{formatMonth(inv.month)}</span></div>
+          <div className="text-right"><span className="text-neutral-400">วันที่</span> <span className="font-medium text-neutral-800 ml-2">{issueDate}</span></div>
+        </div>
       </div>
 
       {/* Table */}
@@ -71,15 +75,23 @@ export default function InvoicePreview({ inv }) {
 
       {/* Payment */}
       <div className="flex gap-6">
-        <div className="flex-1 space-y-1">
-          <p className="text-[10px] text-neutral-400">ชำระผ่านพร้อมเพย์ 0902439797</p>
-          <p className="text-[10px] text-neutral-400">นงลักษณ์ นิพรรัมย์ — ธนาคารกรุงไทย</p>
-          <p className="text-[10px] text-neutral-400 mt-2">กำหนดชำระภายในวันที่ 5 ของทุกเดือน</p>
-          <p className="text-[10px] text-neutral-400">หากชำระหลังกำหนด คิดค่าปรับวันละ 50 บาท</p>
+        <div className="flex-1 space-y-2">
+          <div className="text-[10px] text-neutral-400 leading-snug">
+            <div className="font-medium text-neutral-600 mb-0.5">💳 ช่องทางการชำระเงิน</div>
+            พร้อมเพย์ <span className="font-semibold text-neutral-700">0902439797</span><br />
+            นงลักษณ์ นิพรรัมย์ — ธนาคารกรุงไทย
+          </div>
+          <div className="text-[10px] text-neutral-400 leading-snug pt-2 border-t border-neutral-100">
+            ⚠️ กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
+            หากชำระหลังกำหนด คิดค่าปรับวันละ 50 บาท
+          </div>
         </div>
         {settings.qrCode && (
-          <div className="shrink-0">
-            <img src={settings.qrCode} alt="QR" className="w-20 h-20 object-contain" />
+          <div className="shrink-0 flex flex-col items-center justify-center">
+            <div className="p-2 border-2 border-dashed border-neutral-300 rounded-xl">
+              <img src={settings.qrCode} alt="QR" className="w-20 h-20 object-contain" />
+            </div>
+            <span className="text-[8px] text-neutral-300 mt-1">สแกนชำระเงิน</span>
           </div>
         )}
       </div>
