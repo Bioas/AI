@@ -57,11 +57,23 @@ router.get('/:name', async (req, res) => {
     const doc = await db.collection('uploads').findOne({ filename: req.params.name })
     if (!doc) return res.status(404).json({ error: 'File not found' })
 
+    const imgData = Buffer.isBuffer(doc.data) ? doc.data : doc.data.buffer
     res.set('Content-Type', doc.contentType)
     res.set('Cache-Control', 'public, max-age=86400')
-    res.send(doc.data.buffer || doc.data)
+    res.send(imgData)
   } catch (e) {
     console.error('File serve error:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+router.get('/', async (req, res) => {
+  try {
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+    const files = await db.collection('uploads').find({}, { projection: { filename: 1, contentType: 1, createdAt: 1 } }).toArray()
+    res.json({ files: files.map(f => ({ name: f.filename, type: f.contentType, created: f.createdAt })) })
+  } catch (e) {
     res.status(500).json({ error: e.message })
   }
 })
