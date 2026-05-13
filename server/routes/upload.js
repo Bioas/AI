@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
 
     const host = process.env.VERCEL_URL || req.get('host')
     const protocol = host?.includes('localhost') ? 'http' : 'https'
-    res.json({ url: `${protocol}://${host}/api/files/${safeName}` })
+    res.json({ url: `${protocol}://${host}/api/upload/${safeName}` })
   } catch (e) {
     console.error('Upload error:', e.message)
     res.status(500).json({ error: e.message })
