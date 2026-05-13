@@ -150,8 +150,7 @@ router.post('/send-image', async (req, res) => {
             layout: 'baseline',
             spacing: 'sm',
             contents: [
-              { type: 'text', text: '🧾', flex: 0, size: 'lg' },
-              { type: 'text', text: 'ใบแจ้งหนี้ค่าเช่า', weight: 'bold', size: 'xl', color: '#1a1a2e', flex: 1 }
+              { type: 'text', text: 'INVOICE', weight: 'bold', size: 'xl', color: '#1a1a2e', flex: 1 }
             ]
           },
           { type: 'separator', color: '#e5e7eb' },
@@ -215,7 +214,7 @@ router.post('/send-image', async (req, res) => {
                 cornerRadius: 'md',
                 paddingAll: 'md',
                 contents: [
-                  { type: 'text', text: '⚡ ค่าไฟ + 💧 ค่าน้ำ + 🏠 ค่าเช่า', size: 'xs', color: '#6b7280', align: 'center' }
+                  { type: 'text', text: 'คาไฟ + คานา + คาเชา', size: 'xs', color: '#6b7280', align: 'center' }
                 ]
               }
             ]
@@ -233,7 +232,7 @@ router.post('/send-image', async (req, res) => {
           { type: 'separator', color: '#e5e7eb' },
           {
             type: 'button',
-            action: { type: 'uri', label: '👁️ ดูใบแจ้งหนี้', uri: invoiceImageUrl },
+            action: { type: 'uri', label: 'ดูใบแจงหนี้', uri: invoiceImageUrl },
             style: 'primary',
             color: '#22c55e',
             height: 'md',
