@@ -20,7 +20,7 @@ module.exports = {
           900: '#2a350c',
         },
         surface: '#f6f7f4',
-        sidebar: '#cbe54e',
+        sidebar: '#b49029',
       },
       boxShadow: {
         soft: '0 2px 15px -3px rgba(0, 0, 0, 0.04), 0 10px 20px -2px rgba(0, 0, 0, 0.03)',
