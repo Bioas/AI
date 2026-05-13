@@ -143,7 +143,7 @@ function getFilename(roomNumber, billingMonth) {
 
 async function launchBrowser() {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    const chromium = await import('@sparticuz/chromium')
+    const { default: chromium } = await import('@sparticuz/chromium')
     const puppeteer = await import('puppeteer-core')
     return puppeteer.launch({
       args: chromium.args,
