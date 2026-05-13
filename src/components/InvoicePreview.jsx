@@ -23,7 +23,7 @@ export default function InvoicePreview({ inv }) {
       {/* Header */}
       <div className="flex justify-between items-start pb-6 mb-6 border-b border-neutral-200">
         <div className="flex items-center gap-4">
-          {settings.logo && <img src={settings.logo} alt="" className="h-20 w-20 object-contain" />}
+          {settings.logo && <img src={settings.logo} alt="" className="h-14 w-14 object-contain" />}
           <div>
             <div className="text-base font-bold text-neutral-800">{settings.dormName || 'หอพัก'}</div>
             <div className="text-[10px] text-neutral-400">{settings.address}</div>
@@ -32,7 +32,6 @@ export default function InvoicePreview({ inv }) {
         </div>
         <div className="text-right">
           <div className="text-base font-bold text-neutral-800">ใบแจ้งหนี้</div>
-          <div className="text-[10px] text-neutral-400 mt-1">INV-{date.getFullYear() + 543}-{invId()}</div>
           <div className="text-[10px] text-neutral-400">{issueDate}</div>
         </div>
       </div>
