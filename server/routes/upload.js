@@ -37,12 +37,17 @@ router.post('/', async (req, res) => {
 
     const host = process.env.VERCEL_URL || req.get('host')
     const protocol = host?.includes('localhost') ? 'http' : 'https'
-    const baseUrl = `${protocol}://${host}`
-    res.json({ url: `${baseUrl}/uploads/${safeName}` })
+    res.json({ url: `${protocol}://${host}/api/files/${safeName}` })
   } catch (e) {
     console.error('Upload error:', e.message)
     res.status(500).json({ error: e.message })
   }
+})
+
+router.get('/:name', (req, res) => {
+  const filePath = path.join(uploadDir, req.params.name)
+  if (fs.existsSync(filePath)) return res.sendFile(filePath)
+  res.status(404).json({ error: 'File not found' })
 })
 
 export default router

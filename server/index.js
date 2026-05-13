@@ -24,14 +24,6 @@ app.use('/api/invoice', invoiceRouter)
 app.use('/api/line', lineRouter)
 app.use('/api/upload', uploadRouter)
 
-const isVercel = process.env.VERCEL === '1'
-const uploadsPath = isVercel ? '/tmp/uploads' : path.join(__dirname, 'uploads')
-app.use('/uploads', (req, res, next) => {
-  const filePath = path.join(uploadsPath, req.path)
-  if (fs.existsSync(filePath)) return res.sendFile(filePath)
-  next()
-})
-
 app.get('/api/ping', (req, res) => {
   res.json({ message: 'pong' })
 })
