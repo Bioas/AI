@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import styles from '../styles/Home.module.css';
 
 export default function Room({ rooms, editRoom, modal, setModal, setEditRoom, saveRoom, deleteRoom, setToast }) {
@@ -18,7 +18,7 @@ export default function Room({ rooms, editRoom, modal, setModal, setEditRoom, sa
                   <tr key={r.id} style={{ animationDelay: `${i * 0.05}s` }}>
                     <td><span className={styles.roomNumber}>{r.number}</span></td>
                     <td>{r.rent.toLocaleString()} ฿</td>
-                    <td>{r.tenantName || <span className={styles.emptyText}>— ว่าง —</span>}</td>
+                    <td>{r.tenantName || <span className={styles.emptyText}>—</span>}</td>
                     <td>{r.tenantPhone || <span className={styles.emptyText}>—</span>}</td>
                     <td className={styles.mono}>{r.tenantUserId || <span className={styles.emptyText}>ยังไม่ได้ตั้งค่า</span>}</td>
                     <td><div className={styles.actionBtns}>
