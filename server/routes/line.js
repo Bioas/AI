@@ -136,43 +136,78 @@ router.post('/send-image', async (req, res) => {
 
   const flex = {
     type: 'flex',
-    altText: 'ใบแจ้งหนี้ค่าเช่า ' + (roomNumber || ''),
+    altText: 'ใบแจ้งหนี้คาเชา หอง ' + (roomNumber || ''),
     contents: {
       type: 'bubble',
-      hero: {
-        type: 'image',
-        url: invoiceImageUrl,
-        size: 'full',
-        aspectRatio: '20:13',
-        aspectMode: 'fit',
-        backgroundColor: '#FFFFFF'
-      },
       body: {
         type: 'box',
         layout: 'vertical',
-        spacing: 'md',
-        paddingAll: 'xl',
+        spacing: 'sm',
         contents: [
-          { type: 'text', text: 'ใบแจ้งหนี้คาเชา', weight: 'bold', size: 'xl', color: '#1a1a2e' },
+          {
+            type: 'box',
+            layout: 'baseline',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: 'ใบแจงหนี้คาเชา', weight: 'bold', size: 'xl', color: '#1a1a2e', flex: 1 }
+            ]
+          },
           { type: 'separator', color: '#f0f0f0' },
-          { type: 'text', text: 'ผูเชา: ' + (tenantName || ''), size: 'sm', color: '#6b7280' },
-          { type: 'text', text: 'หอง ' + (roomNumber || ''), size: 'xxl', weight: 'bold', color: '#1a1a2e' },
-          { type: 'text', text: billingMonth || '', size: 'sm', color: '#6b7280' },
-          { type: 'separator', color: '#f0f0f0' },
-          { type: 'text', text: (totalAmount || '') + ' บาท', size: 'xxl', weight: 'bold', color: '#22c55e', align: 'center' },
-          { type: 'text', text: 'กาํหมดชำระ: ' + (dueDate || ''), size: 'sm', color: '#ef4444', align: 'center' },
-          { type: 'text', text: 'คาไฟ + คานา + คาเชา', size: 'xs', color: '#9ca3af', align: 'center' }
+          {
+            type: 'box',
+            layout: 'baseline',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: 'ผูเชา', color: '#aaaaaa', size: 'sm', flex: 1 },
+              { type: 'text', text: tenantName || '', wrap: true, color: '#666666', size: 'sm', flex: 5 }
+            ]
+          },
+          {
+            type: 'box',
+            layout: 'baseline',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: 'หอง', color: '#aaaaaa', size: 'sm', flex: 1 },
+              { type: 'text', text: roomNumber || '', wrap: true, color: '#1a1a2e', size: 'xxl', weight: 'bold', flex: 5 }
+            ]
+          },
+          {
+            type: 'box',
+            layout: 'baseline',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: 'เดือน', color: '#aaaaaa', size: 'sm', flex: 1 },
+              { type: 'text', text: billingMonth || '', wrap: true, color: '#666666', size: 'sm', flex: 5 }
+            ]
+          },
+          { type: 'separator', color: '#f0f0f0', margin: 'lg' },
+          {
+            type: 'box',
+            layout: 'baseline',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: 'จำนวนเงิน', color: '#aaaaaa', size: 'sm', flex: 1 },
+              { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'xxl', weight: 'bold', flex: 5 }
+            ]
+          },
+          {
+            type: 'box',
+            layout: 'baseline',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: 'กำหนดชำระ', color: '#aaaaaa', size: 'sm', flex: 1 },
+              { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'sm', weight: 'bold', flex: 5 }
+            ]
+          }
         ]
       },
       footer: {
         type: 'box',
         layout: 'vertical',
         spacing: 'sm',
-        paddingAll: 'xl',
-        paddingTop: 'none',
         contents: [
           { type: 'separator', color: '#f0f0f0' },
-          { type: 'button', action: { type: 'uri', label: 'ดูใบแจงหนี้', uri: invoiceImageUrl }, style: 'primary', color: '#22c55e', height: 'sm', cornerRadius: 'sm' }
+          { type: 'button', action: { type: 'uri', label: 'ดูใบแจงหนี้', uri: invoiceImageUrl }, style: 'link', height: 'sm' }
         ]
       }
     }
