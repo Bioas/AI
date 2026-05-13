@@ -14,7 +14,11 @@ function formatIssueDate() {
 }
 
 function formatNumber(n) {
-  return Number(n).toLocaleString('th-TH')
+  try {
+    return Number(n).toLocaleString('th-TH')
+  } catch {
+    return String(Number(n) || 0)
+  }
 }
 
 function buildInvoiceHtml(data) {
@@ -139,13 +143,13 @@ function getFilename(roomNumber, billingMonth) {
 
 async function launchBrowser() {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    const chromium = (await import('@sparticuz/chromium')).default
-    const { launch } = await import('puppeteer-core')
-    return launch({
+    const chromium = await import('@sparticuz/chromium')
+    const puppeteer = await import('puppeteer-core')
+    return puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 720, height: 900 },
       executablePath: await chromium.executablePath(),
-      headless: true,
+      headless: chromium.headless,
     })
   }
   const { launch } = await import('puppeteer')
@@ -159,6 +163,9 @@ router.post('/', async (req, res) => {
   try {
     const { to, token, items, total, tenantName, roomNumber, billingMonth, dormName, dormAddress, dormPhone, logo, qrCode } = req.body
 
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return res.status(500).json({ error: 'Vercel Blob token not configured. Set BLOB_READ_WRITE_TOKEN in environment.' })
+    }
     if (!to || !token) {
       return res.status(400).json({ error: 'Missing required fields: to, token' })
     }
@@ -186,13 +193,14 @@ router.post('/', async (req, res) => {
     }
 
     let page
+    let buffer
     try {
       page = await browser.newPage()
       await page.setContent(html, { waitUntil: 'networkidle0' })
       await page.waitForSelector('#invoice')
 
       const element = await page.$('#invoice')
-      const buffer = await element.screenshot({
+      buffer = await element.screenshot({
         type: 'jpeg',
         quality: 82,
         omitBackground: false,
@@ -200,6 +208,10 @@ router.post('/', async (req, res) => {
     } finally {
       if (page) await page.close().catch(() => {})
       if (browser) await browser.close().catch(() => {})
+    }
+
+    if (!buffer) {
+      return res.status(500).json({ error: 'Screenshot returned empty buffer' })
     }
 
     const filename = getFilename(roomNumber || 'unknown', billingMonth || 'unknown')
