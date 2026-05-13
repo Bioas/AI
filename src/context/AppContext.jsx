@@ -224,81 +224,48 @@ export function AppProvider({ children }) {
     if (!inv.userId) { toast('ผู้พักห้องนี้ยังไม่ได้กรอก LINE User ID', true); return false }
     if (!settings.channelToken) { toast('กรุณาตั้งค่า Channel Access Token ก่อน', true); return false }
 
-    let el = document.getElementById('invoicePdfContent')
-    if (!el) {
-      toast('กรุณากด "ดู" เพื่อเปิดใบแจ้งหนี้ก่อนส่ง LINE', true)
-      return false
-    }
-
     try {
-      toast('กำลังสร้างรูปภาพใบแจ้งหนี้...')
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      toast('กำลังส่งใบแจ้งหนี้...')
 
-      const MAX = 1024
-      let outCanvas = canvas
-      if (canvas.width > MAX || canvas.height > MAX) {
-        const ratio = Math.min(MAX / canvas.width, MAX / canvas.height)
-        const c = document.createElement('canvas')
-        c.width = Math.round(canvas.width * ratio)
-        c.height = Math.round(canvas.height * ratio)
-        const ctx = c.getContext('2d')
-        ctx.drawImage(canvas, 0, 0, c.width, c.height)
-        outCanvas = c
-      }
+      const items = [
+        { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
+        { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
+        { desc: 'ค่าน้ำประปา', detail: `${inv.waterUnits} หน่วย × ${inv.rateWater} บาท`, amount: inv.waterCost },
+      ]
+      const cf = Number(settings.commonFee) || 0
+      const inf = Number(settings.internetFee) || 0
+      if (cf > 0) items.push({ desc: 'ค่าส่วนกลาง', detail: '', amount: cf })
+      if (inf > 0) items.push({ desc: 'ค่าอินเทอร์เน็ต', detail: '', amount: inf })
+      const total = items.reduce((s, i) => s + i.amount, 0)
 
-      const PV_MAX = 240
-      const pvRatio = Math.min(PV_MAX / outCanvas.width, PV_MAX / outCanvas.height)
-      const pvC = document.createElement('canvas')
-      pvC.width = Math.round(outCanvas.width * pvRatio)
-      pvC.height = Math.round(outCanvas.height * pvRatio)
-      const pvCtx = pvC.getContext('2d')
-      pvCtx.drawImage(outCanvas, 0, 0, pvC.width, pvC.height)
-
-      toast('กำลังอัปโหลด...')
-      const jpegBase64 = outCanvas.toDataURL('image/jpeg', 0.85)
-      const previewBase64 = pvC.toDataURL('image/jpeg', 0.8)
-      const base = `invoice_${inv.room}_${inv.month.replace('/', '-')}`
-
-      const origRes = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: jpegBase64, filename: `${base}.jpg` }) })
-      const origData = await origRes.json()
-      if (!origRes.ok) throw new Error(origData.error || 'Upload failed')
-
-      toast('กำลังส่งรูปภาพทาง LINE...')
-
-      const md = formatMonth(inv.month)
-      const due = new Date()
-      const dueD = new Date(due.getFullYear(), due.getMonth(), 5)
-      if (dueD < due) dueD.setMonth(dueD.getMonth() + 1)
-      const dueStr = dueD.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' })
-      const bm = inv.month
-
-      const lineRes = await fetch('/api/line/send-image', {
+      const res = await fetch('/api/send-invoice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: inv.userId,
           token: settings.channelToken,
-          invoiceImageUrl: origData.url,
+          items,
+          total,
           tenantName: inv.tenant,
           roomNumber: inv.room,
-          billingMonth: bm,
-          totalAmount: inv.total,
-          dueDate: dueStr,
-          roomFee: inv.rent,
-          waterBill: inv.waterCost,
-          electricBill: inv.elecCost,
+          billingMonth: formatMonth(inv.month),
+          dormName: settings.dormName,
+          dormAddress: settings.address,
+          dormPhone: settings.phone,
+          logo: settings.logo || null,
+          qrCode: settings.qrCode || null,
         }),
       })
-      const lineData = await lineRes.json()
-      if (lineRes.ok) { toast('ส่งรูปภาพInvoice ทาง LINE สำเร็จ!'); return true }
-      toast('ส่งไม่สำเร็จ: ' + (lineData.error || 'Unknown error'), true)
+
+      const data = await res.json()
+      if (res.ok) { toast('ส่ง Invoice ทาง LINE สำเร็จ!'); return true }
+      toast('ส่งไม่สำเร็จ: ' + (data.error || 'Unknown error'), true)
       return false
     } catch (e) {
       toast(`ส่ง Invoice ไม่สำเร็จ: ${e.message}`, true)
       return false
     }
-  }, [settings.channelToken, toast])
+  }, [settings, toast])
 
   const saveSettingsDelayed = useCallback((() => {
     let timer

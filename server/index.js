@@ -9,6 +9,7 @@ import settingsRouter from './routes/settings.js'
 import invoiceRouter from './routes/invoice.js'
 import lineRouter from './routes/line.js'
 import uploadRouter from './routes/upload.js'
+import sendInvoiceRouter from './routes/send-invoice.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -23,6 +24,7 @@ app.use('/api/settings', settingsRouter)
 app.use('/api/invoice', invoiceRouter)
 app.use('/api/line', lineRouter)
 app.use('/api/upload', uploadRouter)
+app.use('/api/send-invoice', sendInvoiceRouter)
 
 app.get('/api/ping', (req, res) => {
   res.json({ message: 'pong' })
