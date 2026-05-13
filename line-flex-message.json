@@ -1,0 +1,228 @@
+{
+  "type": "flex",
+  "altText": "ใบแจ้งหนี้ค่าเช่า ห้อง {{room_number}}",
+  "contents": {
+    "type": "bubble",
+    "direction": "ltr",
+    "header": {
+      "type": "box",
+      "layout": "vertical",
+      "paddingAll": "18px",
+      "paddingBottom": "14px",
+      "backgroundColor": "#FFFFFF",
+      "contents": [
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "contents": [
+            {
+              "type": "box",
+              "layout": "vertical",
+              "width": "4px",
+              "height": "18px",
+              "backgroundColor": "#22C55E",
+              "cornerRadius": "2px",
+              "flex": "none"
+            },
+            {
+              "type": "text",
+              "text": "ใบแจ้งหนี้ค่าเช่า",
+              "weight": "bold",
+              "size": "16px",
+              "color": "#1A1A2E",
+              "margin": "10px",
+              "flex": 0
+            },
+            {
+              "type": "text",
+              "text": "INVOICE",
+              "size": "10px",
+              "color": "#22C55E",
+              "weight": "bold",
+              "margin": "4px",
+              "gravity": "center",
+              "align": "center",
+              "flex": 0,
+              "offsetBottom": "1px"
+            }
+          ]
+        }
+      ]
+    },
+    "body": {
+      "type": "box",
+      "layout": "vertical",
+      "paddingAll": "18px",
+      "paddingTop": "0px",
+      "backgroundColor": "#FFFFFF",
+      "contents": [
+        {
+          "type": "separator",
+          "color": "#F0F0F0",
+          "margin": "none"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "margin": "16px",
+          "alignItems": "flex-end",
+          "contents": [
+            {
+              "type": "box",
+              "layout": "vertical",
+              "flex": 1,
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "ห้อง",
+                  "size": "11px",
+                  "color": "#8E8E93",
+                  "weight": "medium"
+                },
+                {
+                  "type": "text",
+                  "text": "{{room_number}}",
+                  "size": "32px",
+                  "color": "#1A1A2E",
+                  "weight": "bold",
+                  "margin": "4px",
+                  "lineSpacing": "0px"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "ยอดชำระ",
+                  "size": "11px",
+                  "color": "#8E8E93",
+                  "weight": "medium",
+                  "align": "right"
+                },
+                {
+                  "type": "text",
+                  "text": "{{total_amount}}",
+                  "size": "28px",
+                  "color": "#22C55E",
+                  "weight": "bold",
+                  "align": "right",
+                  "margin": "4px"
+                },
+                {
+                  "type": "text",
+                  "text": "บาท",
+                  "size": "12px",
+                  "color": "#22C55E",
+                  "weight": "bold",
+                  "align": "right"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "separator",
+          "color": "#F0F0F0"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "margin": "14px",
+          "contents": [
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "flex": 1,
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "ประจำเดือน",
+                  "size": "12px",
+                  "color": "#8E8E93",
+                  "weight": "medium",
+                  "flex": "none"
+                },
+                {
+                  "type": "text",
+                  "text": "{{billing_month}}",
+                  "size": "12px",
+                  "color": "#1A1A2E",
+                  "weight": "bold",
+                  "margin": "8px",
+                  "flex": 0
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "กำหนดชำระ วันที่ 5",
+              "size": "11px",
+              "color": "#EF4444",
+              "weight": "medium",
+              "align": "right",
+              "flex": "none"
+            }
+          ]
+        },
+        {
+          "type": "separator",
+          "color": "#F0F0F0"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "margin": "14px",
+          "contents": [
+            {
+              "type": "text",
+              "text": "⚡ ค่าเช่าและค่าสาธารณูปโภค",
+              "size": "11px",
+              "color": "#8E8E93",
+              "weight": "regular"
+            }
+          ]
+        }
+      ]
+    },
+    "footer": {
+      "type": "box",
+      "layout": "vertical",
+      "paddingAll": "18px",
+      "paddingTop": "0px",
+      "backgroundColor": "#FFFFFF",
+      "contents": [
+        {
+          "type": "separator",
+          "color": "#F0F0F0"
+        },
+        {
+          "type": "button",
+          "action": {
+            "type": "uri",
+            "label": "📄 เปิดไฟล์ PDF",
+            "uri": "{{pdf_url}}"
+          },
+          "margin": "16px",
+          "height": "48px",
+          "style": "primary",
+          "color": "#22C55E",
+          "cornerRadius": "12px",
+          "offsetTop": "2px"
+        },
+        {
+          "type": "text",
+          "text": "ขอบคุณที่ใช้บริการ",
+          "size": "10px",
+          "color": "#C7C7CC",
+          "weight": "regular",
+          "align": "center",
+          "margin": "12px"
+        }
+      ]
+    }
+  }
+}
