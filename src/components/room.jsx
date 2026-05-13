@@ -1,12 +1,12 @@
-﻿import { useApp } from '../context/AppContext';
+import { useApp } from '../context/AppContext'
 
 export default function Room() {
-  const { rooms, setEditRoom, setModal, deleteRoom } = useApp();
+  const { rooms, setEditRoom, setModal, deleteRoom } = useApp()
 
   const handleDelete = (id, number) => {
-    if (!window.confirm(`⚠️ ต้องการลบห้อง ${number}?`)) return;
-    deleteRoom(id);
-  };
+    if (!window.confirm(`⚠️ ต้องการลบห้อง ${number}?`)) return
+    deleteRoom(id)
+  }
 
   return (
     <div className="animate-fadeInUp">
@@ -15,7 +15,7 @@ export default function Room() {
           🚪 จัดการห้อง
         </h2>
         <button
-          onClick={() => { setEditRoom(null); setModal('room'); }}
+          onClick={() => { setEditRoom(null); setModal('room') }}
           className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-emerald-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
         >
           ➕ เพิ่มห้อง
@@ -52,17 +52,13 @@ export default function Room() {
                   <td className="px-4 py-4">
                     <div className="flex gap-1.5">
                       <button
-                        onClick={() => { setEditRoom(r); setModal('room'); }}
+                        onClick={() => { setEditRoom(r); setModal('room') }}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors"
-                      >
-                        ✏️ แก้ไข
-                      </button>
+                      >✏️ แก้ไข</button>
                       <button
                         onClick={() => handleDelete(r.id, r.number)}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
-                      >
-                        🗑️ ลบ
-                      </button>
+                      >🗑️ ลบ</button>
                     </div>
                   </td>
                 </tr>
@@ -72,5 +68,5 @@ export default function Room() {
         </div>
       </div>
     </div>
-  );
+  )
 }

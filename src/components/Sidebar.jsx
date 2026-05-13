@@ -1,17 +1,18 @@
-import { useState } from 'react';
-import { useApp } from '../context/AppContext';
+import { useState } from 'react'
+import { NavLink } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
 
 const NAV_ITEMS = [
-  ['dashboard', '📊', 'แดชบอร์ด'],
-  ['room', '🚪', 'จัดการห้อง'],
-  ['meters', '⚡', 'บันทึกหน่วย'],
-  ['invoice', '🧾', 'ใบแจ้งหนี้'],
-  ['setting', '⚙️', 'ตั้งค่า'],
-];
+  ['/', '📊', 'แดชบอร์ด'],
+  ['/rooms', '🚪', 'จัดการห้อง'],
+  ['/meters', '⚡', 'บันทึกหน่วย'],
+  ['/invoices', '🧾', 'ใบแจ้งหนี้'],
+  ['/settings', '⚙️', 'ตั้งค่า'],
+]
 
 export default function Sidebar() {
-  const { page, setPage, settings, saveSettingsDelayed } = useApp();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const { settings, saveSettingsDelayed } = useApp()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <>
@@ -39,7 +40,7 @@ export default function Sidebar() {
         `}
       >
         <div className="flex flex-col items-center lg:items-stretch px-4 lg:px-6 pt-6 pb-4 border-b border-white/10">
-          <div className="w-11 h-11 lg:w-13 lg:h-13 rounded-xl bg-white/20 flex items-center justify-center text-xl mx-auto lg:mx-0 mb-2 animate-float">
+          <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center text-xl mx-auto lg:mx-0 mb-2 animate-float">
             🏠
           </div>
           <h1 className="hidden lg:block text-base font-bold text-center bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
@@ -51,24 +52,24 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 py-2">
-          {NAV_ITEMS.map(([key, icon, label]) => (
-            <button
-              key={key}
-              onClick={() => { setPage(key); setMobileOpen(false); }}
-              className={`
-                w-full flex items-center gap-3 px-4 lg:px-6 py-3.5 text-sm transition-all duration-300
-                border-l-[3px] border-transparent relative overflow-hidden
-                hover:bg-white/10 hover:translate-x-1
-                ${page === key
-                  ? 'bg-white/15 border-l-white font-semibold shadow-inner'
-                  : 'bg-white/[0.06]'}
-              `}
+          {NAV_ITEMS.map(([path, icon, label]) => (
+            <NavLink
+              key={path}
+              to={path}
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 px-4 lg:px-6 py-3.5 text-sm transition-all duration-300 border-l-[3px] relative overflow-hidden hover:bg-white/10 hover:translate-x-1 ${
+                  isActive
+                    ? 'bg-white/15 border-l-white font-semibold shadow-inner'
+                    : 'bg-white/[0.06] border-l-transparent'
+                }`
+              }
             >
-              <span className="text-xl lg:text-lg w-7 text-center shrink-0 transition-transform duration-200 group-hover:scale-110">
+              <span className="text-xl lg:text-lg w-7 text-center shrink-0 transition-transform duration-200">
                 {icon}
               </span>
               <span className="hidden lg:inline">{label}</span>
-            </button>
+            </NavLink>
           ))}
         </nav>
 
@@ -86,5 +87,5 @@ export default function Sidebar() {
         </div>
       </aside>
     </>
-  );
+  )
 }

@@ -1,13 +1,13 @@
-import { useApp } from '../context/AppContext';
-import { formatMonth } from '../lib/constants';
+import { useApp } from '../context/AppContext'
+import { formatMonth } from '../lib/constants'
 
 export default function Invoice() {
-  const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendInvLine, setViewInv, setModal } = useApp();
+  const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendInvLine, setViewInv, setModal } = useApp()
 
   const handleView = (inv) => {
-    setViewInv(inv);
-    setModal('invoice');
-  };
+    setViewInv(inv)
+    setModal('invoice')
+  }
 
   return (
     <div className="animate-fadeInUp">
@@ -46,7 +46,7 @@ export default function Invoice() {
                   </div>
                 </td></tr>
               ) : rooms.filter(r => r.tenantName).map((r, i) => {
-                const inv = calcInv(r, invMonth);
+                const inv = calcInv(r, invMonth)
                 return (
                   <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                     <td className="px-4 py-4">
@@ -68,12 +68,12 @@ export default function Invoice() {
                       </div>
                     </td>
                   </tr>
-                );
+                )
               })}
             </tbody>
           </table>
         </div>
       </div>
     </div>
-  );
+  )
 }

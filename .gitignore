@@ -1,35 +1,19 @@
-```
-# Dependencies
 node_modules/
-
-# Build outputs
 .next/
 dist/
 build/
 out/
-
-# Environment variables
 .env
 .env.local
 *.env.*
-
-# IDE specific
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Logs
 *.log
-
-# Temporary files
 *.tmp
-
-# TypeScript/Next.js specific
 *.tsbuildinfo
 .next/cache/
-
-# Coverage
 coverage/
 .nyc_output/
-```
+server/node_modules/

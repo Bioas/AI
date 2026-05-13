@@ -1,11 +1,11 @@
-import { useApp } from '../context/AppContext';
-import { formatMonth } from '../lib/constants';
+import { useApp } from '../context/AppContext'
+import { formatMonth } from '../lib/constants'
 
 export default function InvoicePreview({ inv }) {
-  const { settings } = useApp();
-  const commonFee = settings.commonFee || 0;
-  const internetFee = settings.internetFee || 0;
-  const grandTotal = inv.total + commonFee + internetFee;
+  const { settings } = useApp()
+  const commonFee = settings.commonFee || 0
+  const internetFee = settings.internetFee || 0
+  const grandTotal = inv.total + commonFee + internetFee
 
   return (
     <div id="invoicePdfContent" className="bg-white rounded-2xl p-8 md:p-10 max-w-lg mx-auto font-sans">
@@ -78,5 +78,5 @@ export default function InvoicePreview({ inv }) {
         </p>
       </div>
     </div>
-  );
+  )
 }

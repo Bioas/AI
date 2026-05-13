@@ -1,10 +1,10 @@
-import { useApp } from '../context/AppContext';
-import { formatMonth } from '../lib/constants';
+import { useApp } from '../context/AppContext'
+import { formatMonth } from '../lib/constants'
 
 export default function Meters() {
-  const { rooms, settings, meterMonth, setMeterMonth, meterLocal, setMeterField, saveAllMeters, saveSettingsDelayed } = useApp();
+  const { rooms, settings, meterMonth, setMeterMonth, meterLocal, setMeterField, saveAllMeters, saveSettingsDelayed } = useApp()
 
-  const occRooms = rooms.filter(r => r.tenantName);
+  const occRooms = rooms.filter(r => r.tenantName)
 
   return (
     <div className="animate-fadeInUp">
@@ -54,9 +54,9 @@ export default function Meters() {
                   </div>
                 </td></tr>
               ) : occRooms.map((r, i) => {
-                const ml = meterLocal[r.id] || { cur: { elec: '', water: '' }, prev: { elec: '', water: '' } };
-                const eu = (ml.cur.elec !== '' && ml.prev.elec !== '') ? Math.max(0, Number(ml.cur.elec) - Number(ml.prev.elec)) : '—';
-                const wu = (ml.cur.water !== '' && ml.prev.water !== '') ? Math.max(0, Number(ml.cur.water) - Number(ml.prev.water)) : '—';
+                const ml = meterLocal[r.id] || { cur: { elec: '', water: '' }, prev: { elec: '', water: '' } }
+                const eu = (ml.cur.elec !== '' && ml.prev.elec !== '') ? Math.max(0, Number(ml.cur.elec) - Number(ml.prev.elec)) : '—'
+                const wu = (ml.cur.water !== '' && ml.prev.water !== '') ? Math.max(0, Number(ml.cur.water) - Number(ml.prev.water)) : '—'
                 return (
                   <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                     <td className="px-3 py-4">
@@ -82,7 +82,7 @@ export default function Meters() {
                     </td>
                     <td className="px-3 py-4 font-bold text-emerald-600 text-sm">{wu}</td>
                   </tr>
-                );
+                )
               })}
             </tbody>
           </table>
@@ -107,5 +107,5 @@ export default function Meters() {
         </div>
       </div>
     </div>
-  );
+  )
 }

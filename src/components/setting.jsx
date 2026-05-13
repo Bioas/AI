@@ -1,8 +1,7 @@
-import { useApp } from '../context/AppContext';
-import Link from 'next/link';
+import { useApp } from '../context/AppContext'
 
 export default function Setting() {
-  const { settings, saveSettingsDelayed, uploadLogo, removeLogo, sendLineMsg, exportData, importData, toast } = useApp();
+  const { settings, saveSettingsDelayed, uploadLogo, removeLogo, sendLineMsg, exportData, importData, toast } = useApp()
 
   return (
     <div className="animate-fadeInUp">
@@ -59,10 +58,10 @@ export default function Setting() {
         <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2.5">💰 อัตราค่าใช้จ่าย</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {[
-            ['rateElec', 'ค่าไฟต่อหน่วย (บาท)', 0],
-            ['rateWater', 'ค่าน้ำต่อหน่วย (บาท)', 0],
-            ['commonFee', 'ค่าส่วนกลาง/เดือน (บาท)', 0],
-            ['internetFee', 'ค่าอินเตอร์เน็ต/เดือน (บาท)', 0],
+            ['rateElec', 'ค่าไฟต่อหน่วย (บาท)'],
+            ['rateWater', 'ค่าน้ำต่อหน่วย (บาท)'],
+            ['commonFee', 'ค่าส่วนกลาง/เดือน (บาท)'],
+            ['internetFee', 'ค่าอินเตอร์เน็ต/เดือน (บาท)'],
           ].map(([key, label]) => (
             <div key={key}>
               <label className="block text-sm font-semibold text-slate-900 mb-2">{label}</label>
@@ -93,9 +92,9 @@ export default function Setting() {
             className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
         </div>
         <button onClick={async () => {
-          const uid = prompt('กรอก LINE User ID เพื่อทดสอบ (ขึ้นต้นด้วย U):');
-          if (!uid || !uid.startsWith('U')) { toast('User ID ไม่ถูกต้อง', true); return; }
-          await sendLineMsg(uid, `🧪 ทดสอบ LINE\nเวลา: ${new Date().toLocaleString('th-TH')}\n✅ ระบบพร้อมใช้งาน!`);
+          const uid = prompt('กรอก LINE User ID เพื่อทดสอบ (ขึ้นต้นด้วย U):')
+          if (!uid || !uid.startsWith('U')) { toast('User ID ไม่ถูกต้อง', true); return }
+          await sendLineMsg(uid, `🧪 ทดสอบ LINE\nเวลา: ${new Date().toLocaleString('th-TH')}\n✅ ระบบพร้อมใช้งาน!`)
         }}
           className="mt-4 bg-gradient-to-r from-violet-500 to-violet-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-violet-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
           🧪 ทดสอบส่งข้อความ
@@ -114,5 +113,5 @@ export default function Setting() {
         <input type="file" id="importFile" accept=".json" style={{ display: 'none' }} onChange={importData} />
       </div>
     </div>
-  );
+  )
 }

@@ -1,44 +1,41 @@
-import { useMemo } from 'react';
-import { useApp } from '../context/AppContext';
-import { formatMonth } from '../lib/constants';
+import { useMemo } from 'react'
+import { useApp } from '../context/AppContext'
+import { formatMonth } from '../lib/constants'
 
 export default function Dashboard() {
-  const { rooms, meters, calcInv } = useApp();
-  const now = new Date();
-  const cm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const { rooms, meters, calcInv } = useApp()
+  const now = new Date()
+  const cm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
   const { occ, pending, revenue, recentData } = useMemo(() => {
-    const occ = rooms.filter(r => r.tenantName);
-    let pending = 0;
-    let revenue = 0;
+    const occ = rooms.filter(r => r.tenantName)
+    let pending = 0
+    let revenue = 0
     occ.forEach(r => {
-      const hasMeter = meters.some(x => x.roomId === r.id && x.month === cm);
-      if (!hasMeter) pending++;
-      else {
-        const inv = calcInv(r, cm);
-        revenue += inv.total;
-      }
-    });
+      const hasMeter = meters.some(x => x.roomId === r.id && x.month === cm)
+      if (!hasMeter) pending++
+      else { const inv = calcInv(r, cm); revenue += inv.total }
+    })
     const recentData = occ.map(r => {
-      let la = null;
+      let la = null
       for (let y = now.getFullYear(); y >= now.getFullYear() - 1; y--) {
         for (let m = 11; m >= 0; m--) {
-          const ym = `${y}-${String(m + 1).padStart(2, '0')}`;
-          if (meters.some(x => x.roomId === r.id && x.month === ym)) { la = ym; break; }
+          const ym = `${y}-${String(m + 1).padStart(2, '0')}`
+          if (meters.some(x => x.roomId === r.id && x.month === ym)) { la = ym; break }
         }
-        if (la) break;
+        if (la) break
       }
-      return la ? { room: r, month: la, inv: calcInv(r, la) } : null;
-    }).filter(Boolean).sort((a, b) => b.month.localeCompare(a.month)).slice(0, 10);
-    return { occ, pending, revenue, recentData };
-  }, [rooms, meters, calcInv, cm, now]);
+      return la ? { room: r, month: la, inv: calcInv(r, la) } : null
+    }).filter(Boolean).sort((a, b) => b.month.localeCompare(a.month)).slice(0, 10)
+    return { occ, pending, revenue, recentData }
+  }, [rooms, meters, calcInv, cm, now])
 
   const stats = [
     ['🚪', rooms.length, 'ห้องทั้งหมด', 'from-blue-500 to-blue-400'],
     ['👥', occ.length, 'ผู้พักอาศัย', 'from-emerald-500 to-emerald-400'],
     ['📋', pending, 'รอเรียกเก็บ', 'from-amber-500 to-amber-400'],
     ['💰', revenue.toLocaleString(), 'รายได้ (บาท)', 'from-orange-500 to-orange-400'],
-  ];
+  ]
 
   return (
     <div className="animate-fadeInUp">
@@ -59,23 +56,15 @@ export default function Dashboard() {
             style={{ animationDelay: `${i * 0.08}s` }}
           >
             <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${gradient} rounded-t-2xl`} />
-            <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              {label}
-            </div>
-            <div className="text-3xl font-extrabold text-slate-900">
-              {val}
-            </div>
-            <span className="absolute right-6 top-1/2 -translate-y-1/2 text-5xl opacity-[0.07] transition-transform duration-300 group-hover:-translate-y-[52%]">
-              {icon}
-            </span>
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">{label}</div>
+            <div className="text-3xl font-extrabold text-slate-900">{val}</div>
+            <span className="absolute right-6 top-1/2 -translate-y-1/2 text-5xl opacity-[0.07]">{icon}</span>
           </div>
         ))}
       </div>
 
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-lg transition-all duration-300">
-        <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2.5">
-          📋 รายการล่าสุด
-        </h3>
+        <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2.5">📋 รายการล่าสุด</h3>
         <div className="overflow-x-auto rounded-xl border border-slate-100">
           <table className="w-full text-sm">
             <thead>
@@ -114,5 +103,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-  );
+  )
 }

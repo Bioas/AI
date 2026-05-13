@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import { useApp } from '../context/AppContext';
-import Modal from './Modal';
+import { useState } from 'react'
+import { useApp } from '../context/AppContext'
+import Modal from './Modal'
 
 export default function RoomModal() {
-  const { editRoom, saveRoom } = useApp();
-  const [num, setNum] = useState(editRoom?.number || '');
-  const [rent, setRent] = useState(editRoom?.rent ? editRoom.rent.toString() : '');
-  const [name, setName] = useState(editRoom?.tenantName || '');
-  const [phone, setPhone] = useState(editRoom?.tenantPhone || '');
-  const [userId, setUserId] = useState(editRoom?.tenantUserId || '');
-  const [note, setNote] = useState(editRoom?.note || '');
+  const { editRoom, saveRoom, setModal } = useApp()
+  const [num, setNum] = useState(editRoom?.number || '')
+  const [rent, setRent] = useState(editRoom?.rent ? editRoom.rent.toString() : '')
+  const [name, setName] = useState(editRoom?.tenantName || '')
+  const [phone, setPhone] = useState(editRoom?.tenantPhone || '')
+  const [userId, setUserId] = useState(editRoom?.tenantUserId || '')
+  const [note, setNote] = useState(editRoom?.note || '')
 
   const handleSave = () => {
-    if (!num.trim()) { alert('กรุณาระบุหมายเลขห้อง'); return; }
+    if (!num.trim()) { alert('กรุณาระบุหมายเลขห้อง'); return }
     saveRoom({
       id: editRoom?.id || undefined,
       number: num.trim(),
@@ -21,8 +21,8 @@ export default function RoomModal() {
       tenantPhone: phone.trim(),
       tenantUserId: userId.trim(),
       note: note.trim(),
-    });
-  };
+    })
+  }
 
   return (
     <Modal>
@@ -75,5 +75,5 @@ export default function RoomModal() {
           className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all duration-300">💾 บันทึก</button>
       </div>
     </Modal>
-  );
+  )
 }
