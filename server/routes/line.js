@@ -39,90 +39,6 @@ router.post('/send', async (req, res) => {
   }
 })
 
-router.post('/send-file', async (req, res) => {
-  const { to, token, displayName, fileUrl } = req.body
-
-  if (!to || !token || !displayName || !fileUrl) {
-    return res.status(400).json({ error: 'Missing required fields: to, token, displayName, fileUrl' })
-  }
-
-  if (!to.startsWith('U')) {
-    return res.status(400).json({ error: 'Invalid LINE User ID. Must start with U' })
-  }
-
-  try {
-    const response = await fetch('https://api.line.me/v2/bot/message/push', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        to,
-        messages: [{
-          type: 'flex',
-          altText: `📄 ใบแจ้งหนี้ ${displayName}`,
-          contents: {
-            type: 'bubble',
-            header: {
-              type: 'box', layout: 'vertical', paddingAll: '18px', paddingBottom: '14px', backgroundColor: '#FFFFFF',
-              contents: [{
-                type: 'box', layout: 'horizontal', alignItems: 'center',
-                contents: [
-                  { type: 'box', layout: 'vertical', width: '4px', height: '18px', backgroundColor: '#22C55E', cornerRadius: '2px', flex: 'none' },
-                  { type: 'text', text: 'ใบแจ้งหนี้ค่าเช่า', weight: 'bold', size: '16px', color: '#1A1A2E', margin: '10px', flex: 0 },
-                  { type: 'text', text: 'INVOICE', size: '10px', color: '#22C55E', weight: 'bold', margin: '4px', gravity: 'center', align: 'center', flex: 0, offsetBottom: '1px' },
-                ]
-              }]
-            },
-            body: {
-              type: 'box', layout: 'vertical', paddingAll: '18px', paddingTop: '0px', backgroundColor: '#FFFFFF',
-              contents: [
-                { type: 'separator', color: '#F0F0F0', margin: 'none' },
-                { type: 'box', layout: 'horizontal', margin: '16px', alignItems: 'flex-end',
-                  contents: [
-                    { type: 'box', layout: 'vertical', flex: 1,
-                      contents: [
-                        { type: 'text', text: 'ห้อง', size: '11px', color: '#8E8E93', weight: 'medium' },
-                        { type: 'text', text: displayName.replace('invoice_', '').replace('.pdf', '').split('_')[0], size: '32px', color: '#1A1A2E', weight: 'bold', margin: '4px', lineSpacing: '0px' },
-                      ]
-                    },
-                  ]
-                },
-                { type: 'separator', color: '#F0F0F0' },
-                { type: 'box', layout: 'horizontal', margin: '14px',
-                  contents: [
-                    { type: 'text', text: '📄 ใบแจ้งหนี้พร้อมให้ดาวน์โหลด', size: '12px', color: '#1A1A2E', weight: 'bold' },
-                  ]
-                },
-                { type: 'separator', color: '#F0F0F0' },
-              ]
-            },
-            footer: {
-              type: 'box', layout: 'vertical', paddingAll: '18px', paddingTop: '0px', backgroundColor: '#FFFFFF',
-              contents: [
-                { type: 'separator', color: '#F0F0F0' },
-                { type: 'button', action: { type: 'uri', label: '📄 เปิดไฟล์ PDF', uri: fileUrl }, margin: '16px', height: '48px', style: 'primary', color: '#22C55E', cornerRadius: '12px' },
-              ]
-            }
-          }
-        }],
-      }),
-    })
-
-    const data = await response.json()
-
-    if (response.ok) {
-      return res.status(200).json({ success: true, data })
-    } else {
-      return res.status(response.status).json({ error: data.message || 'LINE API error', details: data })
-    }
-  } catch (error) {
-    console.error('LINE send file error:', error)
-    return res.status(500).json({ error: error.message || 'Internal server error' })
-  }
-})
-
 router.post('/send-image', async (req, res) => {
   const { to, token, invoiceImageUrl, qrCodeUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate } = req.body
 
@@ -135,46 +51,47 @@ router.post('/send-image', async (req, res) => {
   }
 
   const bodyContents = [
-    { type: 'text', text: 'INVOICE', weight: 'bold', size: 'xl', color: '#1a1a2e', wrap: true },
+    { type: 'text', text: 'ใบแจ้งหนี้ค่าเช่า', weight: 'bold', size: 'xl', color: '#1a1a2e', wrap: true },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
-        { type: 'text', text: 'ผูเชา', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: tenantName || '', wrap: true, color: '#666666', size: 'sm', flex: 4 }
+        { type: 'text', text: 'ชื่อผู้เช่า', color: '#aaaaaa', size: 'sm', flex: 1 },
+        { type: 'text', text: tenantName || '', wrap: true, color: '#666666', size: 'sm', flex: 4, align: 'end' }
       ]
     },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
-        { type: 'text', text: 'หอง', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: roomNumber || '', wrap: true, color: '#1a1a2e', size: 'xxl', weight: 'bold', flex: 4 }
+        { type: 'text', text: 'ห้อง', color: '#aaaaaa', size: 'sm', flex: 1 },
+        { type: 'text', text: roomNumber || '', wrap: true, color: '#1a1a2e', size: 'sm', flex: 4, align: 'end' }
       ]
     },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
         { type: 'text', text: 'เดือน', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: billingMonth || '', wrap: true, color: '#666666', size: 'sm', flex: 4 }
+        { type: 'text', text: billingMonth || '', wrap: true, color: '#666666', size: 'sm', flex: 4, align: 'end' }
       ]
     },
     { type: 'separator', color: '#e5e7eb', margin: 'xl' },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
         { type: 'text', text: 'จำนวนเงิน', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'xxl', weight: 'bold', flex: 4 }
+        { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'sm', flex: 4, align: 'end' }
       ]
     },
     { type: 'box', layout: 'baseline', spacing: 'sm',
       contents: [
         { type: 'text', text: 'กำหนดชำระ', color: '#aaaaaa', size: 'sm', flex: 1 },
-        { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'sm', weight: 'bold', flex: 4 }
+        { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'sm', flex: 4, align: 'end' }
       ]
     }
   ]
 
   if (qrCodeUrl) {
     bodyContents.push({
-      type: 'box', layout: 'vertical', spacing: 'md', margin: 'xxl',
+      type: 'box', layout: 'vertical', margin: 'xxl',
       contents: [
-        { type: 'text', text: 'QR CODE', color: '#aaaaaa', size: 'xs' },
-        { type: 'image', url: qrCodeUrl, size: 'xl', aspectRatio: '1:1', aspectMode: 'fit' }
+        { type: 'spacer' },
+        { type: 'image', url: qrCodeUrl, size: 'xl', aspectMode: 'cover' },
+        { type: 'text', text: 'Scan QR code เพื่อชำาระเงิน', color: '#aaaaaa', size: 'xs', wrap: true, margin: 'xxl' }
       ]
     })
   }
@@ -207,7 +124,7 @@ router.post('/send-image', async (req, res) => {
         paddingTop: 'none',
         contents: [
           { type: 'separator', color: '#e5e7eb' },
-          { type: 'button', action: { type: 'uri', label: 'ดูใบแจงหนี้', uri: invoiceImageUrl }, style: 'link', height: 'sm' }
+          { type: 'button', action: { type: 'uri', label: 'ดูใบแจ้งหนี้', uri: invoiceImageUrl }, style: 'link', height: 'sm' }
         ]
       }
     }

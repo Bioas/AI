@@ -1,19 +1,25 @@
 import { motion } from 'framer-motion'
+import { useState, useCallback } from 'react'
 import { useApp } from '../context/AppContext'
 import { formatMonth } from '../lib/constants'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
 import EmptyState from './ui/empty-state'
+import InvoicePreview from './InvoicePreview'
 
 export default function Invoice() {
   const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendPdfToLine, setViewInv, setModal } = useApp()
+  const [sendingInv, setSendingInv] = useState(null)
+
   const handleView = (inv) => { setViewInv(inv); setModal('invoice') }
 
-  const handleLine = (inv) => {
-    setViewInv(inv)
-    setModal('invoice')
-    setTimeout(() => sendPdfToLine(inv), 500)
-  }
+  const handleLine = useCallback((inv) => {
+    setSendingInv(inv)
+    setTimeout(() => {
+      sendPdfToLine(inv)
+      setTimeout(() => setSendingInv(null), 100)
+    }, 100)
+  }, [sendPdfToLine])
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -68,6 +74,12 @@ export default function Invoice() {
           )}
         </CardContent>
       </Card>
+
+      {sendingInv && (
+        <div className="fixed left-0 top-0 -z-50 opacity-0 pointer-events-none" aria-hidden="true">
+          <InvoicePreview inv={sendingInv} />
+        </div>
+      )}
     </motion.div>
   )
 }
