@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import styles from '../styles/Home.module.css';
-import Dashboard from './dashboard';
-import Room from './room';
-import Meters from './meters';
-import Invoice from './invoice';
-import Setting from './setting';
+import Dashboard from '../components/dashboard';
+import Room from '../components/room';
+import Meters from '../components/meters';
+import Invoice from '../components/invoice';
+import Setting from '../components/setting';
 
 const api = async (path, method, body) => {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
