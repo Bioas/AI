@@ -1,5 +1,5 @@
 ﻿import { NextApiRequest, NextApiResponse } from 'next';
-import { generateInvoiceData } from '../utils/billing';
+import { generateInvoiceData } from '../../utils/billing';
 
 export default function handler(
   req: NextApiRequest,
@@ -7,7 +7,7 @@ export default function handler(
 ) {
   const { data } = req.body;
   
-  if (!data || !data.roomId || !data.roomId.toString().length > 0) {
+  if (!data || !data.roomId || !data.roomId.toString().trim()) {
     res.status(400).json({ error: 'roomId is required' });
     return;
   }
