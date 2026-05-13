@@ -9,34 +9,31 @@ export default function InvoicePreview({ inv }) {
 
   return (
     <div id="invoicePdfContent" className="bg-white rounded-xl p-6 max-w-md mx-auto font-sans text-sm">
-      <div className="text-center mb-5 border-b border-slate-100 pb-4">
+      <div className="text-center mb-5 border-b border-neutral-100 pb-4">
         {settings.logo && <img src={settings.logo} alt="โลโก้" className="h-10 object-contain mx-auto mb-2" />}
-        <h2 className="text-blue-700 text-lg font-bold mb-0.5">{settings.dormName}</h2>
-        <p className="text-slate-400 text-xs">{settings.address}</p>
-        <p className="text-slate-400 text-xs">โทร: {settings.phone}</p>
+        <h2 className="text-lime-700 text-lg font-bold mb-0.5">{settings.dormName}</h2>
+        <p className="text-neutral-400 text-xs">{settings.address}</p>
+        <p className="text-neutral-400 text-xs">โทร: {settings.phone}</p>
       </div>
-
       <div className="text-center mb-4">
-        <h3 className="text-blue-700 font-bold">ใบแจ้งหนี้ — {formatMonth(inv.month)}</h3>
+        <h3 className="text-lime-700 font-bold">ใบแจ้งหนี้ — {formatMonth(inv.month)}</h3>
       </div>
-
-      <div className="flex justify-between mb-4 p-3 bg-slate-50 rounded-lg text-xs">
+      <div className="flex justify-between mb-4 p-3 bg-neutral-50 rounded-lg text-xs">
         <div>
-          <p><span className="text-slate-500">ผู้พัก:</span> <span className="font-medium text-slate-800">{inv.tenant}</span></p>
-          <p><span className="text-slate-500">ห้อง:</span> <span className="font-medium text-slate-800">{inv.room}</span></p>
+          <p><span className="text-neutral-500">ผู้พัก:</span> <span className="font-medium text-neutral-800">{inv.tenant}</span></p>
+          <p><span className="text-neutral-500">ห้อง:</span> <span className="font-medium text-neutral-800">{inv.room}</span></p>
         </div>
         <div className="text-right">
-          <p><span className="text-slate-500">วันที่:</span> {new Date().toLocaleDateString('th-TH')}</p>
+          <p><span className="text-neutral-500">วันที่:</span> {new Date().toLocaleDateString('th-TH')}</p>
           <p><span className="text-amber-600 font-medium">รอชำระ</span></p>
         </div>
       </div>
-
       <table className="w-full text-xs mb-4">
         <thead>
-          <tr className="border-b border-slate-200">
-            <th className="text-left py-2 font-medium text-slate-500">รายการ</th>
-            <th className="text-left py-2 font-medium text-slate-500">รายละเอียด</th>
-            <th className="text-right py-2 font-medium text-slate-500">บาท</th>
+          <tr className="border-b border-neutral-200">
+            <th className="text-left py-2 font-medium text-neutral-500">รายการ</th>
+            <th className="text-left py-2 font-medium text-neutral-500">รายละเอียด</th>
+            <th className="text-right py-2 font-medium text-neutral-500">บาท</th>
           </tr>
         </thead>
         <tbody>
@@ -47,24 +44,22 @@ export default function InvoicePreview({ inv }) {
             ...(commonFee > 0 ? [['ค่าส่วนกลาง', '', commonFee]] : []),
             ...(internetFee > 0 ? [['ค่าอินเทอร์เน็ต', '', internetFee]] : []),
           ].map(([label, detail, amount], i) => (
-            <tr key={i} className="border-b border-slate-50">
-              <td className="py-2 text-slate-700">{label}</td>
-              <td className="py-2 text-slate-400">{detail}</td>
-              <td className="py-2 text-right font-medium text-slate-700">{amount.toLocaleString()}</td>
+            <tr key={i} className="border-b border-neutral-50">
+              <td className="py-2 text-neutral-700">{label}</td>
+              <td className="py-2 text-neutral-400">{detail}</td>
+              <td className="py-2 text-right font-medium text-neutral-700">{amount.toLocaleString()}</td>
             </tr>
           ))}
         </tbody>
       </table>
-
-      <div className="flex justify-end py-2.5 border-t-2 border-blue-600 mb-3">
-        <span className="text-base font-bold text-blue-700">รวม: {grandTotal.toLocaleString()} บาท</span>
+      <div className="flex justify-end py-2.5 border-t-2 border-lime-500 mb-3">
+        <span className="text-base font-bold text-lime-700">รวม: {grandTotal.toLocaleString()} บาท</span>
       </div>
-
       <div className="bg-amber-50 rounded-lg p-3 mb-2">
         <p className="text-xs text-amber-800 text-center">⚠️ กรุณาชำระภายในวันที่ 5 ของทุกเดือน</p>
       </div>
-      <div className="bg-slate-50 rounded-lg p-3">
-        <p className="text-xs text-slate-600 text-center">💳 ชำระที่สำนักงานหอพัก หรือโอนเข้าบัญชีธนาคาร</p>
+      <div className="bg-neutral-50 rounded-lg p-3">
+        <p className="text-xs text-neutral-600 text-center">💳 ชำระที่สำนักงานหอพัก หรือโอนเข้าบัญชีธนาคาร</p>
       </div>
     </div>
   )

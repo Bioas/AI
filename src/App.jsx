@@ -19,9 +19,7 @@ export default function App() {
   const { modal, viewInv, downloadPdf, sendInvLine, setModal, settings } = useApp()
 
   return (
-    <div className="flex min-h-screen bg-[#f0f5ff]"
-      style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.06) 0%, transparent 60%)' }}
-    >
+    <div className="flex min-h-screen bg-surface">
       <Sidebar dormName={settings.dormName} />
 
       <main className="flex-1 ml-0 md:ml-60 min-h-screen">
@@ -42,23 +40,18 @@ export default function App() {
 
       <ToastContainer />
 
-      <Suspense fallback={null}>
-        {modal === 'room' && <RoomModal />}
-      </Suspense>
+      <Suspense fallback={null}>{modal === 'room' && <RoomModal />}</Suspense>
 
       <Suspense fallback={null}>
         {modal === 'invoice' && viewInv && (
           <ModalOverlay onClose={() => setModal(null)}>
             <div className="p-6">
-              <h3 className="text-base font-semibold text-slate-800 mb-4">🧾 ใบแจ้งหนี้</h3>
+              <h3 className="text-base font-semibold text-neutral-800 mb-4">🧾 ใบแจ้งหนี้</h3>
               <InvoicePreview inv={viewInv} />
-              <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-slate-100">
-                <button onClick={() => setModal(null)}
-                  className="h-9 px-4 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors">ปิด</button>
-                <button onClick={() => downloadPdf(viewInv)}
-                  className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-blue-600 to-blue-700 text-white hover:from-blue-500 hover:to-blue-600 transition-all shadow-md shadow-blue-200/50">📄 PDF</button>
-                <button onClick={() => sendInvLine(viewInv)}
-                  className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-500 to-teal-600 text-white hover:from-teal-400 hover:to-teal-500 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>
+              <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
+                <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
+                <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 hover:from-lime-300 hover:to-lime-400 transition-all shadow-md shadow-lime-200/50 font-semibold">📄 PDF</button>
+                <button onClick={() => sendInvLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>
               </div>
             </div>
           </ModalOverlay>

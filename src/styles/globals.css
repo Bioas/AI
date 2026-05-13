@@ -7,20 +7,19 @@
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: #d1d5db transparent;
   }
   *::-webkit-scrollbar { width: 5px; height: 5px; }
   *::-webkit-scrollbar-track { background: transparent; }
-  *::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-  *::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  *::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+  *::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
   body {
-    @apply bg-[#f0f5ff] text-slate-800 antialiased;
-    background-image: radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.04) 0%, transparent 60%);
+    @apply bg-surface text-neutral-800 antialiased;
   }
 
   ::selection {
-    @apply bg-blue-200/60 text-blue-900;
+    @apply bg-lime-300/40 text-lime-900;
   }
 
   input[type="number"]::-webkit-outer-spin-button,
@@ -28,22 +27,17 @@
     @apply appearance-none;
     margin: 0;
   }
-  input[type="number"] {
-    -moz-appearance: textfield;
-  }
+  input[type="number"] { -moz-appearance: textfield; }
 }
 
 @layer components {
-  .card-medical {
-    @apply bg-white rounded-2xl shadow-card border border-blue-100/40;
+  .card-lime {
+    @apply bg-white rounded-2xl shadow-card border border-lime-100/40;
   }
-  .card-medical-hover {
-    @apply card-medical hover:shadow-card-hover hover:border-blue-200/60 transition-all duration-300;
+  .card-lime-hover {
+    @apply card-lime hover:shadow-card-hover hover:border-lime-200/60 transition-all duration-300 hover:-translate-y-0.5;
   }
-  .glass-panel {
-    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-soft;
-  }
-  .badge-status {
+  .badge-dot {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
   }
 }
