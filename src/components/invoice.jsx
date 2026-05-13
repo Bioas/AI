@@ -1,5 +1,10 @@
+import { motion } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 import { formatMonth } from '../lib/constants'
+import Card, { CardContent } from './ui/card'
+import PageHeader from './ui/page-header'
+import EmptyState from './ui/empty-state'
+import Badge from './ui/badge'
 
 export default function Invoice() {
   const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendInvLine, setViewInv, setModal } = useApp()
@@ -10,70 +15,74 @@ export default function Invoice() {
   }
 
   return (
-    <div className="animate-fadeInUp">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <h2 className="text-3xl font-extrabold bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
-          🧾 ใบแจ้งหนี้
-        </h2>
-      </div>
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+      <PageHeader
+        title="Invoices"
+        description="View and manage monthly invoices"
+      />
 
-      <div className="flex items-center gap-3 mb-7 bg-white px-5 py-3.5 rounded-xl shadow-sm w-fit">
-        <label className="font-semibold text-slate-900 text-sm">📅 เลือกเดือน:</label>
+      <div className="flex items-center gap-3 mb-6 bg-white rounded-xl border border-zinc-100 px-4 py-3 shadow-sm w-fit">
+        <label className="text-sm font-medium text-zinc-700">Month:</label>
         <input
           type="month"
           value={invMonth}
           onChange={e => setInvMonth(e.target.value)}
-          className="px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
+          className="h-9 px-3 bg-zinc-50 border border-zinc-200 rounded-lg text-sm font-medium text-zinc-900 focus:outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10 transition-all"
         />
       </div>
 
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-lg transition-all duration-300">
-        <div className="overflow-x-auto rounded-xl border border-slate-100">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gradient-to-r from-slate-50 to-emerald-50/50">
-                {['ห้อง', 'ผู้พัก', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'รวม', 'จัดการ'].map(h => (
-                  <th key={h} className="text-left px-4 py-3.5 font-bold text-slate-500 text-[11px] uppercase tracking-wider whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rooms.filter(r => r.tenantName).length === 0 ? (
-                <tr><td colSpan={7}>
-                  <div className="text-center py-14 text-slate-400">
-                    <div className="text-4xl mb-4 animate-float">🧾</div>
-                    <p>ยังไม่มีข้อมูล</p>
-                  </div>
-                </td></tr>
-              ) : rooms.filter(r => r.tenantName).map((r, i) => {
-                const inv = calcInv(r, invMonth)
-                return (
-                  <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                    <td className="px-4 py-4">
-                      <span className="inline-block bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm shadow-emerald-200">{inv.room}</span>
-                    </td>
-                    <td className="px-4 py-4 text-slate-900">{inv.tenant}</td>
-                    <td className="px-4 py-4 text-slate-900">{inv.rent.toLocaleString()}</td>
-                    <td className="px-4 py-4 text-slate-900">{inv.elecCost.toLocaleString()} <span className="text-slate-400 text-xs">({inv.elecUnits} หน่วย)</span></td>
-                    <td className="px-4 py-4 text-slate-900">{inv.waterCost.toLocaleString()} <span className="text-slate-400 text-xs">({inv.waterUnits} หน่วย)</span></td>
-                    <td className="px-4 py-4 text-lg font-extrabold text-slate-900">{inv.total.toLocaleString()} ฿</td>
-                    <td className="px-4 py-4">
-                      <div className="flex gap-1.5">
-                        <button onClick={() => handleView(inv)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">👁️ ดู</button>
-                        <button onClick={() => downloadPdf(inv)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">📄 PDF</button>
-                        <button onClick={() => sendInvLine(inv)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-50 text-green-700 hover:bg-green-100 transition-colors">📱 LINE</button>
-                      </div>
-                    </td>
+      <Card>
+        <CardContent className="pt-6">
+          {rooms.filter(r => r.tenantName).length === 0 ? (
+            <EmptyState icon="🧾" title="No invoices to generate" description="Add tenants to rooms first to generate invoices" />
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-zinc-100">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-100 bg-zinc-50/50">
+                    {['Room', 'Tenant', 'Rent', 'Electric', 'Water', 'Total', 'Actions'].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">{h}</th>
+                    ))}
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+                </thead>
+                <tbody>
+                  {rooms.filter(r => r.tenantName).map(r => {
+                    const inv = calcInv(r, invMonth)
+                    return (
+                      <tr key={r.id} className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-100 text-xs font-bold text-zinc-700">{inv.room}</span>
+                        </td>
+                        <td className="px-4 py-3 text-zinc-700">{inv.tenant}</td>
+                        <td className="px-4 py-3 text-zinc-700">{inv.rent.toLocaleString()}</td>
+                        <td className="px-4 py-3">
+                          <span className="text-zinc-700">{inv.elecCost.toLocaleString()}</span>
+                          <span className="text-zinc-400 text-xs ml-1">({inv.elecUnits}u)</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-zinc-700">{inv.waterCost.toLocaleString()}</span>
+                          <span className="text-zinc-400 text-xs ml-1">({inv.waterUnits}u)</span>
+                        </td>
+                        <td className="px-4 py-3 text-base font-bold text-zinc-900">{inv.total.toLocaleString()} THB</td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1.5">
+                            <button onClick={() => handleView(inv)}
+                              className="h-8 px-3 rounded-lg text-xs font-medium bg-zinc-100 text-zinc-700 hover:bg-zinc-200 transition-colors">View</button>
+                            <button onClick={() => downloadPdf(inv)}
+                              className="h-8 px-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">PDF</button>
+                            <button onClick={() => sendInvLine(inv)}
+                              className="h-8 px-3 rounded-lg text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors">LINE</button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 }

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import Modal from './Modal'
+import Button from './ui/button'
+import Input from './ui/input'
 
 export default function RoomModal() {
   const { editRoom, saveRoom, setModal } = useApp()
@@ -12,7 +14,7 @@ export default function RoomModal() {
   const [note, setNote] = useState(editRoom?.note || '')
 
   const handleSave = () => {
-    if (!num.trim()) { alert('กรุณาระบุหมายเลขห้อง'); return }
+    if (!num.trim()) return
     saveRoom({
       id: editRoom?.id || undefined,
       number: num.trim(),
@@ -25,54 +27,29 @@ export default function RoomModal() {
   }
 
   return (
-    <Modal>
-      <h3 className="text-2xl font-extrabold text-slate-900 mb-7">
-        {editRoom ? '✏️ แก้ไขห้อง' : '➕ เพิ่มห้อง'}
-      </h3>
+    <Modal onClose={() => setModal(null)}>
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-zinc-900 mb-6">
+          {editRoom ? 'Edit Room' : 'Add Room'}
+        </h3>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div>
-          <label className="block text-sm font-semibold text-slate-900 mb-2">หมายเลขห้อง</label>
-          <input value={num} onChange={e => setNum(e.target.value)} placeholder="เช่น 101" autoFocus
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Room Number" value={num} onChange={e => setNum(e.target.value)} placeholder="e.g. 101" autoFocus />
+            <Input label="Monthly Rent (THB)" type="number" value={rent} onChange={e => setRent(e.target.value)} placeholder="3500" />
+          </div>
+          <Input label="Tenant Name" value={name} onChange={e => setName(e.target.value)} placeholder="Full name" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Phone" value={phone} onChange={e => setPhone(e.target.value)} placeholder="081-234-5678" />
+            <Input label="LINE User ID" value={userId} onChange={e => setUserId(e.target.value)} placeholder="Uxxxxxxxxx" />
+          </div>
+          <Input label="Notes" value={note} onChange={e => setNote(e.target.value)} placeholder="Optional notes" />
         </div>
-        <div>
-          <label className="block text-sm font-semibold text-slate-900 mb-2">ค่าเช่าต่อเดือน (บาท)</label>
-          <input type="number" value={rent} onChange={e => setRent(e.target.value)} placeholder="3500"
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
+
+        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-zinc-100">
+          <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+          <Button onClick={handleSave}>{editRoom ? 'Save Changes' : 'Add Room'}</Button>
         </div>
-      </div>
-
-      <div className="mt-5">
-        <label className="block text-sm font-semibold text-slate-900 mb-2">ชื่อผู้พัก</label>
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="ชื่อ-นามสกุล"
-          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5">
-        <div>
-          <label className="block text-sm font-semibold text-slate-900 mb-2">เบอร์โทรศัพท์</label>
-          <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="081-234-5678"
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-slate-900 mb-2">LINE User ID</label>
-          <input value={userId} onChange={e => setUserId(e.target.value)} placeholder="Uxxxxxxxxx"
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
-        </div>
-      </div>
-
-      <div className="mt-5">
-        <label className="block text-sm font-semibold text-slate-900 mb-2">หมายเหตุ</label>
-        <input value={note} onChange={e => setNote(e.target.value)} placeholder="เช่น รวมค่าเน็ต"
-          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
-      </div>
-
-      <div className="flex gap-3.5 justify-end mt-8">
-        <button onClick={() => setModal(null)}
-          className="bg-slate-100 text-slate-500 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-all">ยกเลิก</button>
-        <button onClick={handleSave}
-          className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all duration-300">💾 บันทึก</button>
       </div>
     </Modal>
   )

@@ -1,89 +1,82 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const NAV_ITEMS = [
-  ['/', '📊', 'แดชบอร์ด'],
-  ['/rooms', '🚪', 'จัดการห้อง'],
-  ['/meters', '⚡', 'บันทึกหน่วย'],
-  ['/invoices', '🧾', 'ใบแจ้งหนี้'],
-  ['/settings', '⚙️', 'ตั้งค่า'],
+  { path: '/', icon: '📊', label: 'Dashboard' },
+  { path: '/rooms', icon: '🚪', label: 'Rooms' },
+  { path: '/meters', icon: '⚡', label: 'Meters' },
+  { path: '/invoices', icon: '🧾', label: 'Invoices' },
+  { path: '/settings', icon: '⚙️', label: 'Settings' },
 ]
 
-export default function Sidebar() {
-  const { settings, saveSettingsDelayed } = useApp()
-  const [mobileOpen, setMobileOpen] = useState(false)
+export default function Sidebar({ dormName }) {
+  const [open, setOpen] = useState(false)
 
   return (
     <>
       <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-700 text-white shadow-lg"
+        onClick={() => setOpen(true)}
+        className="fixed top-3 left-3 z-50 md:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-900 text-white shadow-lg shadow-black/10"
       >
-        <span className="text-xl">☰</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
 
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40 md:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 bg-black/40 z-40 md:hidden"
+            onClick={() => setOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       <aside
         className={`
           fixed inset-y-0 left-0 z-40 flex flex-col
-          bg-gradient-to-b from-emerald-800 to-emerald-700 text-white
-          transition-all duration-300 ease-in-out
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0 md:w-[72px] lg:w-64
+          bg-sidebar text-white
+          transition-transform duration-300 ease-out
+          ${open ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0 md:w-60
         `}
       >
-        <div className="flex flex-col items-center lg:items-stretch px-4 lg:px-6 pt-6 pb-4 border-b border-white/10">
-          <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center text-xl mx-auto lg:mx-0 mb-2 animate-float">
+        <div className="flex items-center gap-3 px-5 h-16 border-b border-white/[0.06]">
+          <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-sm shrink-0">
             🏠
           </div>
-          <h1 className="hidden lg:block text-base font-bold text-center bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-            {settings.dormName || 'หอพัก Billing'}
-          </h1>
-          <p className="hidden lg:block text-[10px] text-white/60 text-center mt-0.5">
-            ระบบจัดการค่าเช่ารายเดือน
-          </p>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold truncate">{dormName || 'Dorm Billing'}</div>
+            <div className="text-[10px] text-white/40 font-medium">Management</div>
+          </div>
         </div>
 
-        <nav className="flex-1 py-2">
-          {NAV_ITEMS.map(([path, icon, label]) => (
+        <nav className="flex-1 py-3 px-3 space-y-0.5">
+          {NAV_ITEMS.map(item => (
             <NavLink
-              key={path}
-              to={path}
-              onClick={() => setMobileOpen(false)}
+              key={item.path}
+              to={item.path}
+              onClick={() => setOpen(false)}
               className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 lg:px-6 py-3.5 text-sm transition-all duration-300 border-l-[3px] relative overflow-hidden hover:bg-white/10 hover:translate-x-1 ${
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
                   isActive
-                    ? 'bg-white/15 border-l-white font-semibold shadow-inner'
-                    : 'bg-white/[0.06] border-l-transparent'
+                    ? 'bg-white/10 text-white font-medium shadow-inner'
+                    : 'text-white/50 hover:text-white hover:bg-white/[0.04]'
                 }`
               }
             >
-              <span className="text-xl lg:text-lg w-7 text-center shrink-0 transition-transform duration-200">
-                {icon}
-              </span>
-              <span className="hidden lg:inline">{label}</span>
+              <span className="text-base w-5 text-center shrink-0">{item.icon}</span>
+              <span>{item.label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="mt-auto px-4 lg:px-5 py-4 border-t border-white/10">
-          <label className="hidden lg:block text-[10px] text-white/70 uppercase tracking-wider mb-1.5">
-            LINE Token
-          </label>
-          <input
-            type="text"
-            placeholder="Token..."
-            value={settings.channelToken || ''}
-            onChange={e => saveSettingsDelayed('channelToken', e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-white/15 text-white text-xs placeholder-white/40 focus:outline-none focus:bg-white/25 focus:ring-2 focus:ring-white/20 transition-all"
-          />
+        <div className="px-3 pb-4">
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <div className="text-[10px] text-white/30 font-medium uppercase tracking-wider mb-1.5">System</div>
+            <div className="text-xs text-white/40">v1.0.0</div>
+          </div>
         </div>
       </aside>
     </>

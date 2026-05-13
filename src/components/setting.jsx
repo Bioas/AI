@@ -1,117 +1,143 @@
+import { motion } from 'framer-motion'
 import { useApp } from '../context/AppContext'
+import Card, { CardContent } from './ui/card'
+import PageHeader from './ui/page-header'
+import Input from './ui/input'
+import Button from './ui/button'
 
 export default function Setting() {
   const { settings, saveSettingsDelayed, uploadLogo, removeLogo, sendLineMsg, exportData, importData, toast } = useApp()
 
+  const sections = [
+    {
+      title: '🏢 Dormitory Info',
+      fields: [
+        { key: 'dormName', label: 'Dorm Name', type: 'text', placeholder: 'Dorm name' },
+        { key: 'phone', label: 'Phone', type: 'text', placeholder: '081-234-5678' },
+        { key: 'address', label: 'Address', type: 'text', placeholder: '123 Main St, Bangkok', fullWidth: true },
+      ],
+    },
+    {
+      title: '💰 Rates',
+      fields: [
+        { key: 'rateElec', label: 'Electricity (THB/unit)', type: 'number' },
+        { key: 'rateWater', label: 'Water (THB/unit)', type: 'number' },
+        { key: 'commonFee', label: 'Common Fee (THB/mo)', type: 'number' },
+        { key: 'internetFee', label: 'Internet (THB/mo)', type: 'number' },
+      ],
+    },
+  ]
+
   return (
-    <div className="animate-fadeInUp">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <h2 className="text-3xl font-extrabold bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
-          ⚙️ ตั้งค่าระบบ
-        </h2>
-      </div>
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+      <PageHeader title="Settings" description="Configure your dormitory system" />
 
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-lg transition-all duration-300">
-        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2.5">🏢 ข้อมูลหอพัก</h3>
-        <div className="flex flex-col sm:flex-row items-start gap-6 mb-7 p-5 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/30 transition-all duration-300">
-          <div className="w-20 h-20 shrink-0">
-            {settings.logo ? (
-              <img src={settings.logo} alt="Logo" className="w-20 h-20 object-contain rounded-xl border border-slate-200" />
-            ) : (
-              <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-emerald-300 to-emerald-400 flex items-center justify-center text-3xl text-slate-900">
-                🏠
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-sm font-semibold text-zinc-900 mb-5">🏢 Dormitory Info</h3>
+            <div className="flex flex-col sm:flex-row items-start gap-5 mb-6 p-4 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
+              <div className="w-16 h-16 shrink-0">
+                {settings.logo ? (
+                  <img src={settings.logo} alt="Logo" className="w-16 h-16 object-contain rounded-lg border border-zinc-200" />
+                ) : (
+                  <div className="w-16 h-16 rounded-lg bg-zinc-200 flex items-center justify-center text-2xl">🏠</div>
+                )}
               </div>
-            )}
-          </div>
-          <div>
-            <p className="font-bold text-sm text-slate-900 mb-2.5">โลโก้หอพัก (แสดงใน PDF)</p>
-            <div className="flex gap-2.5 mb-2">
-              <button onClick={() => document.getElementById('logoInput')?.click()}
-                className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-emerald-700 hover:shadow-md transition-all duration-300">📷 อัปโหลด</button>
-              <button onClick={removeLogo}
-                className="bg-red-50 text-red-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-100 transition-all duration-300">🗑️ ลบ</button>
+              <div>
+                <p className="text-sm font-medium text-zinc-900 mb-2">Logo</p>
+                <div className="flex gap-2">
+                  <button onClick={() => document.getElementById('logoInput')?.click()}
+                    className="h-9 px-4 rounded-xl text-xs font-medium bg-zinc-900 text-white hover:bg-zinc-800 transition-colors shadow-sm">Upload</button>
+                  <button onClick={removeLogo}
+                    className="h-9 px-4 rounded-xl text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors">Remove</button>
+                </div>
+                <input type="file" id="logoInput" accept="image/*" style={{ display: 'none' }} onChange={uploadLogo} />
+                <p className="text-xs text-zinc-400 mt-1.5">PNG, JPG max 2MB</p>
+              </div>
             </div>
-            <input type="file" id="logoInput" accept="image/*" style={{ display: 'none' }} onChange={uploadLogo} />
-            <p className="text-xs text-slate-400">รองรับ PNG, JPG ขนาดไม่เกิน 2MB</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">ชื่อหอพัก</label>
-            <input value={settings.dormName} onChange={e => saveSettingsDelayed('dormName', e.target.value)}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">เบอร์โทรศัพท์</label>
-            <input value={settings.phone} onChange={e => saveSettingsDelayed('phone', e.target.value)}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
-          </div>
-        </div>
-        <div className="mt-5">
-          <label className="block text-sm font-semibold text-slate-900 mb-2">ที่อยู่</label>
-          <input value={settings.address} onChange={e => saveSettingsDelayed('address', e.target.value)}
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-lg transition-all duration-300">
-        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2.5">💰 อัตราค่าใช้จ่าย</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {[
-            ['rateElec', 'ค่าไฟต่อหน่วย (บาท)'],
-            ['rateWater', 'ค่าน้ำต่อหน่วย (บาท)'],
-            ['commonFee', 'ค่าส่วนกลาง/เดือน (บาท)'],
-            ['internetFee', 'ค่าอินเตอร์เน็ต/เดือน (บาท)'],
-          ].map(([key, label]) => (
-            <div key={key}>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">{label}</label>
-              <input type="number" value={settings[key] || 0}
-                onChange={e => saveSettingsDelayed(key, parseFloat(e.target.value) || 0)}
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input label="Dorm Name" value={settings.dormName} onChange={e => saveSettingsDelayed('dormName', e.target.value)} placeholder="Dorm name" />
+              <Input label="Phone" value={settings.phone} onChange={e => saveSettingsDelayed('phone', e.target.value)} placeholder="081-234-5678" />
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="mt-4">
+              <Input label="Address" value={settings.address} onChange={e => saveSettingsDelayed('address', e.target.value)} placeholder="123 Main St, Bangkok" />
+            </div>
+          </CardContent>
+        </Card>
 
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-lg transition-all duration-300">
-        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2.5">📱 LINE Messaging API</h3>
-        <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200/50 rounded-xl p-5 mb-5 text-sm text-slate-900 leading-relaxed">
-          📌 <strong>วิธีตั้งค่า:</strong><br />
-          1. สร้าง Channel ที่ <code className="bg-emerald-200/50 px-2 py-0.5 rounded text-xs font-mono">developers.line.biz/console</code><br />
-          2. เปิด Messaging API → คัดลอก <strong>Channel Access Token</strong><br />
-          3. ผู้พักเพิ่มบอทเป็นเพื่อน → ระบบส่งใบแจ้งหนี้ผ่าน LINE ได้
-        </div>
-        <div className="flex items-center gap-2.5 mb-5 text-sm font-semibold text-slate-900">
-          <span className={`w-3 h-3 rounded-full ${settings.channelToken ? 'bg-green-500 shadow-md shadow-green-500/50' : 'bg-red-500 shadow-md shadow-red-500/50'}`} />
-          {settings.channelToken ? 'Token ถูกตั้งค่าแล้ว' : 'ยังไม่ได้ตั้งค่า Token'}
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-slate-900 mb-2">Channel Access Token</label>
-          <input type="text" placeholder="eyJhbGciOi..." value={settings.channelToken || ''}
-            onChange={e => saveSettingsDelayed('channelToken', e.target.value)}
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" />
-        </div>
-        <button onClick={async () => {
-          const uid = prompt('กรอก LINE User ID เพื่อทดสอบ (ขึ้นต้นด้วย U):')
-          if (!uid || !uid.startsWith('U')) { toast('User ID ไม่ถูกต้อง', true); return }
-          await sendLineMsg(uid, `🧪 ทดสอบ LINE\nเวลา: ${new Date().toLocaleString('th-TH')}\n✅ ระบบพร้อมใช้งาน!`)
-        }}
-          className="mt-4 bg-gradient-to-r from-violet-500 to-violet-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-violet-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-          🧪 ทดสอบส่งข้อความ
-        </button>
-      </div>
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-sm font-semibold text-zinc-900 mb-5">💰 Rates</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {['rateElec', 'rateWater', 'commonFee', 'internetFee'].map(key => (
+                <Input
+                  key={key}
+                  label={{
+                    rateElec: 'Electricity (THB/unit)',
+                    rateWater: 'Water (THB/unit)',
+                    commonFee: 'Common Fee (THB/mo)',
+                    internetFee: 'Internet (THB/mo)',
+                  }[key]}
+                  type="number"
+                  value={settings[key] || 0}
+                  onChange={e => saveSettingsDelayed(key, parseFloat(e.target.value) || 0)}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-lg transition-all duration-300">
-        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2.5">🗂️ สำรอง & กู้คืนข้อมูล</h3>
-        <p className="text-sm text-slate-400 mb-5">💡 Export ไว้พกไป Import ในเครื่องอื่น</p>
-        <div className="flex gap-3.5 flex-wrap">
-          <button onClick={exportData}
-            className="bg-transparent border-2 border-emerald-600 text-emerald-600 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-600 hover:text-white hover:shadow-md transition-all duration-300">📤 Export</button>
-          <button onClick={() => document.getElementById('importFile')?.click()}
-            className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 hover:shadow-md transition-all duration-300">📥 Import</button>
-        </div>
-        <input type="file" id="importFile" accept=".json" style={{ display: 'none' }} onChange={importData} />
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-sm font-semibold text-zinc-900 mb-1">📱 LINE Messaging</h3>
+            <p className="text-xs text-zinc-400 mb-5">Send invoices directly to tenants via LINE</p>
+
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-5 text-xs text-blue-800 leading-relaxed">
+              <strong>Setup:</strong> Create a channel at LINE Developers Console → enable Messaging API → copy Channel Access Token → paste below.
+            </div>
+
+            <div className="flex items-center gap-2 mb-4">
+              <span className={`w-2 h-2 rounded-full ${settings.channelToken ? 'bg-emerald-500' : 'bg-red-400'}`} />
+              <span className="text-xs text-zinc-500">{settings.channelToken ? 'Token configured' : 'No token set'}</span>
+            </div>
+
+            <Input
+              label="Channel Access Token"
+              type="text"
+              placeholder="Paste your LINE token here..."
+              value={settings.channelToken || ''}
+              onChange={e => saveSettingsDelayed('channelToken', e.target.value)}
+            />
+
+            <div className="mt-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  const uid = prompt('Enter LINE User ID (starts with U):')
+                  if (!uid || !uid.startsWith('U')) { toast('Invalid User ID', true); return }
+                  await sendLineMsg(uid, `🧪 Test message\nTime: ${new Date().toLocaleString('th-TH')}\n✅ System ready!`)
+                }}
+              >
+                🧪 Test Message
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-sm font-semibold text-zinc-900 mb-1">🗂️ Backup & Restore</h3>
+            <p className="text-xs text-zinc-400 mb-5">Export your data for backup or import to another instance</p>
+            <div className="flex gap-3">
+              <Button variant="outline" size="sm" onClick={exportData}>📤 Export</Button>
+              <Button size="sm" onClick={() => document.getElementById('importFile')?.click()}>📥 Import</Button>
+              <input type="file" id="importFile" accept=".json" style={{ display: 'none' }} onChange={importData} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </motion.div>
   )
 }
