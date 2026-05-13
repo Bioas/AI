@@ -224,12 +224,18 @@ export function AppProvider({ children }) {
     if (!inv.userId) { toast('ผู้พักห้องนี้ยังไม่ได้กรอก LINE User ID', true); return false }
     if (!settings.channelToken) { toast('กรุณาตั้งค่า Channel Access Token ก่อน', true); return false }
 
-    const el = document.getElementById('invoicePdfContent')
-    if (!el) return false
+    let el = document.getElementById('invoicePdfContent')
+    if (!el) {
+      toast('กรุณากด "ดู" เพื่อเปิดใบแจ้งหนี้ก่อนส่ง LINE', true)
+      return false
+    }
 
     try {
+      toast('กำลังสร้างรูปภาพใบแจ้งหนี้...')
       const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      toast('กำลังอัปโหลด...')
+
       const jpegBase64 = canvas.toDataURL('image/jpeg', 0.85)
       const filename = `invoice_${inv.room}_${inv.month.replace('/', '-')}.jpg`
 
@@ -240,6 +246,8 @@ export function AppProvider({ children }) {
       })
       const uploadData = await uploadRes.json()
       if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed')
+
+      toast('กำลังส่งรูปภาพทาง LINE...')
 
       const lineRes = await fetch('/api/line/send-image', {
         method: 'POST',
