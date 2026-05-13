@@ -189,7 +189,7 @@ router.post('/send-image', async (req, res) => {
             spacing: 'sm',
             contents: [
               { type: 'text', text: 'จำนวนเงิน', color: '#9ca3af', size: 'sm', flex: 1 },
-              { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'xxl', weight: 'bold', flex: 4, align: 'end' }
+              { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'xxl', weight: 'bold', flex: 4 }
             ]
           },
           {
@@ -198,7 +198,7 @@ router.post('/send-image', async (req, res) => {
             spacing: 'sm',
             contents: [
               { type: 'text', text: 'กำหนดชำระ', color: '#9ca3af', size: 'sm', flex: 1 },
-              { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'md', weight: 'bold', flex: 4, align: 'end' }
+              { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'md', weight: 'bold', flex: 4 }
             ]
           },
           { type: 'separator', color: '#e5e7eb', margin: 'xl' },
@@ -210,9 +210,6 @@ router.post('/send-image', async (req, res) => {
               {
                 type: 'box',
                 layout: 'vertical',
-                backgroundColor: '#f0fdf4',
-                cornerRadius: 'md',
-                paddingAll: 'md',
                 contents: [
                   { type: 'text', text: 'คาไฟ + คานา + คาเชา', size: 'xs', color: '#6b7280', align: 'center' }
                 ]
@@ -226,18 +223,14 @@ router.post('/send-image', async (req, res) => {
         type: 'box',
         layout: 'vertical',
         spacing: 'sm',
-        paddingAll: 'xl',
-        paddingTop: 'none',
+        paddingAll: 'none',
         contents: [
           { type: 'separator', color: '#e5e7eb' },
           {
             type: 'button',
             action: { type: 'uri', label: 'ดูใบแจงหนี้', uri: invoiceImageUrl },
-            style: 'primary',
-            color: '#22c55e',
-            height: 'md',
-            cornerRadius: 'md',
-            margin: 'md'
+            style: 'link',
+            height: 'sm'
           }
         ]
       }
@@ -259,10 +252,11 @@ router.post('/send-image', async (req, res) => {
     if (response.ok) {
       return res.status(200).json({ success: true, data })
     } else {
+      console.error('LINE API 400:', JSON.stringify(data))
       return res.status(response.status).json({ error: data.message || 'LINE API error', details: data })
     }
   } catch (error) {
-    console.error('LINE send image error:', error)
+    console.error('LINE send error:', error)
     return res.status(500).json({ error: error.message || 'Internal server error' })
   }
 })
