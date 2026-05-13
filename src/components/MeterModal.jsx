@@ -1,0 +1,99 @@
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { useApp } from '../context/AppContext'
+import { getPrevMonth } from '../lib/constants'
+import Modal from './Modal'
+import Button from './ui/button'
+import Input from './ui/input'
+
+export default function MeterModal({ room, onClose }) {
+  const { meters, meterMonth, fetchAll, toast } = useApp()
+  const pm = getPrevMonth(meterMonth)
+
+  const existingCur = meters.find(x => x.roomId === room.id && x.month === meterMonth) || {}
+  const existingPrev = meters.find(x => x.roomId === room.id && x.month === pm) || {}
+
+  const [curElec, setCurElec] = useState(existingCur.elec?.toString() || '')
+  const [curWater, setCurWater] = useState(existingCur.water?.toString() || '')
+  const [prevElec, setPrevElec] = useState(existingPrev.elec?.toString() || '')
+  const [prevWater, setPrevWater] = useState(existingPrev.water?.toString() || '')
+  const [saving, setSaving] = useState(false)
+
+  const elecUsed = (curElec && prevElec) ? Math.max(0, Number(curElec) - Number(prevElec)) : null
+  const waterUsed = (curWater && prevWater) ? Math.max(0, Number(curWater) - Number(prevWater)) : null
+  const rateElec = useApp().settings.rateElec || 7
+  const rateWater = useApp().settings.rateWater || 20
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const { api } = await import('../lib/api')
+      const bodyCur = { roomId: room.id, month: meterMonth, elec: Number(curElec) || 0, water: Number(curWater) || 0 }
+      const bodyPrev = { roomId: room.id, month: pm, elec: Number(prevElec) || 0, water: Number(prevWater) || 0 }
+
+      if (existingCur._id || curElec || curWater) {
+        if (existingCur._id) {
+          await api('/api/meters', 'PUT', bodyCur)
+        } else {
+          await api('/api/meters', 'POST', bodyCur)
+        }
+      }
+      if (existingPrev._id || prevElec || prevWater) {
+        if (existingPrev._id) {
+          await api('/api/meters', 'PUT', bodyPrev)
+        } else {
+          await api('/api/meters', 'POST', bodyPrev)
+        }
+      }
+      await fetchAll()
+      toast('บันทึกหน่วยมิเตอร์เรียบร้อย')
+      onClose()
+    } catch (e) {
+      toast(`บันทึกไม่สำเร็จ: ${e.message}`, true)
+    }
+    setSaving(false)
+  }
+
+  return (
+    <Modal onClose={onClose}>
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100">
+          <span className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-base font-bold text-zinc-700">{room.number}</span>
+          <div>
+            <h3 className="text-base font-semibold text-zinc-900">บันทึกหน่วยมิเตอร์</h3>
+            <p className="text-xs text-zinc-500">{room.tenantName || 'ไม่มีผู้พัก'}</p>
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          <div>
+            <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">⚡ มิเตอร์ไฟฟ้า</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="เลขก่อนหน้า" type="number" value={prevElec} onChange={e => setPrevElec(e.target.value)} />
+              <Input label="เลขปัจจุบัน" type="number" value={curElec} onChange={e => setCurElec(e.target.value)} />
+            </div>
+            {elecUsed !== null && (
+              <p className="text-xs text-emerald-600 font-medium mt-2">ใช้ไป {elecUsed} หน่วย = {elecUsed * rateElec} บาท</p>
+            )}
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">💧 มิเตอร์น้ำ</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="เลขก่อนหน้า" type="number" value={prevWater} onChange={e => setPrevWater(e.target.value)} />
+              <Input label="เลขปัจจุบัน" type="number" value={curWater} onChange={e => setCurWater(e.target.value)} />
+            </div>
+            {waterUsed !== null && (
+              <p className="text-xs text-emerald-600 font-medium mt-2">ใช้ไป {waterUsed} หน่วย = {waterUsed * rateWater} บาท</p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-zinc-100">
+          <Button variant="ghost" onClick={onClose} disabled={saving}>ยกเลิก</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'บันทึก'}</Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}

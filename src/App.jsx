@@ -16,7 +16,7 @@ const InvoicePreview = lazy(() => import('./components/InvoicePreview'))
 const ModalOverlay = lazy(() => import('./components/Modal'))
 
 export default function App() {
-  const { modal, viewInv, downloadPdf, sendInvLine, setModal, settings, loading } = useApp()
+  const { modal, viewInv, downloadPdf, sendInvLine, setModal, settings } = useApp()
 
   return (
     <div className="flex min-h-screen bg-surface">
@@ -48,27 +48,12 @@ export default function App() {
         {modal === 'invoice' && viewInv && (
           <ModalOverlay onClose={() => setModal(null)}>
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-zinc-900 mb-4">🧾 Invoice</h3>
+              <h3 className="text-base font-semibold text-zinc-900 mb-4">🧾 ใบแจ้งหนี้</h3>
               <InvoicePreview inv={viewInv} />
               <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-zinc-100">
-                <button
-                  onClick={() => setModal(null)}
-                  className="h-9 px-4 rounded-xl text-sm font-medium text-zinc-600 hover:bg-zinc-100 transition-colors"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => downloadPdf(viewInv)}
-                  className="h-9 px-4 rounded-xl text-sm font-medium bg-zinc-900 text-white hover:bg-zinc-800 transition-colors shadow-sm"
-                >
-                  PDF
-                </button>
-                <button
-                  onClick={() => sendInvLine(viewInv)}
-                  className="h-9 px-4 rounded-xl text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
-                >
-                  LINE
-                </button>
+                <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-zinc-600 hover:bg-zinc-100 transition-colors">ปิด</button>
+                <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-zinc-900 text-white hover:bg-zinc-800 transition-colors shadow-sm">📄 PDF</button>
+                <button onClick={() => sendInvLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm">📱 LINE</button>
               </div>
             </div>
           </ModalOverlay>
