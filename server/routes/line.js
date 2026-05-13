@@ -134,7 +134,49 @@ router.post('/send-image', async (req, res) => {
     return res.status(400).json({ error: 'Invalid LINE User ID. Must start with U' })
   }
 
-  const previewUrl = invoiceImageUrl.replace('.jpg', '_preview.jpg')
+  const flex = {
+    type: 'flex',
+    altText: 'ใบแจ้งหนี้ค่าเช่า ' + (roomNumber || ''),
+    contents: {
+      type: 'bubble',
+      hero: {
+        type: 'image',
+        url: invoiceImageUrl,
+        size: 'full',
+        aspectRatio: '20:13',
+        aspectMode: 'fit',
+        backgroundColor: '#FFFFFF'
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'md',
+        paddingAll: 'xl',
+        contents: [
+          { type: 'text', text: 'ใบแจ้งหนี้คาเชา', weight: 'bold', size: 'xl', color: '#1a1a2e' },
+          { type: 'separator', color: '#f0f0f0' },
+          { type: 'text', text: 'ผูเชา: ' + (tenantName || ''), size: 'sm', color: '#6b7280' },
+          { type: 'text', text: 'หอง ' + (roomNumber || ''), size: 'xxl', weight: 'bold', color: '#1a1a2e' },
+          { type: 'text', text: billingMonth || '', size: 'sm', color: '#6b7280' },
+          { type: 'separator', color: '#f0f0f0' },
+          { type: 'text', text: (totalAmount || '') + ' บาท', size: 'xxl', weight: 'bold', color: '#22c55e', align: 'center' },
+          { type: 'text', text: 'กาํหมดชำระ: ' + (dueDate || ''), size: 'sm', color: '#ef4444', align: 'center' },
+          { type: 'text', text: 'คาไฟ + คานา + คาเชา', size: 'xs', color: '#9ca3af', align: 'center' }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        paddingAll: 'xl',
+        paddingTop: 'none',
+        contents: [
+          { type: 'separator', color: '#f0f0f0' },
+          { type: 'button', action: { type: 'uri', label: 'ดูใบแจงหนี้', uri: invoiceImageUrl }, style: 'primary', color: '#22c55e', height: 'sm', cornerRadius: 'sm' }
+        ]
+      }
+    }
+  }
 
   try {
     const response = await fetch('https://api.line.me/v2/bot/message/push', {
@@ -143,10 +185,7 @@ router.post('/send-image', async (req, res) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        to,
-        messages: [{ type: 'image', originalContentUrl: invoiceImageUrl, previewImageUrl: previewUrl }],
-      }),
+      body: JSON.stringify({ to, messages: [flex] }),
     })
 
     const data = await response.json()
