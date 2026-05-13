@@ -244,6 +244,23 @@ export function AppProvider({ children }) {
     api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('ลบโลโก้สำเร็จ') }).catch(e => toast(`ลบไม่สำเร็จ: ${e.message}`, true))
   }, [settings, toast])
 
+  const uploadQr = useCallback((e) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (f.size > 2 * 1024 * 1024) { toast('ไฟล์ใหญ่เกิน 2MB', true); return }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const s = { ...settings, qrCode: ev.target?.result }
+      api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('อัปโหลด QR Code สำเร็จ') }).catch(e => toast(`อัปโหลดไม่สำเร็จ: ${e.message}`, true))
+    }
+    reader.readAsDataURL(f)
+  }, [settings, toast])
+
+  const removeQr = useCallback(() => {
+    const s = { ...settings, qrCode: '' }
+    api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('ลบ QR Code สำเร็จ') }).catch(e => toast(`ลบไม่สำเร็จ: ${e.message}`, true))
+  }, [settings, toast])
+
   const exportData = useCallback(() => {
     const data = { rooms, meters, settings, exportDate: new Date().toISOString() }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -282,7 +299,7 @@ export function AppProvider({ children }) {
     calcInv, saveAllMeters, initMeterLocal,
     saveRoom, deleteRoom,
     downloadPdf, sendLineMsg, sendInvLine,
-    saveSettingsDelayed, uploadLogo, removeLogo,
+    saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr,
     exportData, importData,
   }
 

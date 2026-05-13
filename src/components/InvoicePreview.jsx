@@ -11,12 +11,12 @@ export default function InvoicePreview({ inv }) {
     <div id="invoicePdfContent" className="bg-white rounded-xl p-6 max-w-md mx-auto font-sans text-sm">
       <div className="text-center mb-5 border-b border-neutral-100 pb-4">
         {settings.logo && <img src={settings.logo} alt="โลโก้" className="h-16 object-contain mx-auto mb-3" />}
-        <h2 className="text-lime-700 text-lg font-bold mb-0.5">{settings.dormName}</h2>
+        <h2 className="text-amber-700 text-lg font-bold mb-0.5">{settings.dormName}</h2>
         <p className="text-neutral-400 text-xs">{settings.address}</p>
         <p className="text-neutral-400 text-xs">โทร: {settings.phone}</p>
       </div>
       <div className="text-center mb-4">
-        <h3 className="text-lime-700 font-bold">ใบแจ้งหนี้ — {formatMonth(inv.month)}</h3>
+        <h3 className="text-amber-700 font-bold">ใบแจ้งหนี้ — {formatMonth(inv.month)}</h3>
       </div>
       <div className="flex justify-between mb-4 p-3 bg-neutral-50 rounded-lg text-xs">
         <div>
@@ -52,14 +52,29 @@ export default function InvoicePreview({ inv }) {
           ))}
         </tbody>
       </table>
-      <div className="flex justify-end py-2.5 border-t-2 border-lime-500 mb-3">
-        <span className="text-base font-bold text-lime-700">รวม: {grandTotal.toLocaleString()} บาท</span>
+      <div className="flex justify-end py-2.5 border-t-2 border-amber-500 mb-3">
+        <span className="text-base font-bold text-amber-700">รวม: {grandTotal.toLocaleString()} บาท</span>
       </div>
-      <div className="bg-amber-50 rounded-lg p-3 mb-2">
-        <p className="text-xs text-amber-800 text-center">⚠️ กรุณาชำระภายในวันที่ 5 ของทุกเดือน</p>
-      </div>
-      <div className="bg-neutral-50 rounded-lg p-3">
-        <p className="text-xs text-neutral-600 text-center">💳 ชำระที่สำนักงานหอพัก หรือโอนเข้าบัญชีธนาคาร</p>
+
+      <div className="space-y-2">
+        <div className="bg-amber-50 rounded-xl p-3.5 border border-amber-100">
+          <p className="text-xs text-amber-800 leading-relaxed text-center">
+            กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
+            หากชำระหลังวันกำหนด คิดค่าปรับวันละ 50 บาท
+          </p>
+        </div>
+        <div className="bg-neutral-50 rounded-xl p-3.5 border border-neutral-100">
+          <p className="text-xs text-neutral-700 leading-relaxed text-center">
+            <strong>ชำระเงินที่:</strong> สำนักงานหอพัก<br />
+            <strong>หรือ โอนเข้าบัญชี</strong> พร้อมเพย์ 0902439797<br />
+            นงลักษณ์ นิพรรัมย์ ธนาคารกรุงไทย
+          </p>
+        </div>
+        {settings.qrCode && (
+          <div className="flex justify-center pt-1">
+            <img src={settings.qrCode} alt="QR Code พร้อมเพย์" className="w-28 h-28 object-contain rounded-xl border border-neutral-200 shadow-sm" />
+          </div>
+        )}
       </div>
     </div>
   )
