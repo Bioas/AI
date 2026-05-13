@@ -1,12 +1,10 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-
 /**
  * LINE Messaging API Proxy
  * ใช้งาน: POST /api/line/send
  * Body: { to: string, text: string, token: string }
  * แก้ปัญหา CORS ที่เกิดจากการเรียก LINE API จาก browser โดยตรง
  */
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -41,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } else {
       return res.status(response.status).json({ error: data.message || 'LINE API error', details: data });
     }
-  } catch (error: any) {
+  } catch (error) {
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

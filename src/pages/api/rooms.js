@@ -1,10 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { connectDB } from '../../lib/mongodb';
+import { connectDB } from '../../lib/mongodb.js';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req, res) {
   let client;
   try { client = await connectDB(); }
-  catch (e: any) { return res.status(500).json({ error: e.message }); }
+  catch (e) { return res.status(500).json({ error: e.message }); }
 
   const db = client.db('dorm_billing');
   const collection = db.collection('rooms');
