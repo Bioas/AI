@@ -124,10 +124,10 @@ router.post('/send-file', async (req, res) => {
 })
 
 router.post('/send-image', async (req, res) => {
-  const { to, token, imageUrl } = req.body
+  const { to, token, originalContentUrl, previewImageUrl } = req.body
 
-  if (!to || !token || !imageUrl) {
-    return res.status(400).json({ error: 'Missing required fields: to, token, imageUrl' })
+  if (!to || !token || !originalContentUrl || !previewImageUrl) {
+    return res.status(400).json({ error: 'Missing required fields: to, token, originalContentUrl, previewImageUrl' })
   }
 
   if (!to.startsWith('U')) {
@@ -143,7 +143,7 @@ router.post('/send-image', async (req, res) => {
       },
       body: JSON.stringify({
         to,
-        messages: [{ type: 'image', originalContentUrl: imageUrl, previewImageUrl: imageUrl }],
+        messages: [{ type: 'image', originalContentUrl, previewImageUrl }],
       }),
     })
 

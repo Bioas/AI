@@ -247,17 +247,27 @@ export function AppProvider({ children }) {
         outCanvas = c
       }
 
+      const PV_MAX = 240
+      const pvRatio = Math.min(PV_MAX / outCanvas.width, PV_MAX / outCanvas.height)
+      const pvC = document.createElement('canvas')
+      pvC.width = Math.round(outCanvas.width * pvRatio)
+      pvC.height = Math.round(outCanvas.height * pvRatio)
+      const pvCtx = pvC.getContext('2d')
+      pvCtx.drawImage(outCanvas, 0, 0, pvC.width, pvC.height)
+
       toast('กำลังอัปโหลด...')
       const jpegBase64 = outCanvas.toDataURL('image/jpeg', 0.85)
-      const filename = `invoice_${inv.room}_${inv.month.replace('/', '-')}.jpg`
+      const previewBase64 = pvC.toDataURL('image/jpeg', 0.8)
+      const base = `invoice_${inv.room}_${inv.month.replace('/', '-')}`
 
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: jpegBase64, filename }),
-      })
-      const uploadData = await uploadRes.json()
-      if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed')
+      const [origRes, prevRes] = await Promise.all([
+        fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: jpegBase64, filename: `${base}.jpg` }) }),
+        fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: previewBase64, filename: `${base}_preview.jpg` }) }),
+      ])
+      const origData = await origRes.json()
+      const prevData = await prevRes.json()
+      if (!origRes.ok) throw new Error(origData.error || 'Upload failed')
+      if (!prevRes.ok) throw new Error(prevData.error || 'Preview upload failed')
 
       toast('กำลังส่งรูปภาพทาง LINE...')
 
@@ -267,7 +277,8 @@ export function AppProvider({ children }) {
         body: JSON.stringify({
           to: inv.userId,
           token: settings.channelToken,
-          imageUrl: uploadData.url,
+          originalContentUrl: origData.url,
+          previewImageUrl: prevData.url,
         }),
       })
       const lineData = await lineRes.json()
