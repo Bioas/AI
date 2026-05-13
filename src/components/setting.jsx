@@ -28,20 +28,37 @@ export default function Setting() {
           </dl>
         </CardContent></Card>
 
-        <Card><CardContent className="pt-6">
-          <div className="flex items-start justify-between mb-4">
-            <h3 className="text-sm font-semibold text-neutral-800">🖼️ โลโก้หอพัก</h3>
-            <Button size="sm" variant="secondary" onClick={() => setActiveSection('logo')}>จัดการ</Button>
-          </div>
-          <div className="flex items-center gap-4">
-            {settings.logo ? (
-              <img src={settings.logo} alt="โลโก้" className="w-16 h-16 object-contain rounded-xl border border-neutral-200 shadow-sm" />
-            ) : (
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl">🏠</div>
-            )}
-            <div className="text-xs text-neutral-500">{settings.logo ? 'มีโลโก้' : 'ยังไม่มีโลโก้'}</div>
-          </div>
-        </CardContent></Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <Card><CardContent className="pt-6">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-sm font-semibold text-neutral-800">🖼️ โลโก้หอพัก</h3>
+              <Button size="sm" variant="secondary" onClick={() => setActiveSection('logo')}>จัดการ</Button>
+            </div>
+            <div className="flex items-center gap-4">
+              {settings.logo ? (
+                <img src={settings.logo} alt="โลโก้" className="w-16 h-16 object-contain rounded-xl border border-neutral-200 shadow-sm" />
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl">🏠</div>
+              )}
+              <div className="text-xs text-neutral-500">{settings.logo ? 'มีโลโก้' : 'ยังไม่มีโลโก้'}</div>
+            </div>
+          </CardContent></Card>
+
+          <Card><CardContent className="pt-6">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-sm font-semibold text-neutral-800">📱 QR Code ชำระเงิน</h3>
+              <Button size="sm" variant="secondary" onClick={() => setActiveSection('qr')}>จัดการ</Button>
+            </div>
+            <div className="flex items-center gap-4">
+              {settings.qrCode ? (
+                <img src={settings.qrCode} alt="QR Code" className="w-16 h-16 object-contain rounded-xl border border-neutral-200 shadow-sm" />
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl border border-dashed border-lime-200">📱</div>
+              )}
+              <div className="text-xs text-neutral-500">{settings.qrCode ? 'มี QR Code' : 'ยังไม่มี QR Code'}</div>
+            </div>
+          </CardContent></Card>
+        </div>
 
         <Card><CardContent className="pt-6">
           <div className="flex items-start justify-between mb-4">
