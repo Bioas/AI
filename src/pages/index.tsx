@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import styles from '../styles/Home.module.css';
+import Dashboard from './dashboard';
+import Rooms from './rooms';
+import Meters from './meters';
+import Invoice from './invoice';
+import Setting from './setting';
 
 const api = async (path: string, method: string, body?: any) => {
   const opts: any = { method, headers: { 'Content-Type': 'application/json' } };
@@ -320,50 +325,8 @@ export default function Home() {
       {/* Main */}
       <div className={styles.main}>
         {/* DASHBOARD */}
-        {page === 'dashboard' && (
-          <div className={styles.page}>
-            <div className={styles.pageHeader}><h2>📊 แดชบอร์ด</h2>
-              <span className={styles.dateLabel}>{now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-            </div>
-            <div className={styles.statsGrid}>
-              {[
-                ['🚪', rooms.length, 'ห้องทั้งหมด', 'blue'],
-                ['👥', occ.length, 'ผู้พักอาศัย', 'green'],
-                ['📋', pending, 'รอเรียกเก็บ', 'yellow'],
-                ['💰', revenue.toLocaleString(), 'รายได้ (บาท)', 'red']
-              ].map(([icon, val, label, color], i) => (
-                <div key={i} className={`${styles.statCard} ${styles[color]}`} style={{ animationDelay: `${i * 0.08}s` }}>
-                  <div className={styles.statLabel}>{label}</div>
-                  <div className={styles.statValue}>{val}</div>
-                  <span className={styles.statIconBig}>{icon}</span>
-                </div>
-              ))}
-            </div>
-            <div className={styles.card}>
-              <h3>📋 รายการล่าสุด</h3>
-              <div className={styles.tableWrap}>
-                <table>
-                  <thead><tr><th>ห้อง</th><th>ผู้พัก</th><th>เดือน</th><th>ค่าเช่า</th><th>ค่าไฟ</th><th>ค่าน้ำ</th><th>รวม</th><th>สถานะ</th></tr></thead>
-                  <tbody>
-                    {recentData.length === 0 ? <tr><td colSpan={8}><div className={styles.emptyState}><div className={styles.emptyIcon}>📋</div><p>ยังไม่มีข้อมูลใบแจ้งหนี้</p></div></td></tr> :
-                      recentData.map((d: any, i: number) => (
-                        <tr key={i} style={{ animationDelay: `${i * 0.05}s` }}>
-                          <td><span className={styles.roomNumber}>{d.inv.room}</span></td>
-                          <td>{d.inv.tenant}</td>
-                          <td>{formatMonth(d.month)}</td>
-                          <td>{d.inv.rent.toLocaleString()}</td>
-                          <td>{d.inv.elecCost.toLocaleString()}</td>
-                          <td>{d.inv.waterCost.toLocaleString()}</td>
-                          <td className={styles.highlight}>{d.inv.total.toLocaleString()} ฿</td>
-                          <td><span className={styles.badgeUnpaid}>รอชำระ</span></td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+        {page === 'dashboard' && (<Dashboard toast={toast} />)}
+
 
         {/* ROOMS */}
         {page === 'rooms' && (
