@@ -26,7 +26,7 @@ export default function InvoicePreview({ inv }) {
       {/* Header */}
       <div className="flex justify-between items-start pb-6 mb-6 border-b border-amber-200/60">
         <div className="flex items-center gap-3">
-          {settings.logo && <img src={settings.logo} alt="" className="h-20 w-20 object-contain shrink-0" />}
+          {settings.logo && <img src={settings.logo} alt="" className="h-16 w-16 object-contain shrink-0" />}
           <div>
             <div className="text-base font-bold text-amber-800">{settings.dormName || 'หอพัก'}</div>
             <div className="text-[10px] text-neutral-400 mt-0.5">{settings.address}</div>
