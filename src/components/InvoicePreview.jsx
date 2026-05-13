@@ -1,8 +1,6 @@
 import { useApp } from '../context/AppContext'
 import { formatMonth } from '../lib/constants'
 
-const invId = () => Math.random().toString(36).substring(2, 8).toUpperCase()
-
 export default function InvoicePreview({ inv }) {
   const { settings } = useApp()
   const cf = settings.commonFee || 0
@@ -15,8 +13,10 @@ export default function InvoicePreview({ inv }) {
     ...(inf > 0 ? [{ desc: 'ค่าอินเทอร์เน็ต', detail: '', amount: inf }] : []),
   ]
   const total = items.reduce((s, i) => s + i.amount, 0)
-  const date = new Date()
-  const issueDate = date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })
+  const now = new Date()
+  const y = now.getFullYear() + 543
+  const m = now.toLocaleDateString('th-TH', { month: 'short' })
+  const issueDate = `30 ${m} ${y}`
 
   return (
     <div id="invoicePdfContent" className="bg-white mx-auto font-sans text-[11px] text-neutral-700 leading-relaxed" style={{ padding: 40 }}>
@@ -25,18 +25,20 @@ export default function InvoicePreview({ inv }) {
 
       {/* Header */}
       <div className="flex justify-between items-start pb-6 mb-6 border-b border-amber-200/60">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {settings.logo && <img src={settings.logo} alt="" className="h-20 w-20 object-contain shrink-0" />}
           <div>
-            <div className="text-base font-bold text-amber-800">{settings.dormName || 'หอพัก'}</div>
-            <div className="text-[10px] text-neutral-400">{settings.address}</div>
+            <div className="flex items-center gap-3">
+              <span className="text-base font-bold text-amber-800">{settings.dormName || 'หอพัก'}</span>
+              <span className="text-amber-300 font-light">|</span>
+              <span className="text-base font-bold text-amber-700">ใบแจ้งหนี้</span>
+            </div>
+            <div className="text-[10px] text-neutral-400 mt-0.5">{settings.address}</div>
             <div className="text-[10px] text-neutral-400">โทร {settings.phone}</div>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-base font-bold text-amber-700">ใบแจ้งหนี้</div>
-          <div className="text-[10px] text-amber-600/60 mt-1">INV-{date.getFullYear() + 543}-{invId()}</div>
-          <div className="text-[10px] text-neutral-400">{issueDate}</div>
+          <div className="text-base font-bold text-amber-800">{issueDate}</div>
         </div>
       </div>
 
