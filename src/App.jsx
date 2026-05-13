@@ -16,7 +16,7 @@ const InvoicePreview = lazy(() => import('./components/InvoicePreview'))
 const ModalOverlay = lazy(() => import('./components/Modal'))
 
 export default function App() {
-  const { modal, viewInv, downloadPdf, sendInvLine, setModal, settings } = useApp()
+  const { modal, viewInv, downloadPdf, sendPdfToLine, setModal, settings } = useApp()
 
   return (
     <div className="flex min-h-screen bg-surface">
@@ -51,7 +51,7 @@ export default function App() {
               <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
                 <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
                 <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 hover:from-lime-300 hover:to-lime-400 transition-all shadow-md shadow-lime-200/50 font-semibold">📄 PDF</button>
-                <button onClick={() => sendInvLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>
+                <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>
               </div>
             </div>
           </ModalOverlay>
