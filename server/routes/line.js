@@ -134,44 +134,7 @@ router.post('/send-image', async (req, res) => {
     return res.status(400).json({ error: 'Invalid LINE User ID. Must start with U' })
   }
 
-  const flex = {
-    type: 'flex',
-    altText: `ใบแจ้งหนี้ค่าเช่า ห้อง ${roomNumber || ''} ${totalAmount || ''} บาท`,
-    contents: {
-      type: 'bubble',
-      hero: {
-        type: 'image',
-        url: invoiceImageUrl,
-        size: 'full',
-        aspectRatio: '20:13',
-        aspectMode: 'fit',
-        backgroundColor: '#FFFFFF',
-        action: { type: 'uri', uri: invoiceImageUrl }
-      },
-      body: {
-        type: 'box', layout: 'vertical', paddingAll: '16px',
-        contents: [
-          { type: 'text', text: '🧾 ใบแจ้งหนี้ค่าเช่า', weight: 'bold', size: 'lg', color: '#1A1A2E' },
-          { type: 'separator', color: '#F0F0F0', margin: 'md' },
-          { type: 'text', text: `ผู้เช่า: ${tenantName || ''}`, size: 'sm', color: '#6B7280', margin: 'md' },
-          { type: 'text', text: `ห้อง ${roomNumber || ''}`, size: 'xl', weight: 'bold', color: '#1A1A2E', margin: 'xs' },
-          { type: 'text', text: billingMonth || '', size: 'sm', color: '#6B7280', margin: 'xs' },
-          { type: 'separator', color: '#F0F0F0', margin: 'lg' },
-          { type: 'text', text: `${totalAmount || ''} บาท`, size: 'xxl', weight: 'bold', color: '#22C55E', align: 'center', margin: 'lg' },
-          { type: 'text', text: `กำหนดชำระ: ${dueDate || ''}`, size: 'sm', color: '#EF4444', align: 'center', margin: 'xs' },
-          { type: 'separator', color: '#F0F0F0', margin: 'lg' },
-          { type: 'text', text: '⚡ ค่าไฟ + 💧 ค่าน้ำ + 🏠 ค่าเช่า', size: 'xs', color: '#9CA3AF', align: 'center', margin: 'md' },
-        ]
-      },
-      footer: {
-        type: 'box', layout: 'vertical', paddingAll: '16px', paddingTop: '0px',
-        contents: [
-          { type: 'separator', color: '#F0F0F0' },
-          { type: 'button', action: { type: 'uri', label: 'ดูใบแจ้งหนี้', uri: invoiceImageUrl }, margin: 'md', height: '48px', style: 'primary', color: '#22C55E', cornerRadius: '12px' },
-        ]
-      },
-    }
-  }
+  const previewUrl = invoiceImageUrl.replace('.jpg', '_preview.jpg')
 
   try {
     const response = await fetch('https://api.line.me/v2/bot/message/push', {
@@ -180,7 +143,10 @@ router.post('/send-image', async (req, res) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ to, messages: [flex] }),
+      body: JSON.stringify({
+        to,
+        messages: [{ type: 'image', originalContentUrl: invoiceImageUrl, previewImageUrl: previewUrl }],
+      }),
     })
 
     const data = await response.json()
