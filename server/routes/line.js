@@ -110,8 +110,8 @@ function createFeesBox(roomFee, electricBill, waterBill, totalAmount, dueDate) {
   }
 }
 
-function createQRCodeBox(qrImageUrl) {
-  if (!qrImageUrl) return null
+function createQRCodeBox(qrUrl) {
+  if (!qrUrl) return null
 
   return {
     type: 'box',
@@ -119,13 +119,13 @@ function createQRCodeBox(qrImageUrl) {
     margin: 'xxl',
     contents: [
       { type: 'spacer' },
-      { type: 'image', url: qrImageUrl, aspectMode: 'cover', size: 'xl' },
+      { type: 'image', url: qrUrl, aspectMode: 'cover', size: 'xl' },
       { type: 'text', text: 'Scan QR code เพื่อชำระเงิน', color: '#aaaaaa', wrap: true, margin: 'xxl', size: 'xs' }
     ]
   }
 }
 
-function createBodyBlock({ tenantName, roomNumber, billingMonth, roomFee, electricBill, waterBill, totalAmount, dueDate, qrImageUrl }) {
+function createBodyBlock({ tenantName, roomNumber, billingMonth, roomFee, electricBill, waterBill, totalAmount, dueDate, qrUrl }) {
   const contents = [
     createTitleBox(),
     createDetailsBox(tenantName, roomNumber, billingMonth),
@@ -133,7 +133,7 @@ function createBodyBlock({ tenantName, roomNumber, billingMonth, roomFee, electr
     createFeesBox(roomFee, electricBill, waterBill, totalAmount, dueDate)
   ]
 
-  const qrBox = createQRCodeBox(qrImageUrl)
+  const qrBox = createQRCodeBox(qrUrl)
   if (qrBox) contents.push(qrBox)
 
   return {
@@ -162,7 +162,7 @@ function createFooterBlock(invoiceImageUrl) {
 // ── Send image endpoint ────────────────────────────────────────
 
 router.post('/send-image', async (req, res) => {
-  const { to, token, invoiceImageUrl, qrImageUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate, roomFee, waterBill, electricBill } = req.body
+  const { to, token, invoiceImageUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate, roomFee, waterBill, electricBill } = req.body
 
   if (!to || !token || !invoiceImageUrl) {
     return res.status(400).json({ error: 'Missing required fields: to, token, invoiceImageUrl' })
@@ -172,10 +172,14 @@ router.post('/send-image', async (req, res) => {
     return res.status(400).json({ error: 'Invalid LINE User ID. Must start with U' })
   }
 
+  const host = process.env.VERCEL_URL || req.get('host')
+  const protocol = host?.includes('localhost') ? 'http' : 'https'
+  const qrUrl = `${protocol}://${host}/api/upload/qr.png`
+
   const bubble = {
     type: 'bubble',
     hero: createHeroBlock(invoiceImageUrl),
-    body: createBodyBlock({ tenantName, roomNumber, billingMonth, roomFee, electricBill, waterBill, totalAmount, dueDate, qrImageUrl }),
+    body: createBodyBlock({ tenantName, roomNumber, billingMonth, roomFee, electricBill, waterBill, totalAmount, dueDate, qrUrl }),
     footer: createFooterBlock(invoiceImageUrl)
   }
 

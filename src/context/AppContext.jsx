@@ -264,18 +264,6 @@ export function AppProvider({ children }) {
       const origData = await origRes.json()
       if (!origRes.ok) throw new Error(origData.error || 'Upload failed')
 
-      toast('กำลังอัปโหลด QR Code...')
-      let qrImageUrl = null
-      if (settings.qrCode) {
-        const qrRes = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file: settings.qrCode, filename: `qr_${Date.now()}.png` })
-        })
-        const qrData = await qrRes.json()
-        if (qrRes.ok) qrImageUrl = qrData.url
-      }
-
       toast('กำลังส่งรูปภาพทาง LINE...')
 
       const md = formatMonth(inv.month)
@@ -292,7 +280,6 @@ export function AppProvider({ children }) {
           to: inv.userId,
           token: settings.channelToken,
           invoiceImageUrl: origData.url,
-          qrImageUrl,
           tenantName: inv.tenant,
           roomNumber: inv.room,
           billingMonth: bm,
@@ -311,7 +298,7 @@ export function AppProvider({ children }) {
       toast(`ส่ง Invoice ไม่สำเร็จ: ${e.message}`, true)
       return false
     }
-  }, [settings.channelToken, settings.qrCode, toast])
+  }, [settings.channelToken, toast])
 
   const saveSettingsDelayed = useCallback((() => {
     let timer
@@ -347,9 +334,19 @@ export function AppProvider({ children }) {
     if (!f) return
     if (f.size > 2 * 1024 * 1024) { toast('ไฟล์ใหญ่เกิน 2MB', true); return }
     const reader = new FileReader()
-    reader.onload = (ev) => {
-      const s = { ...settings, qrCode: ev.target?.result }
-      api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('อัปโหลด QR Code สำเร็จ') }).catch(e => toast(`อัปโหลดไม่สำเร็จ: ${e.message}`, true))
+    reader.onload = async (ev) => {
+      const base64 = ev.target?.result
+      const s = { ...settings, qrCode: base64 }
+      try {
+        await api('/api/settings', 'POST', s)
+        await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: base64, filename: 'qr.png' })
+        })
+        setSettings(s)
+        toast('อัปโหลด QR Code สำเร็จ')
+      } catch (e) { toast(`อัปโหลดไม่สำเร็จ: ${e.message}`, true) }
     }
     reader.readAsDataURL(f)
   }, [settings, toast])
