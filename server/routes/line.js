@@ -124,7 +124,7 @@ router.post('/send-file', async (req, res) => {
 })
 
 router.post('/send-image', async (req, res) => {
-  const { to, token, invoiceImageUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate } = req.body
+  const { to, token, invoiceImageUrl, qrCodeUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate } = req.body
 
   if (!to || !token || !invoiceImageUrl) {
     return res.status(400).json({ error: 'Missing required fields: to, token, invoiceImageUrl' })
@@ -134,104 +134,80 @@ router.post('/send-image', async (req, res) => {
     return res.status(400).json({ error: 'Invalid LINE User ID. Must start with U' })
   }
 
+  const bodyContents = [
+    { type: 'text', text: 'INVOICE', weight: 'bold', size: 'xl', color: '#1a1a2e', wrap: true },
+    { type: 'box', layout: 'baseline', spacing: 'sm',
+      contents: [
+        { type: 'text', text: 'ผูเชา', color: '#aaaaaa', size: 'sm', flex: 1 },
+        { type: 'text', text: tenantName || '', wrap: true, color: '#666666', size: 'sm', flex: 4 }
+      ]
+    },
+    { type: 'box', layout: 'baseline', spacing: 'sm',
+      contents: [
+        { type: 'text', text: 'หอง', color: '#aaaaaa', size: 'sm', flex: 1 },
+        { type: 'text', text: roomNumber || '', wrap: true, color: '#1a1a2e', size: 'xxl', weight: 'bold', flex: 4 }
+      ]
+    },
+    { type: 'box', layout: 'baseline', spacing: 'sm',
+      contents: [
+        { type: 'text', text: 'เดือน', color: '#aaaaaa', size: 'sm', flex: 1 },
+        { type: 'text', text: billingMonth || '', wrap: true, color: '#666666', size: 'sm', flex: 4 }
+      ]
+    },
+    { type: 'separator', color: '#e5e7eb', margin: 'xl' },
+    { type: 'box', layout: 'baseline', spacing: 'sm',
+      contents: [
+        { type: 'text', text: 'จำนวนเงิน', color: '#aaaaaa', size: 'sm', flex: 1 },
+        { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'xxl', weight: 'bold', flex: 4 }
+      ]
+    },
+    { type: 'box', layout: 'baseline', spacing: 'sm',
+      contents: [
+        { type: 'text', text: 'กำหนดชำระ', color: '#aaaaaa', size: 'sm', flex: 1 },
+        { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'sm', weight: 'bold', flex: 4 }
+      ]
+    }
+  ]
+
+  if (qrCodeUrl) {
+    bodyContents.push({
+      type: 'box', layout: 'vertical', spacing: 'md', margin: 'xxl',
+      contents: [
+        { type: 'text', text: 'QR CODE', color: '#aaaaaa', size: 'xs' },
+        { type: 'image', url: qrCodeUrl, size: 'xl', aspectRatio: '1:1', aspectMode: 'fit' }
+      ]
+    })
+  }
+
   const flex = {
     type: 'flex',
     altText: 'ใบแจ้งหนี้ค่าเช่า ห้อง ' + (roomNumber || ''),
     contents: {
       type: 'bubble',
+      hero: {
+        type: 'image',
+        url: invoiceImageUrl,
+        size: 'full',
+        aspectRatio: '20:13',
+        aspectMode: 'fit',
+        backgroundColor: '#FFFFFF'
+      },
       body: {
         type: 'box',
         layout: 'vertical',
         spacing: 'md',
         paddingAll: 'xl',
-        contents: [
-          {
-            type: 'box',
-            layout: 'baseline',
-            spacing: 'sm',
-            contents: [
-              { type: 'text', text: 'INVOICE', weight: 'bold', size: 'xl', color: '#1a1a2e', flex: 1 }
-            ]
-          },
-          { type: 'separator', color: '#e5e7eb' },
-          {
-            type: 'box',
-            layout: 'baseline',
-            spacing: 'sm',
-            margin: 'lg',
-            contents: [
-              { type: 'text', text: 'ผู้เช่า', color: '#9ca3af', size: 'sm', flex: 1 },
-              { type: 'text', text: tenantName || '', wrap: true, color: '#1a1a2e', size: 'md', weight: 'bold', flex: 4 }
-            ]
-          },
-          {
-            type: 'box',
-            layout: 'baseline',
-            spacing: 'sm',
-            contents: [
-              { type: 'text', text: 'ห้อง', color: '#9ca3af', size: 'sm', flex: 1 },
-              { type: 'text', text: 'ห้อง ' + (roomNumber || ''), wrap: true, color: '#1a1a2e', size: 'xxl', weight: 'bold', flex: 4 }
-            ]
-          },
-          {
-            type: 'box',
-            layout: 'baseline',
-            spacing: 'sm',
-            contents: [
-              { type: 'text', text: 'เดือน', color: '#9ca3af', size: 'sm', flex: 1 },
-              { type: 'text', text: billingMonth || '', wrap: true, color: '#6b7280', size: 'sm', flex: 4 }
-            ]
-          },
-          { type: 'separator', color: '#e5e7eb', margin: 'xl' },
-          {
-            type: 'box',
-            layout: 'baseline',
-            spacing: 'sm',
-            contents: [
-              { type: 'text', text: 'จำนวนเงิน', color: '#9ca3af', size: 'sm', flex: 1 },
-              { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'xxl', weight: 'bold', flex: 4 }
-            ]
-          },
-          {
-            type: 'box',
-            layout: 'baseline',
-            spacing: 'sm',
-            contents: [
-              { type: 'text', text: 'กำหนดชำระ', color: '#9ca3af', size: 'sm', flex: 1 },
-              { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'md', weight: 'bold', flex: 4 }
-            ]
-          },
-          { type: 'separator', color: '#e5e7eb', margin: 'xl' },
-          {
-            type: 'box',
-            layout: 'horizontal',
-            spacing: 'sm',
-            contents: [
-              {
-                type: 'box',
-                layout: 'vertical',
-                contents: [
-                  { type: 'text', text: 'คาไฟ + คานา + คาเชา', size: 'xs', color: '#6b7280', align: 'center' }
-                ]
-              }
-            ]
-          },
-          { type: 'text', text: 'ขอบคุณที่ใช้บริการ', size: 'xs', color: '#d1d5db', align: 'center', margin: 'lg' }
-        ]
+        contents: bodyContents
       },
       footer: {
         type: 'box',
         layout: 'vertical',
-        spacing: 'sm',
-        paddingAll: 'none',
+        spacing: 'md',
+        paddingAll: 'xl',
+        paddingTop: 'none',
         contents: [
           { type: 'separator', color: '#e5e7eb' },
-          {
-            type: 'button',
-            action: { type: 'uri', label: 'ดูใบแจงหนี้', uri: invoiceImageUrl },
-            style: 'link',
-            height: 'sm'
-          }
+          { type: 'button', action: { type: 'uri', label: 'ดูใบแจงหนี้', uri: invoiceImageUrl }, style: 'link', height: 'sm' }
         ]
       }
     }

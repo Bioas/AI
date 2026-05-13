@@ -260,14 +260,18 @@ export function AppProvider({ children }) {
       const previewBase64 = pvC.toDataURL('image/jpeg', 0.8)
       const base = `invoice_${inv.room}_${inv.month.replace('/', '-')}`
 
-      const [origRes, prevRes] = await Promise.all([
-        fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: jpegBase64, filename: `${base}.jpg` }) }),
-        fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: previewBase64, filename: `${base}_preview.jpg` }) }),
-      ])
+      const origRes = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: jpegBase64, filename: `${base}.jpg` }) })
       const origData = await origRes.json()
-      const prevData = await prevRes.json()
       if (!origRes.ok) throw new Error(origData.error || 'Upload failed')
-      if (!prevRes.ok) throw new Error(prevData.error || 'Preview upload failed')
+
+      let qrUrl = ''
+      if (settings.qrCode && settings.qrCode.startsWith('data:')) {
+        try {
+          const qrRes = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: settings.qrCode, filename: 'qrcode.png' }) })
+          const qrData = await qrRes.json()
+          if (qrRes.ok) qrUrl = qrData.url
+        } catch (e) { console.warn('QR upload failed:', e) }
+      }
 
       toast('กำลังส่งรูปภาพทาง LINE...')
 
@@ -285,6 +289,7 @@ export function AppProvider({ children }) {
           to: inv.userId,
           token: settings.channelToken,
           invoiceImageUrl: origData.url,
+          qrCodeUrl: qrUrl,
           tenantName: inv.tenant,
           roomNumber: inv.room,
           billingMonth: bm,
