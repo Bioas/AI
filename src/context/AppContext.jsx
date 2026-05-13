@@ -241,13 +241,18 @@ export function AppProvider({ children }) {
       const offsetX = mg + (pw - finalW) / 2
       doc.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, mg, finalW, finalH)
 
-      const pdfBase64 = doc.output('datauristring')
+      const pdfArray = doc.output('arraybuffer')
+      const bytes = new Uint8Array(pdfArray)
+      let binary = ''
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+      const pdfBase64 = btoa(binary)
+      const dataUri = `data:application/pdf;base64,${pdfBase64}`
       const filename = `invoice_${inv.room}_${inv.month.replace('/', '-')}.pdf`
 
       const uploadRes = await fetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: pdfBase64, filename }),
+        body: JSON.stringify({ file: dataUri, filename }),
       })
       const uploadData = await uploadRes.json()
       if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed')

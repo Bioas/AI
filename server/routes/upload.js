@@ -15,14 +15,20 @@ router.post('/', async (req, res) => {
     const { file, filename } = req.body
     if (!file || !filename) return res.status(400).json({ error: 'Missing file or filename' })
 
-    const base64 = file.replace(/^data:application\/pdf;base64,/, '')
-    const filePath = path.join(uploadDir, filename)
+    let base64 = file
+    const dataUriMatch = file.match(/^data:application\/pdf[^,]*;base64,(.+)$/)
+    if (dataUriMatch) {
+      base64 = dataUriMatch[1]
+    }
+
+    const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const filePath = path.join(uploadDir, safeName)
     fs.writeFileSync(filePath, Buffer.from(base64, 'base64'))
 
     const baseUrl = `${req.protocol}://${req.get('host')}`
-    res.json({ url: `${baseUrl}/uploads/${filename}` })
+    res.json({ url: `${baseUrl}/uploads/${safeName}` })
   } catch (e) {
-    console.error('Upload error:', e)
+    console.error('Upload error:', e.message)
     res.status(500).json({ error: e.message })
   }
 })
