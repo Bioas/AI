@@ -22,8 +22,8 @@ export default function InvoicePreview({ inv }) {
     <div id="invoicePdfContent" className="bg-white mx-auto font-sans text-[11px] text-neutral-700 leading-relaxed" style={{ padding: 40 }}>
       {/* Header */}
       <div className="flex justify-between items-start pb-6 mb-6 border-b border-neutral-200">
+        {settings.logo && <img src={settings.logo} alt="" className="h-16 w-16 object-contain" />}
         <div className="flex items-center gap-4">
-          {settings.logo && <img src={settings.logo} alt="" className="h-16 w-16 object-contain" />}
           <div>
             <div className="text-base font-bold text-neutral-800">{settings.dormName || 'หอพัก'}</div>
             <div className="text-[10px] text-neutral-400">{settings.address}</div>
