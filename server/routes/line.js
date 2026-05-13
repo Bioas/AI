@@ -123,4 +123,41 @@ router.post('/send-file', async (req, res) => {
   }
 })
 
+router.post('/send-image', async (req, res) => {
+  const { to, token, imageUrl } = req.body
+
+  if (!to || !token || !imageUrl) {
+    return res.status(400).json({ error: 'Missing required fields: to, token, imageUrl' })
+  }
+
+  if (!to.startsWith('U')) {
+    return res.status(400).json({ error: 'Invalid LINE User ID. Must start with U' })
+  }
+
+  try {
+    const response = await fetch('https://api.line.me/v2/bot/message/push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        to,
+        messages: [{ type: 'image', originalContentUrl: imageUrl, previewImageUrl: imageUrl }],
+      }),
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+      return res.status(200).json({ success: true, data })
+    } else {
+      return res.status(response.status).json({ error: data.message || 'LINE API error', details: data })
+    }
+  } catch (error) {
+    console.error('LINE send image error:', error)
+    return res.status(500).json({ error: error.message || 'Internal server error' })
+  }
+})
+
 export default router

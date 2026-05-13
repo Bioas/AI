@@ -228,51 +228,34 @@ export function AppProvider({ children }) {
     if (!el) return false
 
     try {
-      const { jsPDF } = await import('jspdf')
       const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' })
-      const doc = new jsPDF('p', 'mm', 'a4')
-      const mg = 10
-      const pw = 210 - mg * 2
-      const ph = (canvas.height * pw) / canvas.width
-      const maxH = 297 - mg * 2
-      const finalH = Math.min(ph, maxH)
-      const finalW = (canvas.width * finalH) / canvas.height
-      const offsetX = mg + (pw - finalW) / 2
-      doc.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', offsetX, mg, finalW, finalH)
-
-      const pdfArray = doc.output('arraybuffer')
-      const bytes = new Uint8Array(pdfArray)
-      let binary = ''
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-      const pdfBase64 = btoa(binary)
-      const dataUri = `data:application/pdf;base64,${pdfBase64}`
-      const filename = `invoice_${inv.room}_${inv.month.replace('/', '-')}.pdf`
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const jpegBase64 = canvas.toDataURL('image/jpeg', 0.85)
+      const filename = `invoice_${inv.room}_${inv.month.replace('/', '-')}.jpg`
 
       const uploadRes = await fetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: dataUri, filename }),
+        body: JSON.stringify({ file: jpegBase64, filename }),
       })
       const uploadData = await uploadRes.json()
       if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed')
 
-      const lineRes = await fetch('/api/line/send-file', {
+      const lineRes = await fetch('/api/line/send-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: inv.userId,
           token: settings.channelToken,
-          displayName: filename,
-          fileUrl: uploadData.url,
+          imageUrl: uploadData.url,
         }),
       })
       const lineData = await lineRes.json()
-      if (lineRes.ok) { toast('ส่ง PDF ทาง LINE สำเร็จ!'); return true }
+      if (lineRes.ok) { toast('ส่งรูปภาพInvoice ทาง LINE สำเร็จ!'); return true }
       toast('ส่งไม่สำเร็จ: ' + (lineData.error || 'Unknown error'), true)
       return false
     } catch (e) {
-      toast(`ส่ง PDF ไม่สำเร็จ: ${e.message}`, true)
+      toast(`ส่ง Invoice ไม่สำเร็จ: ${e.message}`, true)
       return false
     }
   }, [settings.channelToken, toast])
