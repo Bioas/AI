@@ -220,6 +220,58 @@ export function AppProvider({ children }) {
     sendLineMsg(inv.userId, text)
   }, [sendLineMsg, toast])
 
+  const sendPdfToLine = useCallback(async (inv) => {
+    if (!inv.userId) { toast('ผู้พักห้องนี้ยังไม่ได้กรอก LINE User ID', true); return false }
+    if (!settings.channelToken) { toast('กรุณาตั้งค่า Channel Access Token ก่อน', true); return false }
+
+    const el = document.getElementById('invoicePdfContent')
+    if (!el) return false
+
+    try {
+      const { jsPDF } = await import('jspdf')
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const doc = new jsPDF('p', 'mm', 'a4')
+      const mg = 10
+      const pw = 210 - mg * 2
+      const ph = (canvas.height * pw) / canvas.width
+      const maxH = 297 - mg * 2
+      const finalH = Math.min(ph, maxH)
+      const finalW = (canvas.width * finalH) / canvas.height
+      const offsetX = mg + (pw - finalW) / 2
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, mg, finalW, finalH)
+
+      const pdfBase64 = doc.output('datauristring')
+      const filename = `invoice_${inv.room}_${inv.month.replace('/', '-')}.pdf`
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: pdfBase64, filename }),
+      })
+      const uploadData = await uploadRes.json()
+      if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed')
+
+      const lineRes = await fetch('/api/line/send-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: inv.userId,
+          token: settings.channelToken,
+          displayName: filename,
+          fileUrl: uploadData.url,
+        }),
+      })
+      const lineData = await lineRes.json()
+      if (lineRes.ok) { toast('ส่ง PDF ทาง LINE สำเร็จ!'); return true }
+      toast('ส่งไม่สำเร็จ: ' + (lineData.error || 'Unknown error'), true)
+      return false
+    } catch (e) {
+      toast(`ส่ง PDF ไม่สำเร็จ: ${e.message}`, true)
+      return false
+    }
+  }, [settings.channelToken, toast])
+
   const saveSettingsDelayed = useCallback((() => {
     let timer
     return (key, value) => {
@@ -303,7 +355,7 @@ export function AppProvider({ children }) {
     fetchAll, toast,
     calcInv, saveAllMeters, initMeterLocal,
     saveRoom, deleteRoom,
-    downloadPdf, sendLineMsg, sendInvLine,
+    downloadPdf, sendLineMsg, sendInvLine, sendPdfToLine,
     saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr,
     exportData, importData,
   }
