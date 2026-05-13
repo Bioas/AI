@@ -1,5 +1,4 @@
 import { Router } from 'express'
-import { connectDB } from '../lib/mongodb.js'
 
 const router = Router()
 
