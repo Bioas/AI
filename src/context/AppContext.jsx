@@ -18,6 +18,7 @@ export function AppProvider({ children }) {
   const [invMonth, setInvMonth] = useState(getCurrentMonth())
   const [viewInv, setViewInv] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [meterLocal, setMeterLocal] = useState({})
 
   const toast = useCallback((msg, err = false) => {
@@ -28,6 +29,7 @@ export function AppProvider({ children }) {
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const [r, m, s] = await Promise.all([
         api('/api/rooms', 'GET'),
@@ -37,8 +39,10 @@ export function AppProvider({ children }) {
       setRooms(r || [])
       setMeters(m || [])
       setSettings(s || {})
-    } catch {
-      toast('โหลดข้อมูลไม่สำเร็จ', true)
+    } catch (e) {
+      console.error('fetchAll error:', e)
+      setError(e.message)
+      toast(`โหลดข้อมูลไม่สำเร็จ: ${e.message}`, true)
     }
     setLoading(false)
   }, [toast])
@@ -101,7 +105,8 @@ export function AppProvider({ children }) {
             await api('/api/meters', 'POST', body)
           }
           saved++
-        } catch {
+        } catch (e) {
+          console.error(`saveMeter error for room ${rid}:`, e)
           errors++
         }
       }
@@ -116,7 +121,8 @@ export function AppProvider({ children }) {
             await api('/api/meters', 'POST', body)
           }
           saved++
-        } catch {
+        } catch (e) {
+          console.error(`saveMeter error for room ${rid} (prev):`, e)
           errors++
         }
       }
@@ -130,32 +136,44 @@ export function AppProvider({ children }) {
   }, [meterLocal, meters, meterMonth, fetchAll, toast])
 
   const saveRoom = useCallback(async (data) => {
-    const method = data.id ? 'PUT' : 'POST'
-    await api('/api/rooms', method, data.id ? { ...data } : data)
-    await fetchAll()
-    setModal(null)
-    setEditRoom(null)
-    toast(data.id ? 'แก้ไขห้องสำเร็จ' : 'เพิ่มห้องสำเร็จ')
+    try {
+      const method = data.id ? 'PUT' : 'POST'
+      await api('/api/rooms', method, data.id ? { ...data } : data)
+      await fetchAll()
+      setModal(null)
+      setEditRoom(null)
+      toast(data.id ? 'แก้ไขห้องสำเร็จ' : 'เพิ่มห้องสำเร็จ')
+    } catch (e) {
+      toast(`ไม่สำเร็จ: ${e.message}`, true)
+    }
   }, [fetchAll, toast])
 
   const deleteRoom = useCallback(async (id) => {
-    await api('/api/rooms', 'DELETE', { id })
-    await fetchAll()
-    toast('ลบห้องสำเร็จ')
+    try {
+      await api('/api/rooms', 'DELETE', { id })
+      await fetchAll()
+      toast('ลบห้องสำเร็จ')
+    } catch (e) {
+      toast(`ลบไม่สำเร็จ: ${e.message}`, true)
+    }
   }, [fetchAll, toast])
 
   const downloadPdf = useCallback(async (inv) => {
     const el = document.getElementById('invoicePdfContent')
     if (!el) return
-    const { jsPDF } = await import('jspdf')
-    const html2canvas = (await import('html2canvas')).default
-    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-    const doc = new jsPDF('p', 'mm', 'a4')
-    const pw = 210 - 20
-    const ph = (canvas.height * pw) / canvas.width
-    doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pw, ph)
-    doc.save(`invoice_${inv.room}_${inv.month}.pdf`)
-    toast('ดาวน์โหลด PDF สำเร็จ')
+    try {
+      const { jsPDF } = await import('jspdf')
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const doc = new jsPDF('p', 'mm', 'a4')
+      const pw = 210 - 20
+      const ph = (canvas.height * pw) / canvas.width
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pw, ph)
+      doc.save(`invoice_${inv.room}_${inv.month}.pdf`)
+      toast('ดาวน์โหลด PDF สำเร็จ')
+    } catch (e) {
+      toast(`PDF error: ${e.message}`, true)
+    }
   }, [toast])
 
   const sendLineMsg = useCallback(async (to, text) => {
@@ -198,13 +216,13 @@ export function AppProvider({ children }) {
   }, [sendLineMsg, toast])
 
   const saveSettingsDelayed = useCallback((() => {
-    const timer = {}
+    let timer
     return (key, value) => {
-      clearTimeout(timer.current)
-      timer.current = setTimeout(() => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
         const s = { ...settings, [key]: value }
         setSettings(s)
-        api('/api/settings', 'POST', s)
+        api('/api/settings', 'POST', s).catch(e => console.error('saveSettings error:', e))
       }, 800)
     }
   })(), [settings])
@@ -216,14 +234,14 @@ export function AppProvider({ children }) {
     const reader = new FileReader()
     reader.onload = (ev) => {
       const s = { ...settings, logo: ev.target?.result }
-      api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('อัปโหลดโลโก้สำเร็จ') })
+      api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('อัปโหลดโลโก้สำเร็จ') }).catch(e => toast(`อัปโหลดไม่สำเร็จ: ${e.message}`, true))
     }
     reader.readAsDataURL(f)
   }, [settings, toast])
 
   const removeLogo = useCallback(() => {
     const s = { ...settings, logo: '' }
-    api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('ลบโลโก้สำเร็จ') })
+    api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('ลบโลโก้สำเร็จ') }).catch(e => toast(`ลบไม่สำเร็จ: ${e.message}`, true))
   }, [settings, toast])
 
   const exportData = useCallback(() => {
@@ -255,7 +273,7 @@ export function AppProvider({ children }) {
   }, [fetchAll, toast])
 
   const value = {
-    rooms, meters, settings, loading,
+    rooms, meters, settings, loading, error,
     modal, setModal, editRoom, setEditRoom,
     meterMonth, setMeterMonth, invMonth, setInvMonth,
     viewInv, setViewInv, toasts,

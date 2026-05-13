@@ -10,19 +10,27 @@ const defaults = {
 }
 
 router.get('/', async (req, res) => {
-  let client
-  try { client = await connectDB() } catch (e) { return res.status(200).json(defaults) }
-  const db = client.db('dorm_billing')
-  const s = await db.collection('settings').findOne({ _id: 'default' })
-  res.status(200).json(s || defaults)
+  try {
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+    const s = await db.collection('settings').findOne({ _id: 'default' })
+    res.status(200).json(s || defaults)
+  } catch (e) {
+    console.error('GET /api/settings error:', e)
+    res.status(200).json(defaults)
+  }
 })
 
 router.post('/', async (req, res) => {
-  let client
-  try { client = await connectDB() } catch (e) { return res.status(500).json({ error: e.message }) }
-  const db = client.db('dorm_billing')
-  await db.collection('settings').updateOne({ _id: 'default' }, { $set: req.body }, { upsert: true })
-  res.status(200).json(req.body)
+  try {
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+    await db.collection('settings').updateOne({ _id: 'default' }, { $set: req.body }, { upsert: true })
+    res.status(200).json(req.body)
+  } catch (e) {
+    console.error('POST /api/settings error:', e)
+    res.status(500).json({ error: e.message })
+  }
 })
 
 export default router

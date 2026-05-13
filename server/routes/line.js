@@ -34,6 +34,7 @@ router.post('/send', async (req, res) => {
       return res.status(response.status).json({ error: data.message || 'LINE API error', details: data })
     }
   } catch (error) {
+    console.error('LINE send error:', error)
     return res.status(500).json({ error: error.message || 'Internal server error' })
   }
 })
