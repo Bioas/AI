@@ -8,11 +8,11 @@ export default function InvoicePreview({ inv }) {
   const cf = settings.commonFee || 0
   const inf = settings.internetFee || 0
   const items = [
-    { desc: 'ค่าเช่าห้อง', amount: inv.rent },
-    { desc: 'ค่าไฟฟ้า', amount: inv.elecCost },
-    { desc: 'ค่าน้ำประปา', amount: inv.waterCost },
-    ...(cf > 0 ? [{ desc: 'ค่าส่วนกลาง', amount: cf }] : []),
-    ...(inf > 0 ? [{ desc: 'ค่าอินเทอร์เน็ต', amount: inf }] : []),
+    { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
+    { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
+    { desc: 'ค่าน้ำประปา', detail: `${inv.waterUnits} หน่วย × ${inv.rateWater} บาท`, amount: inv.waterCost },
+    ...(cf > 0 ? [{ desc: 'ค่าส่วนกลาง', detail: '', amount: cf }] : []),
+    ...(inf > 0 ? [{ desc: 'ค่าอินเทอร์เน็ต', detail: '', amount: inf }] : []),
   ]
   const total = items.reduce((s, i) => s + i.amount, 0)
   const date = new Date()
@@ -23,7 +23,7 @@ export default function InvoicePreview({ inv }) {
       {/* Header */}
       <div className="flex justify-between items-start pb-6 mb-6 border-b border-neutral-200">
         <div className="flex items-center gap-4">
-          {settings.logo && <img src={settings.logo} alt="" className="h-12 w-12 object-contain" />}
+          {settings.logo && <img src={settings.logo} alt="" className="h-20 w-20 object-contain" />}
           <div>
             <div className="text-base font-bold text-neutral-800">{settings.dormName || 'หอพัก'}</div>
             <div className="text-[10px] text-neutral-400">{settings.address}</div>
@@ -52,13 +52,15 @@ export default function InvoicePreview({ inv }) {
         <thead>
           <tr className="border-b border-neutral-200">
             <th className="text-left pb-2 font-medium text-[10px] text-neutral-400">รายการ</th>
+            <th className="text-left pb-2 font-medium text-[10px] text-neutral-400">รายละเอียด</th>
             <th className="text-right pb-2 font-medium text-[10px] text-neutral-400">จำนวนเงิน</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item, i) => (
             <tr key={i} className="border-b border-neutral-50">
-              <td className="py-2 text-[11px] text-neutral-700">{item.desc}</td>
+              <td className="py-2 pr-2 text-[11px] text-neutral-700">{item.desc}</td>
+              <td className="py-2 pr-2 text-[10px] text-neutral-400">{item.detail}</td>
               <td className="py-2 text-right text-[11px] text-neutral-700">{item.amount.toLocaleString()}</td>
             </tr>
           ))}
