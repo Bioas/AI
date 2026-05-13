@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { connectDB } from '../lib/mongodb.js'
 
 const router = Router()
 
@@ -103,26 +104,15 @@ router.post('/send-image', async (req, res) => {
     }
   ]
 
-  if (qrCodeUrl && qrCodeUrl.length > 0) {
-    bodyContents.push({
-      type: 'box', layout: 'vertical', margin: 'xxl',
-      contents: [
-        { type: 'text', text: 'QR CODE', color: '#aaaaaa', size: 'xs' },
-        { type: 'image', url: qrCodeUrl || invoiceImageUrl, size: 'xl', aspectMode: 'fit' },
-        { type: 'text', text: 'Scan QR code เพื่อชำระเงิน', color: '#aaaaaa', size: 'xs', wrap: true, margin: 'md' }
-      ]
-    })
-  }
-
   const host = process.env.VERCEL_URL || req.get('host')
   const protocol = host?.includes('localhost') ? 'http' : 'https'
-  const qrCodeUrl = `${protocol}://${host}/api/settings/qr`
+  const qrImgUrl = `${protocol}://${host}/api/settings/qr`
 
   bodyContents.push({
     type: 'box', layout: 'vertical', margin: 'xxl',
     contents: [
       { type: 'text', text: 'QR CODE', color: '#aaaaaa', size: 'xs' },
-      { type: 'image', url: qrCodeUrl, size: 'xl', aspectMode: 'fit' },
+      { type: 'image', url: qrImgUrl, size: 'xl', aspectMode: 'fit' },
       { type: 'text', text: 'Scan QR code เพื่อชำระเงิน', color: '#aaaaaa', size: 'xs', wrap: true, margin: 'md' }
     ]
   })
