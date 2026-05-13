@@ -1,8 +1,9 @@
 {
   "type": "flex",
-  "altText": "ใบแจ้งหนี้ค่าเช่าห้อง {{room_number}}",
+  "altText": "🧾 ใบแจ้งหนี้ค่าเช่า ห้อง {{room_number}} — {{total_amount}} บาท",
   "contents": {
     "type": "bubble",
+    "size": "mega",
     "direction": "ltr",
     "header": {
       "type": "box",
@@ -20,7 +21,7 @@
               "type": "box",
               "layout": "vertical",
               "width": "4px",
-              "height": "18px",
+              "height": "20px",
               "backgroundColor": "#22C55E",
               "cornerRadius": "2px",
               "flex": "none"
@@ -29,7 +30,7 @@
               "type": "text",
               "text": "ใบแจ้งหนี้ค่าเช่า",
               "weight": "bold",
-              "size": "16px",
+              "size": "17px",
               "color": "#1A1A2E",
               "margin": "10px",
               "flex": 0
@@ -42,31 +43,21 @@
               "weight": "bold",
               "margin": "4px",
               "gravity": "center",
-              "align": "center",
               "flex": 0,
               "offsetBottom": "1px"
             }
           ]
-        }
-      ]
-    },
-    "body": {
-      "type": "box",
-      "layout": "vertical",
-      "paddingAll": "18px",
-      "paddingTop": "0px",
-      "backgroundColor": "#FFFFFF",
-      "contents": [
+        },
         {
           "type": "separator",
           "color": "#F0F0F0",
-          "margin": "none"
+          "margin": "12px"
         },
         {
           "type": "box",
           "layout": "horizontal",
-          "margin": "16px",
-          "alignItems": "flex-end",
+          "margin": "10px",
+          "alignItems": "center",
           "contents": [
             {
               "type": "box",
@@ -75,19 +66,18 @@
               "contents": [
                 {
                   "type": "text",
-                  "text": "ห้อง",
-                  "size": "11px",
-                  "color": "#8E8E93",
+                  "text": "ผู้เช่า",
+                  "size": "10px",
+                  "color": "#9CA3AF",
                   "weight": "medium"
                 },
                 {
                   "type": "text",
-                  "text": "{{room_number}}",
-                  "size": "32px",
+                  "text": "{{tenant_name}}",
+                  "size": "14px",
                   "color": "#1A1A2E",
                   "weight": "bold",
-                  "margin": "4px",
-                  "lineSpacing": "0px"
+                  "margin": "2px"
                 }
               ]
             },
@@ -97,27 +87,141 @@
               "contents": [
                 {
                   "type": "text",
-                  "text": "ยอดชำระ",
-                  "size": "11px",
-                  "color": "#8E8E93",
+                  "text": "ห้อง",
+                  "size": "10px",
+                  "color": "#9CA3AF",
                   "weight": "medium",
                   "align": "right"
                 },
                 {
                   "type": "text",
-                  "text": "{{total_amount}}",
-                  "size": "28px",
-                  "color": "#22C55E",
+                  "text": "{{room_number}}",
+                  "size": "20px",
+                  "color": "#1A1A2E",
                   "weight": "bold",
                   "align": "right",
-                  "margin": "4px"
+                  "margin": "2px"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "margin": "6px",
+          "alignItems": "center",
+          "contents": [
+            {
+              "type": "text",
+              "text": "{{billing_month}}",
+              "size": "12px",
+              "color": "#6B7280",
+              "weight": "medium",
+              "flex": 1
+            },
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "backgroundColor": "#FEF3C7",
+              "cornerRadius": "100px",
+              "paddingStart": "10px",
+              "paddingEnd": "10px",
+              "paddingTop": "4px",
+              "paddingBottom": "4px",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "⏳ รอชำระ",
+                  "size": "10px",
+                  "color": "#D97706",
+                  "weight": "bold"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "hero": {
+      "type": "image",
+      "url": "{{invoice_image_url}}",
+      "size": "full",
+      "aspectRatio": "1.91:1",
+      "aspectMode": "fit",
+      "backgroundColor": "#FFFFFF",
+      "action": {
+        "type": "uri",
+        "label": "ดูใบแจ้งหนี้",
+        "uri": "{{invoice_image_url}}"
+      }
+    },
+    "body": {
+      "type": "box",
+      "layout": "vertical",
+      "paddingAll": "18px",
+      "paddingTop": "14px",
+      "backgroundColor": "#FFFFFF",
+      "contents": [
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "box",
+              "layout": "vertical",
+              "flex": 1,
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "จำนวนเงิน",
+                  "size": "10px",
+                  "color": "#9CA3AF",
+                  "weight": "medium"
+                },
+                {
+                  "type": "text",
+                  "text": "{{total_amount}}",
+                  "size": "32px",
+                  "color": "#22C55E",
+                  "weight": "bold",
+                  "margin": "2px"
                 },
                 {
                   "type": "text",
                   "text": "บาท",
                   "size": "12px",
                   "color": "#22C55E",
+                  "weight": "bold"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "กำหนดชำระ",
+                  "size": "10px",
+                  "color": "#9CA3AF",
+                  "weight": "medium",
+                  "align": "right"
+                },
+                {
+                  "type": "text",
+                  "text": "{{due_date}}",
+                  "size": "14px",
+                  "color": "#EF4444",
                   "weight": "bold",
+                  "align": "right",
+                  "margin": "4px"
+                },
+                {
+                  "type": "text",
+                  "text": "วันครบกำหนด",
+                  "size": "9px",
+                  "color": "#EF4444",
                   "align": "right"
                 }
               ]
@@ -126,65 +230,42 @@
         },
         {
           "type": "separator",
-          "color": "#F0F0F0"
+          "color": "#F0F0F0",
+          "margin": "12px"
         },
         {
           "type": "box",
           "layout": "horizontal",
-          "margin": "14px",
+          "margin": "12px",
           "contents": [
             {
               "type": "box",
               "layout": "horizontal",
+              "backgroundColor": "#F9FAFB",
+              "cornerRadius": "8px",
+              "paddingAll": "10px",
               "flex": 1,
               "contents": [
                 {
                   "type": "text",
-                  "text": "ประจำเดือน",
-                  "size": "12px",
-                  "color": "#8E8E93",
-                  "weight": "medium",
-                  "flex": "none"
-                },
-                {
-                  "type": "text",
-                  "text": "{{billing_month}}",
-                  "size": "12px",
-                  "color": "#1A1A2E",
-                  "weight": "bold",
-                  "margin": "8px",
-                  "flex": 0
+                  "text": "⚡ ค่าไฟ + 💧 ค่าน้ำ + 🏠 ค่าเช่า",
+                  "size": "11px",
+                  "color": "#6B7280",
+                  "weight": "regular",
+                  "wrap": true
                 }
               ]
-            },
-            {
-              "type": "text",
-              "text": "กำหนดชำระ วันที่ 5",
-              "size": "11px",
-              "color": "#EF4444",
-              "weight": "medium",
-              "align": "right",
-              "flex": "none"
             }
           ]
         },
         {
-          "type": "separator",
-          "color": "#F0F0F0"
-        },
-        {
-          "type": "box",
-          "layout": "horizontal",
-          "margin": "14px",
-          "contents": [
-            {
-              "type": "text",
-              "text": "⚡ ค่าเช่าและค่าสาธารณูปโภค",
-              "size": "11px",
-              "color": "#8E8E93",
-              "weight": "regular"
-            }
-          ]
+          "type": "text",
+          "text": "ขอบคุณที่ใช้บริการ",
+          "size": "10px",
+          "color": "#D1D5DB",
+          "weight": "regular",
+          "align": "center",
+          "margin": "6px"
         }
       ]
     },
@@ -203,24 +284,14 @@
           "type": "button",
           "action": {
             "type": "uri",
-            "label": "📄 เปิดไฟล์ PDF",
-            "uri": "{{pdf_url}}"
+            "label": "👁️ ดูใบแจ้งหนี้",
+            "uri": "{{invoice_image_url}}"
           },
-          "margin": "16px",
+          "margin": "14px",
           "height": "48px",
           "style": "primary",
           "color": "#22C55E",
-          "cornerRadius": "12px",
-          "offsetTop": "2px"
-        },
-        {
-          "type": "text",
-          "text": "ขอบคุณที่ใช้บริการ",
-          "size": "10px",
-          "color": "#C7C7CC",
-          "weight": "regular",
-          "align": "center",
-          "margin": "12px"
+          "cornerRadius": "12px"
         }
       ]
     }

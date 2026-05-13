@@ -271,14 +271,28 @@ export function AppProvider({ children }) {
 
       toast('กำลังส่งรูปภาพทาง LINE...')
 
+      const md = formatMonth(inv.month)
+      const due = new Date()
+      const dueD = new Date(due.getFullYear(), due.getMonth(), 5)
+      if (dueD < due) dueD.setMonth(dueD.getMonth() + 1)
+      const dueStr = dueD.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      const bm = inv.month
+
       const lineRes = await fetch('/api/line/send-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: inv.userId,
           token: settings.channelToken,
-          originalContentUrl: origData.url,
-          previewImageUrl: prevData.url,
+          invoiceImageUrl: origData.url,
+          tenantName: inv.tenant,
+          roomNumber: inv.room,
+          billingMonth: bm,
+          totalAmount: inv.total,
+          dueDate: dueStr,
+          roomFee: inv.rent,
+          waterBill: inv.waterCost,
+          electricBill: inv.elecCost,
         }),
       })
       const lineData = await lineRes.json()
