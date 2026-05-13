@@ -6,8 +6,14 @@ import PageHeader from './ui/page-header'
 import EmptyState from './ui/empty-state'
 
 export default function Invoice() {
-  const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendInvLine, setViewInv, setModal } = useApp()
+  const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendPdfToLine, setViewInv, setModal } = useApp()
   const handleView = (inv) => { setViewInv(inv); setModal('invoice') }
+
+  const handleLine = (inv) => {
+    setViewInv(inv)
+    setModal('invoice')
+    setTimeout(() => sendPdfToLine(inv), 500)
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -50,7 +56,7 @@ export default function Invoice() {
                           <div className="flex gap-1.5">
                             <button onClick={() => handleView(inv)} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-100">ดู</button>
                             <button onClick={() => downloadPdf(inv)} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-100">PDF</button>
-                            <button onClick={() => sendInvLine(inv)} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors border border-teal-100">LINE</button>
+                            <button onClick={() => handleLine(inv)} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors border border-teal-100">LINE</button>
                           </div>
                         </td>
                       </tr>

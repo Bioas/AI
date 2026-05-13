@@ -267,9 +267,9 @@ export function AppProvider({ children }) {
       let qrUrl = ''
       if (settings.qrCode && settings.qrCode.startsWith('data:')) {
         try {
-          const qrRes = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: settings.qrCode, filename: 'qrcode.png' }) })
+          const qrRes = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: settings.qrCode, filename: `qrcode_${inv.room}_${Date.now()}.png` }) })
           const qrData = await qrRes.json()
-          if (qrRes.ok) qrUrl = qrData.url
+          if (qrRes.ok) { qrUrl = qrData.url }
         } catch (e) { console.warn('QR upload failed:', e) }
       }
 

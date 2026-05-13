@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
 
     const buffer = Buffer.from(base64, 'base64')
     const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const contentType = filename.endsWith('.jpg') || filename.endsWith('.jpeg') ? 'image/jpeg' : 'application/octet-stream'
+    const contentType = filename.endsWith('.jpg') || filename.endsWith('.jpeg') ? 'image/jpeg' : filename.endsWith('.png') ? 'image/png' : 'application/octet-stream'
 
     const client = await connectDB()
     const db = client.db('dorm_billing')
