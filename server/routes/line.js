@@ -20,10 +20,7 @@ router.post('/send', async (req, res) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        to,
-        messages: [{ type: 'text', text }],
-      }),
+      body: JSON.stringify({ to, messages: [{ type: 'text', text }] }),
     })
 
     const data = await response.json()
@@ -39,6 +36,131 @@ router.post('/send', async (req, res) => {
   }
 })
 
+// ── Builder functions ──────────────────────────────────────────
+
+function createHeroBlock(imageUrl) {
+  return {
+    type: 'image',
+    url: imageUrl,
+    size: 'full',
+    aspectRatio: '20:13',
+    aspectMode: 'cover',
+    backgroundColor: '#FFFFFF'
+  }
+}
+
+function createTitleBox() {
+  return {
+    type: 'text',
+    text: 'ใบแจ้งหนี้ค่าเช่า',
+    wrap: true,
+    weight: 'bold',
+    gravity: 'center',
+    size: 'xl'
+  }
+}
+
+function createDetailBlock(title, detail) {
+  return {
+    type: 'box',
+    layout: 'baseline',
+    spacing: 'sm',
+    contents: [
+      { type: 'text', text: title, color: '#aaaaaa', size: 'sm', flex: 1, wrap: true },
+      { type: 'text', text: detail, wrap: true, color: '#666666', size: 'sm', flex: 4 }
+    ]
+  }
+}
+
+function createSeparator() {
+  return { type: 'separator', color: '#e5e7eb', margin: 'xl' }
+}
+
+function createFeeRow(label, amount) {
+  return createDetailBlock(label, amount + ' บาท')
+}
+
+function createDetailsBox(tenantName, roomNumber, billingMonth) {
+  return {
+    type: 'box',
+    layout: 'vertical',
+    margin: 'lg',
+    spacing: 'sm',
+    contents: [
+      createDetailBlock('ผู้พัก', tenantName || ''),
+      createDetailBlock('ห้อง', roomNumber || ''),
+      createDetailBlock('เดือน', billingMonth || '')
+    ]
+  }
+}
+
+function createFeesBox(roomFee, electricBill, waterBill, totalAmount, dueDate) {
+  return {
+    type: 'box',
+    layout: 'vertical',
+    margin: 'lg',
+    spacing: 'sm',
+    contents: [
+      createFeeRow('ค่าเช่าห้อง', roomFee || '0'),
+      createFeeRow('ค่าไฟฟ้า', electricBill || '0'),
+      createFeeRow('ค่าน้ำประปา', waterBill || '0'),
+      createFeeRow('รวมทั้งสิ้น', totalAmount || ''),
+      createDetailBlock('กำหนดชำระ', dueDate || '')
+    ]
+  }
+}
+
+function createQRCodeBox(qrImageUrl) {
+  if (!qrImageUrl) return null
+
+  return {
+    type: 'box',
+    layout: 'vertical',
+    margin: 'xxl',
+    contents: [
+      { type: 'spacer' },
+      { type: 'image', url: qrImageUrl, aspectMode: 'cover', size: 'xl' },
+      { type: 'text', text: 'Scan QR code เพื่อชำระเงิน', color: '#aaaaaa', wrap: true, margin: 'xxl', size: 'xs' }
+    ]
+  }
+}
+
+function createBodyBlock({ tenantName, roomNumber, billingMonth, roomFee, electricBill, waterBill, totalAmount, dueDate, qrImageUrl }) {
+  const contents = [
+    createTitleBox(),
+    createDetailsBox(tenantName, roomNumber, billingMonth),
+    createSeparator(),
+    createFeesBox(roomFee, electricBill, waterBill, totalAmount, dueDate)
+  ]
+
+  const qrBox = createQRCodeBox(qrImageUrl)
+  if (qrBox) contents.push(qrBox)
+
+  return {
+    type: 'box',
+    layout: 'vertical',
+    spacing: 'md',
+    paddingAll: 'xl',
+    contents
+  }
+}
+
+function createFooterBlock(invoiceImageUrl) {
+  return {
+    type: 'box',
+    layout: 'vertical',
+    spacing: 'md',
+    paddingAll: 'xl',
+    paddingTop: 'none',
+    contents: [
+      { type: 'separator', color: '#e5e7eb' },
+      { type: 'button', action: { type: 'uri', label: 'ดูใบแจ้งหนี้', uri: invoiceImageUrl }, style: 'link', height: 'sm' }
+    ]
+  }
+}
+
+// ── Send image endpoint ────────────────────────────────────────
+
 router.post('/send-image', async (req, res) => {
   const { to, token, invoiceImageUrl, qrImageUrl, tenantName, roomNumber, billingMonth, totalAmount, dueDate, roomFee, waterBill, electricBill } = req.body
 
@@ -50,102 +172,17 @@ router.post('/send-image', async (req, res) => {
     return res.status(400).json({ error: 'Invalid LINE User ID. Must start with U' })
   }
 
-  const bodyContents = [
-    { type: 'text', text: 'ใบแจ้งหนี้ค่าเช่า', weight: 'bold', size: 'xl', color: '#1a1a2e', wrap: true },
-    { type: 'box', layout: 'baseline', spacing: 'sm',
-      contents: [
-        { type: 'text', text: 'ผู้พัก', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
-        { type: 'text', text: tenantName || '', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
-      ]
-    },
-    { type: 'box', layout: 'baseline', spacing: 'sm',
-      contents: [
-        { type: 'text', text: 'ห้อง', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
-        { type: 'text', text: roomNumber || '', wrap: true, color: '#1a1a2e', size: 'sm', flex: 3, align: 'end' }
-      ]
-    },
-    { type: 'box', layout: 'baseline', spacing: 'sm',
-      contents: [
-        { type: 'text', text: 'เดือน', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
-        { type: 'text', text: billingMonth || '', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
-      ]
-    },
-    { type: 'separator', color: '#e5e7eb', margin: 'xl' },
-    { type: 'box', layout: 'baseline', spacing: 'sm',
-      contents: [
-        { type: 'text', text: 'ค่าเช่าห้อง', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
-        { type: 'text', text: (roomFee || '0') + ' บาท', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
-      ]
-    },
-    { type: 'box', layout: 'baseline', spacing: 'sm',
-      contents: [
-        { type: 'text', text: 'ค่าไฟฟ้า', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
-        { type: 'text', text: (electricBill || '0') + ' บาท', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
-      ]
-    },
-    { type: 'box', layout: 'baseline', spacing: 'sm',
-      contents: [
-        { type: 'text', text: 'ค่าน้ำประปา', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
-        { type: 'text', text: (waterBill || '0') + ' บาท', wrap: true, color: '#666666', size: 'sm', flex: 3, align: 'end' }
-      ]
-    },
-    { type: 'box', layout: 'baseline', spacing: 'sm',
-      contents: [
-        { type: 'text', text: 'รวมทั้งสิ้น', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
-        { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'sm', flex: 3, align: 'end' }
-      ]
-    },
-    { type: 'box', layout: 'baseline', spacing: 'sm',
-      contents: [
-        { type: 'text', text: 'กำหนดชำระ', color: '#aaaaaa', size: 'sm', flex: 2, wrap: true },
-        { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'sm', flex: 3, align: 'end' }
-      ]
-    }
-  ]
-
-  if (qrImageUrl) {
-    bodyContents.push({
-      type: 'box', layout: 'vertical', margin: 'xxl',
-      contents: [
-        { type: 'text', text: 'QR CODE', color: '#aaaaaa', size: 'xs' },
-        { type: 'image', url: qrImageUrl, size: 'xl', aspectMode: 'fit' },
-        { type: 'text', text: 'Scan QR code เพื่อชำระเงิน', color: '#aaaaaa', size: 'xs', wrap: true, margin: 'md' }
-      ]
-    })
+  const bubble = {
+    type: 'bubble',
+    hero: createHeroBlock(invoiceImageUrl),
+    body: createBodyBlock({ tenantName, roomNumber, billingMonth, roomFee, electricBill, waterBill, totalAmount, dueDate, qrImageUrl }),
+    footer: createFooterBlock(invoiceImageUrl)
   }
 
   const flex = {
     type: 'flex',
     altText: 'ใบแจ้งหนี้ค่าเช่า ห้อง ' + (roomNumber || ''),
-    contents: {
-      type: 'bubble',
-      hero: {
-        type: 'image',
-        url: invoiceImageUrl,
-        size: 'full',
-        aspectRatio: '20:13',
-        aspectMode: 'fit',
-        backgroundColor: '#FFFFFF'
-      },
-      body: {
-        type: 'box',
-        layout: 'vertical',
-        spacing: 'md',
-        paddingAll: 'xl',
-        contents: bodyContents
-      },
-      footer: {
-        type: 'box',
-        layout: 'vertical',
-        spacing: 'md',
-        paddingAll: 'xl',
-        paddingTop: 'none',
-        contents: [
-          { type: 'separator', color: '#e5e7eb' },
-          { type: 'button', action: { type: 'uri', label: 'ดูใบแจ้งหนี้', uri: invoiceImageUrl }, style: 'link', height: 'sm' }
-        ]
-      }
-    }
+    contents: bubble
   }
 
   try {
