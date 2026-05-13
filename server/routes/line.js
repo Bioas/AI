@@ -136,39 +136,33 @@ router.post('/send-image', async (req, res) => {
 
   const flex = {
     type: 'flex',
-    altText: 'ใบแจ้งหนี้คาเชา หอง ' + (roomNumber || ''),
+    altText: 'ใบแจ้งหนี้ค่าเช่า ห้อง ' + (roomNumber || ''),
     contents: {
       type: 'bubble',
       body: {
         type: 'box',
         layout: 'vertical',
-        spacing: 'sm',
+        spacing: 'md',
+        paddingAll: 'xl',
         contents: [
           {
             type: 'box',
             layout: 'baseline',
             spacing: 'sm',
             contents: [
-              { type: 'text', text: 'ใบแจงหนี้คาเชา', weight: 'bold', size: 'xl', color: '#1a1a2e', flex: 1 }
+              { type: 'text', text: '🧾', flex: 0, size: 'lg' },
+              { type: 'text', text: 'ใบแจ้งหนี้ค่าเช่า', weight: 'bold', size: 'xl', color: '#1a1a2e', flex: 1 }
             ]
           },
-          { type: 'separator', color: '#f0f0f0' },
+          { type: 'separator', color: '#e5e7eb' },
           {
             type: 'box',
             layout: 'baseline',
             spacing: 'sm',
+            margin: 'lg',
             contents: [
-              { type: 'text', text: 'ผูเชา', color: '#aaaaaa', size: 'sm', flex: 1 },
-              { type: 'text', text: tenantName || '', wrap: true, color: '#666666', size: 'sm', flex: 5 }
-            ]
-          },
-          {
-            type: 'box',
-            layout: 'baseline',
-            spacing: 'sm',
-            contents: [
-              { type: 'text', text: 'หอง', color: '#aaaaaa', size: 'sm', flex: 1 },
-              { type: 'text', text: roomNumber || '', wrap: true, color: '#1a1a2e', size: 'xxl', weight: 'bold', flex: 5 }
+              { type: 'text', text: 'ผู้เช่า', color: '#9ca3af', size: 'sm', flex: 1 },
+              { type: 'text', text: tenantName || '', wrap: true, color: '#1a1a2e', size: 'md', weight: 'bold', flex: 4 }
             ]
           },
           {
@@ -176,18 +170,8 @@ router.post('/send-image', async (req, res) => {
             layout: 'baseline',
             spacing: 'sm',
             contents: [
-              { type: 'text', text: 'เดือน', color: '#aaaaaa', size: 'sm', flex: 1 },
-              { type: 'text', text: billingMonth || '', wrap: true, color: '#666666', size: 'sm', flex: 5 }
-            ]
-          },
-          { type: 'separator', color: '#f0f0f0', margin: 'lg' },
-          {
-            type: 'box',
-            layout: 'baseline',
-            spacing: 'sm',
-            contents: [
-              { type: 'text', text: 'จำนวนเงิน', color: '#aaaaaa', size: 'sm', flex: 1 },
-              { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'xxl', weight: 'bold', flex: 5 }
+              { type: 'text', text: 'ห้อง', color: '#9ca3af', size: 'sm', flex: 1 },
+              { type: 'text', text: 'ห้อง ' + (roomNumber || ''), wrap: true, color: '#1a1a2e', size: 'xxl', weight: 'bold', flex: 4 }
             ]
           },
           {
@@ -195,19 +179,67 @@ router.post('/send-image', async (req, res) => {
             layout: 'baseline',
             spacing: 'sm',
             contents: [
-              { type: 'text', text: 'กำหนดชำระ', color: '#aaaaaa', size: 'sm', flex: 1 },
-              { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'sm', weight: 'bold', flex: 5 }
+              { type: 'text', text: 'เดือน', color: '#9ca3af', size: 'sm', flex: 1 },
+              { type: 'text', text: billingMonth || '', wrap: true, color: '#6b7280', size: 'sm', flex: 4 }
             ]
-          }
+          },
+          { type: 'separator', color: '#e5e7eb', margin: 'xl' },
+          {
+            type: 'box',
+            layout: 'baseline',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: 'จำนวนเงิน', color: '#9ca3af', size: 'sm', flex: 1 },
+              { type: 'text', text: (totalAmount || '') + ' บาท', wrap: true, color: '#22c55e', size: 'xxl', weight: 'bold', flex: 4, align: 'end' }
+            ]
+          },
+          {
+            type: 'box',
+            layout: 'baseline',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: 'กำหนดชำระ', color: '#9ca3af', size: 'sm', flex: 1 },
+              { type: 'text', text: dueDate || '', wrap: true, color: '#ef4444', size: 'md', weight: 'bold', flex: 4, align: 'end' }
+            ]
+          },
+          { type: 'separator', color: '#e5e7eb', margin: 'xl' },
+          {
+            type: 'box',
+            layout: 'horizontal',
+            spacing: 'sm',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#f0fdf4',
+                cornerRadius: 'md',
+                paddingAll: 'md',
+                contents: [
+                  { type: 'text', text: '⚡ ค่าไฟ + 💧 ค่าน้ำ + 🏠 ค่าเช่า', size: 'xs', color: '#6b7280', align: 'center' }
+                ]
+              }
+            ]
+          },
+          { type: 'text', text: 'ขอบคุณที่ใช้บริการ', size: 'xs', color: '#d1d5db', align: 'center', margin: 'lg' }
         ]
       },
       footer: {
         type: 'box',
         layout: 'vertical',
         spacing: 'sm',
+        paddingAll: 'xl',
+        paddingTop: 'none',
         contents: [
-          { type: 'separator', color: '#f0f0f0' },
-          { type: 'button', action: { type: 'uri', label: 'ดูใบแจงหนี้', uri: invoiceImageUrl }, style: 'link', height: 'sm' }
+          { type: 'separator', color: '#e5e7eb' },
+          {
+            type: 'button',
+            action: { type: 'uri', label: '👁️ ดูใบแจ้งหนี้', uri: invoiceImageUrl },
+            style: 'primary',
+            color: '#22c55e',
+            height: 'md',
+            cornerRadius: 'md',
+            margin: 'md'
+          }
         ]
       }
     }
