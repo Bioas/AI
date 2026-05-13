@@ -1,6 +1,6 @@
 {
   "type": "flex",
-  "altText": "ใบแจ้งหนี้ค่าเช่า ห้อง {{room_number}}",
+  "altText": "ใบแจ้งหนี้ค่าเช่าห้อง {{room_number}}",
   "contents": {
     "type": "bubble",
     "direction": "ltr",
