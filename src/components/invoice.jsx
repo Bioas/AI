@@ -8,7 +8,7 @@ import EmptyState from './ui/empty-state'
 import InvoicePreview from './InvoicePreview'
 
 export default function Invoice() {
-  const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendPdfToLine, setViewInv, setModal } = useApp()
+  const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendPdfToLine, setViewInv, setModal, sendingQrImage } = useApp()
   const [sendingInv, setSendingInv] = useState(null)
 
   const handleView = (inv) => { setViewInv(inv); setModal('invoice') }
@@ -77,7 +77,7 @@ export default function Invoice() {
 
       {sendingInv && (
         <div className="fixed left-0 top-0 -z-50 opacity-0 pointer-events-none" aria-hidden="true">
-          <InvoicePreview inv={sendingInv} />
+          <InvoicePreview inv={sendingInv} qrImage={sendingQrImage} />
         </div>
       )}
     </motion.div>

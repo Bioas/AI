@@ -30,13 +30,14 @@ export function DormInfoModal({ onClose }) {
   const [dormName, setDormName] = useState(settings.dormName || '')
   const [phone, setPhone] = useState(settings.phone || '')
   const [address, setAddress] = useState(settings.address || '')
+  const [promptpayNumber, setPromptpayNumber] = useState(settings.promptpayNumber || '')
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
     setSaving(true)
     try {
       const { api } = await import('../lib/api')
-      await api('/api/settings', 'POST', { ...settings, dormName, phone, address })
+      await api('/api/settings', 'POST', { ...settings, dormName, phone, address, promptpayNumber })
       await fetchAll(); toast('บันทึกข้อมูลหอพักเรียบร้อย'); onClose()
     } catch (e) { toast(`บันทึกไม่สำเร็จ: ${e.message}`, true) }
     setSaving(false)
@@ -47,6 +48,7 @@ export function DormInfoModal({ onClose }) {
       <Input label="ชื่อหอพัก" value={dormName} onChange={e => setDormName(e.target.value)} placeholder="ชื่อหอพัก" />
       <Input label="เบอร์โทรศัพท์" value={phone} onChange={e => setPhone(e.target.value)} placeholder="081-234-5678" />
       <Input label="ที่อยู่" value={address} onChange={e => setAddress(e.target.value)} placeholder="123 ถนนสุขุมวิท กรุงเทพฯ" />
+      <Input label="หมายเลข PromptPay" value={promptpayNumber} onChange={e => setPromptpayNumber(e.target.value)} placeholder="090-243-9797" />
     </SettingFrame>
   )
 }
