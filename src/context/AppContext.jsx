@@ -234,9 +234,21 @@ export function AppProvider({ children }) {
       toast('กำลังสร้างรูปภาพใบแจ้งหนี้...')
       const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-      toast('กำลังอัปโหลด...')
 
-      const jpegBase64 = canvas.toDataURL('image/jpeg', 0.85)
+      const MAX = 1024
+      let outCanvas = canvas
+      if (canvas.width > MAX || canvas.height > MAX) {
+        const ratio = Math.min(MAX / canvas.width, MAX / canvas.height)
+        const c = document.createElement('canvas')
+        c.width = Math.round(canvas.width * ratio)
+        c.height = Math.round(canvas.height * ratio)
+        const ctx = c.getContext('2d')
+        ctx.drawImage(canvas, 0, 0, c.width, c.height)
+        outCanvas = c
+      }
+
+      toast('กำลังอัปโหลด...')
+      const jpegBase64 = outCanvas.toDataURL('image/jpeg', 0.85)
       const filename = `invoice_${inv.room}_${inv.month.replace('/', '-')}.jpg`
 
       const uploadRes = await fetch('/api/upload', {
