@@ -1,46 +1,75 @@
-import styles from '../styles/Home.module.css';
+import { useApp } from '../context/AppContext';
+import { formatMonth } from '../lib/constants';
 
-const THAI_MONTHS = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+export default function Invoice() {
+  const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendInvLine, setViewInv, setModal } = useApp();
 
-function formatMonth(ym) {
-  const [y, m] = ym.split('-');
-  return THAI_MONTHS[parseInt(m)] + ' ' + (parseInt(y) + 543);
-}
+  const handleView = (inv) => {
+    setViewInv(inv);
+    setModal('invoice');
+  };
 
-export default function Invoice({ rooms, meters, settings, invMonth, setInvMonth, calcInv, downloadPdf, sendInvLine, formatMonth }) {
   return (
-    <div className={styles.page}>
-      <div className={styles.pageHeader}><h2>🧾 ใบแจ้งหนี้</h2></div>
-      <div className={styles.monthSelector}>
-        <label>📅 เลือกเดือน:</label>
-        <input type="month" value={invMonth} onChange={e => setInvMonth(e.target.value)} />
+    <div className="animate-fadeInUp">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <h2 className="text-3xl font-extrabold bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
+          🧾 ใบแจ้งหนี้
+        </h2>
       </div>
-      <div className={styles.card}>
-        <div className={styles.tableWrap}>
-          <table>
-            <thead><tr><th>ห้อง</th><th>ผู้พัก</th><th>ค่าเช่า</th><th>ค่าไฟ</th><th>ค่าน้ำ</th><th>รวม</th><th>จัดการ</th></tr></thead>
+
+      <div className="flex items-center gap-3 mb-7 bg-white px-5 py-3.5 rounded-xl shadow-sm w-fit">
+        <label className="font-semibold text-slate-900 text-sm">📅 เลือกเดือน:</label>
+        <input
+          type="month"
+          value={invMonth}
+          onChange={e => setInvMonth(e.target.value)}
+          className="px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
+        />
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-lg transition-all duration-300">
+        <div className="overflow-x-auto rounded-xl border border-slate-100">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gradient-to-r from-slate-50 to-emerald-50/50">
+                {['ห้อง', 'ผู้พัก', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'รวม', 'จัดการ'].map(h => (
+                  <th key={h} className="text-left px-4 py-3.5 font-bold text-slate-500 text-[11px] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
             <tbody>
-              {rooms.filter(r => r.tenantName).length === 0 ?
-                <tr><td colSpan={7}><div className={styles.emptyState}><div className={styles.emptyIcon}>🧾</div><p>ยังไม่มีข้อมูล</p></div></td></tr> :
-                rooms.filter(r => r.tenantName).map((r, i) => {
-                  const inv = calcInv(r, invMonth);
-                  return (
-                    <tr key={r.id} style={{ animationDelay: `${i * 0.05}s` }}>
-                      <td><span className={styles.roomNumber}>{inv.room}</span></td>
-                      <td>{inv.tenant}</td>
-                      <td>{inv.rent.toLocaleString()}</td>
-                      <td>{inv.elecCost.toLocaleString()} <small>({inv.elecUnits} หน่วย)</small></td>
-                      <td>{inv.waterCost.toLocaleString()} <small>({inv.waterUnits} หน่วย)</small></td>
-                      <td className={styles.totalCell}>{inv.total.toLocaleString()} ฿</td>
-                      <td><div className={styles.actionBtns}>
-                        <button className={styles.btnView} onClick={() => { /* view handled in parent */ }}>👁️ ดู</button>
-                        <button className={styles.btnPdf} onClick={() => downloadPdf(inv)}>📄 PDF</button>
-                        <button className={styles.btnLine} onClick={() => sendInvLine(inv)}>📱 LINE</button>
-                      </div></td>
-                    </tr>
-                  );
-                })}
+              {rooms.filter(r => r.tenantName).length === 0 ? (
+                <tr><td colSpan={7}>
+                  <div className="text-center py-14 text-slate-400">
+                    <div className="text-4xl mb-4 animate-float">🧾</div>
+                    <p>ยังไม่มีข้อมูล</p>
+                  </div>
+                </td></tr>
+              ) : rooms.filter(r => r.tenantName).map((r, i) => {
+                const inv = calcInv(r, invMonth);
+                return (
+                  <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-4">
+                      <span className="inline-block bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm shadow-emerald-200">{inv.room}</span>
+                    </td>
+                    <td className="px-4 py-4 text-slate-900">{inv.tenant}</td>
+                    <td className="px-4 py-4 text-slate-900">{inv.rent.toLocaleString()}</td>
+                    <td className="px-4 py-4 text-slate-900">{inv.elecCost.toLocaleString()} <span className="text-slate-400 text-xs">({inv.elecUnits} หน่วย)</span></td>
+                    <td className="px-4 py-4 text-slate-900">{inv.waterCost.toLocaleString()} <span className="text-slate-400 text-xs">({inv.waterUnits} หน่วย)</span></td>
+                    <td className="px-4 py-4 text-lg font-extrabold text-slate-900">{inv.total.toLocaleString()} ฿</td>
+                    <td className="px-4 py-4">
+                      <div className="flex gap-1.5">
+                        <button onClick={() => handleView(inv)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">👁️ ดู</button>
+                        <button onClick={() => downloadPdf(inv)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">📄 PDF</button>
+                        <button onClick={() => sendInvLine(inv)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-50 text-green-700 hover:bg-green-100 transition-colors">📱 LINE</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

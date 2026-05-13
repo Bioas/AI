@@ -1,5 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap');
 
-:root{--primary:#374151;--primary-light:#6b7280;--primary-lighter:#9ca3af;--primary-dark:#111827;--primary-darker:#030712;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--bg:#ffffff;--bg-gradient:#ffffff;--card:#ffffff;--text:#1a1a2e;--text-light:#6b7280;--border:#e5e7eb;--shadow:0 4px 24px rgba(55,65,81,0.08);--shadow-hover:0 8px 32px rgba(55,65,81,0.15)}
-*{margin:0;padding:0;box-sizing:border-box}
-body{margin:0;font-family:'Noto Sans Thai','Inter','Segoe UI',system-ui,-apple-system,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans text-slate-900 antialiased;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    @apply appearance-none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
