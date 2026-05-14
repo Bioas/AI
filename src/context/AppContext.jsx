@@ -34,16 +34,18 @@ export function AppProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const [r, m, s, res] = await Promise.all([
+      const [r, m, s, res, lu] = await Promise.all([
         api('/api/rooms', 'GET'),
         api('/api/meters', 'GET'),
         api('/api/settings', 'GET'),
         api('/api/residents', 'GET'),
+        api('/api/line/users', 'GET').catch(() => []),
       ])
       setRooms(r || [])
       setMeters(m || [])
       setSettings(s || {})
       setResidents(res || [])
+      setLineUsers(lu || [])
     } catch (e) {
       console.error('fetchAll error:', e)
       setError(e.message)

@@ -85,8 +85,25 @@ export default function RoomModal() {
             {editRoom && residentName && (
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">ผู้พักปัจจุบัน</label>
-                <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-500">
-                  {residentName}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-500">
+                    {residentName}
+                  </div>
+                  <button onClick={() => {
+                    if (window.confirm(`ต้องการลบ "${residentName}" ออกจากห้องนี้?`)) {
+                      saveRoom({
+                        id: editRoom.id,
+                        roomNumber: roomNumber.trim(),
+                        rentPrice: Number(rentPrice) || 0,
+                        roomType,
+                        note: note.trim(),
+                        residentId: null,
+                      })
+                    }
+                  }}
+                    className="h-10 px-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors border border-rose-200 shrink-0">
+                    ลบผู้เช่า
+                  </button>
                 </div>
               </div>
             )}

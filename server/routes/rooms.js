@@ -118,6 +118,14 @@ router.put('/', async (req, res) => {
       updatedAt: new Date().toISOString(),
     }
 
+    const oldRoom = await db.collection('rooms').findOne({ id })
+    if (oldRoom?.residentId && !residentId) {
+      await db.collection('residents').updateOne(
+        { id: oldRoom.residentId },
+        { $set: { roomId: '', updatedAt: new Date().toISOString() } }
+      )
+    }
+
     await db.collection('rooms').updateOne({ id }, { $set: update })
     res.status(200).json({ ...update, id, number: update.roomNumber, rent: update.rentPrice })
   } catch (e) {
