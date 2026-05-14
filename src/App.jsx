@@ -13,7 +13,7 @@ const Invoice = lazy(() => import('./components/invoice'))
 const Setting = lazy(() => import('./components/setting'))
 const RoomModal = lazy(() => import('./components/RoomModal'))
 const InvoicePreview = lazy(() => import('./components/InvoicePreview'))
-const ModalOverlay = lazy(() => import('./components/Modal'))
+const ModalOverlay = lazy(() => import('./components/ui/modal'))
 
 export default function App() {
   const { modal, viewInv, downloadPdf, sendPdfToLine, setModal, settings } = useApp()
@@ -44,7 +44,7 @@ export default function App() {
 
       <Suspense fallback={null}>
         {modal === 'invoice' && viewInv && (
-          <ModalOverlay onClose={() => setModal(null)}>
+              <ModalOverlay open={true} onClose={() => setModal(null)}>
             <div className="p-6">
               <h3 className="text-base font-semibold text-neutral-800 mb-4">🧾 ใบแจ้งหนี้</h3>
               <InvoicePreview inv={viewInv} />

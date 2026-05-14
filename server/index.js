@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url'
 import roomsRouter from './routes/rooms.js'
 import metersRouter from './routes/meters.js'
 import settingsRouter from './routes/settings.js'
-import invoiceRouter from './routes/invoice.js'
 import lineRouter from './routes/line.js'
 import uploadRouter from './routes/upload.js'
 import sendInvoiceRouter from './routes/send-invoice.js'
@@ -21,7 +20,6 @@ app.use(express.json({ limit: '10mb' }))
 app.use('/api/rooms', roomsRouter)
 app.use('/api/meters', metersRouter)
 app.use('/api/settings', settingsRouter)
-app.use('/api/invoice', invoiceRouter)
 app.use('/api/line', lineRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/send-invoice', sendInvoiceRouter)

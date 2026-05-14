@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState, useCallback } from 'react'
 import { useApp } from '../context/AppContext'
-import { formatMonth } from '../lib/constants'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
 import EmptyState from './ui/empty-state'

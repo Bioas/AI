@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import Modal from './Modal'
+import Modal from './ui/modal'
 import Button from './ui/button'
 import Input from './ui/input'
 
@@ -22,7 +22,7 @@ export default function RoomModal() {
   }
 
   return (
-    <Modal onClose={() => setModal(null)}>
+    <Modal open={true} onClose={() => setModal(null)}>
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">🚪</div>

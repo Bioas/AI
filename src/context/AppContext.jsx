@@ -199,27 +199,6 @@ export function AppProvider({ children }) {
     } catch (err) { toast('ข้อผิดพลาด: ' + err.message, true); return false }
   }, [settings.channelToken, toast])
 
-  const sendInvLine = useCallback((inv) => {
-    if (!inv.userId) { toast('ผู้พักห้องนี้ยังไม่ได้กรอก LINE User ID', true); return }
-    const md = formatMonth(inv.month)
-    const text = [
-      `🏠 ใบแจ้งหนี้ - ห้อง ${inv.room}`,
-      `━━━━━━━━━━━━━━━`,
-      `📅 เดือน ${md}`,
-      `👤 ${inv.tenant}`,
-      `━━━━━━━━━━━━━━━`,
-      `🏠 ค่าเช่า: ${inv.rent.toLocaleString()} ฿`,
-      `⚡ ค่าไฟ: ${inv.elecCost.toLocaleString()} ฿ (${inv.elecUnits} หน่วย)`,
-      `💧 ค่าน้ำ: ${inv.waterCost.toLocaleString()} ฿ (${inv.waterUnits} หน่วย)`,
-      `━━━━━━━━━━━━━━━`,
-      `💰 รวมทั้งหมด: ${inv.total.toLocaleString()} ฿`,
-      `━━━━━━━━━━━━━━━`,
-      `กรุณาชำระเงินภายในวันที่ 5`,
-      `ขอบคุณครับ 🙏`,
-    ].join('\n')
-    sendLineMsg(inv.userId, text)
-  }, [sendLineMsg, toast])
-
   const sendPdfToLine = useCallback(async (inv) => {
     if (!inv.userId) { toast('ผู้พักห้องนี้ยังไม่ได้กรอก LINE User ID', true); return false }
     if (!settings.channelToken) { toast('กรุณาตั้งค่า Channel Access Token ก่อน', true); return false }
@@ -360,7 +339,7 @@ export function AppProvider({ children }) {
     fetchAll, toast,
     calcInv, saveAllMeters, initMeterLocal,
     saveRoom, deleteRoom,
-    downloadPdf, sendLineMsg, sendInvLine, sendPdfToLine,
+    downloadPdf, sendLineMsg, sendPdfToLine,
     saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr,
     exportData, importData,
   }

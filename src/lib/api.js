@@ -5,8 +5,6 @@ export async function api(path, method = 'GET', body = null) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } }
   if (body) opts.body = JSON.stringify(body)
 
-  console.log(`[API] ${method} ${url}`)
-
   let res
   try {
     res = await fetch(url, opts)
