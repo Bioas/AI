@@ -19,6 +19,8 @@ export function AppProvider({ children }) {
   const [viewInv, setViewInv] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [residents, setResidents] = useState([])
+  const [editResident, setEditResident] = useState(null)
   const [meterLocal, setMeterLocal] = useState({})
 
   const toast = useCallback((msg, err = false) => {
@@ -31,14 +33,16 @@ export function AppProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const [r, m, s] = await Promise.all([
+      const [r, m, s, res] = await Promise.all([
         api('/api/rooms', 'GET'),
         api('/api/meters', 'GET'),
         api('/api/settings', 'GET'),
+        api('/api/residents', 'GET'),
       ])
       setRooms(r || [])
       setMeters(m || [])
       setSettings(s || {})
+      setResidents(res || [])
     } catch (e) {
       console.error('fetchAll error:', e)
       setError(e.message)
@@ -158,6 +162,39 @@ export function AppProvider({ children }) {
       toast(`ลบไม่สำเร็จ: ${e.message}`, true)
     }
   }, [fetchAll, toast])
+
+  const fetchResidents = useCallback(async (search = '') => {
+    try {
+      const query = search ? `?search=${encodeURIComponent(search)}` : ''
+      const res = await api(`/api/residents${query}`, 'GET')
+      setResidents(res || [])
+    } catch (e) {
+      toast(`โหลดข้อมูลผู้พักไม่สำเร็จ: ${e.message}`, true)
+    }
+  }, [toast])
+
+  const saveResident = useCallback(async (data) => {
+    try {
+      const method = data.id ? 'PUT' : 'POST'
+      await api('/api/residents', method, data)
+      await fetchResidents()
+      setModal(null)
+      setEditResident(null)
+      toast(data.id ? 'แก้ไขข้อมูลผู้พักสำเร็จ' : 'เพิ่มผู้พักอาศัยสำเร็จ')
+    } catch (e) {
+      toast(`ไม่สำเร็จ: ${e.message}`, true)
+    }
+  }, [fetchResidents, toast])
+
+  const deleteResident = useCallback(async (id) => {
+    try {
+      await api('/api/residents', 'DELETE', { id })
+      await fetchResidents()
+      toast('ลบข้อมูลผู้พักสำเร็จ')
+    } catch (e) {
+      toast(`ลบไม่สำเร็จ: ${e.message}`, true)
+    }
+  }, [fetchResidents, toast])
 
   const downloadPdf = useCallback(async (inv) => {
     const el = document.getElementById('invoicePdfContent')
@@ -332,14 +369,16 @@ export function AppProvider({ children }) {
   }, [fetchAll, toast])
 
   const value = {
-    rooms, meters, settings, loading, error,
+    rooms, residents, settings, loading, error,
     modal, setModal, editRoom, setEditRoom,
+    editResident, setEditResident,
     meterMonth, setMeterMonth, invMonth, setInvMonth,
     viewInv, setViewInv, toasts,
     meterLocal, setMeterField,
     fetchAll, toast,
     calcInv, saveAllMeters, initMeterLocal,
     saveRoom, deleteRoom,
+    fetchResidents, saveResident, deleteResident,
     downloadPdf, sendLineMsg, sendPdfToLine,
     saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr,
     exportData, importData,

@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext'
 const NAV_ITEMS = [
   { path: '/', icon: '📊', label: 'แดชบอร์ด', desc: 'ภาพรวมระบบ' },
   { path: '/rooms', icon: '🚪', label: 'จัดการห้อง', desc: 'ห้องพักและผู้เช่า' },
+  { path: '/residents', icon: '👥', label: 'ผู้พักอาศัย', desc: 'จัดการผู้เช่า' },
   { path: '/meters', icon: '⚡', label: 'บันทึกมิเตอร์', desc: 'ไฟฟ้าและน้ำประปา' },
   { path: '/invoices', icon: '🧾', label: 'ใบแจ้งหนี้', desc: 'ค่าเช่ารายเดือน' },
   { path: '/settings', icon: '⚙️', label: 'ตั้งค่า', desc: 'จัดการระบบ' },

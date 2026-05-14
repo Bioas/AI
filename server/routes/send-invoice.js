@@ -8,9 +8,10 @@ const THAI_MONTHS = ['', 'มกราคม', 'กุมภาพันธ์',
 
 function formatIssueDate() {
   const now = new Date()
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
   const m = THAI_MONTHS[now.getMonth() + 1]
   const y = now.getFullYear() + 543
-  return `30 ${m} ${y}`
+  return `${lastDay} ${m} ${y}`
 }
 
 function formatNumber(n) {

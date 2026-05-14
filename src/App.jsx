@@ -10,8 +10,10 @@ const Dashboard = lazy(() => import('./components/dashboard'))
 const Room = lazy(() => import('./components/room'))
 const Meters = lazy(() => import('./components/meters'))
 const Invoice = lazy(() => import('./components/invoice'))
+const Resident = lazy(() => import('./components/resident'))
 const Setting = lazy(() => import('./components/setting'))
 const RoomModal = lazy(() => import('./components/RoomModal'))
+const ResidentModal = lazy(() => import('./components/ResidentModal'))
 const InvoicePreview = lazy(() => import('./components/InvoicePreview'))
 const ModalOverlay = lazy(() => import('./components/ui/modal'))
 
@@ -31,6 +33,7 @@ export default function App() {
                 <Route path="/rooms" element={<Room />} />
                 <Route path="/meters" element={<Meters />} />
                 <Route path="/invoices" element={<Invoice />} />
+                <Route path="/residents" element={<Resident />} />
                 <Route path="/settings" element={<Setting />} />
               </Routes>
             </AnimatePresence>
@@ -41,6 +44,7 @@ export default function App() {
       <ToastContainer />
 
       <Suspense fallback={null}>{modal === 'room' && <RoomModal />}</Suspense>
+      <Suspense fallback={null}>{modal === 'resident' && <ResidentModal />}</Suspense>
 
       <Suspense fallback={null}>
         {modal === 'invoice' && viewInv && (

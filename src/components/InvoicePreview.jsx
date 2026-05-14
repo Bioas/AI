@@ -14,9 +14,10 @@ export default function InvoicePreview({ inv }) {
   ]
   const total = items.reduce((s, i) => s + i.amount, 0)
   const now = new Date()
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
   const y = now.getFullYear() + 543
   const m = now.toLocaleDateString('th-TH', { month: 'short' })
-  const issueDate = `30 ${m} ${y}`
+  const issueDate = `${lastDay} ${m} ${y}`
 
   return (
     <div id="invoicePdfContent" className="bg-white mx-auto font-sans text-[13px] text-neutral-700 leading-relaxed" style={{ padding: 40 }}>
