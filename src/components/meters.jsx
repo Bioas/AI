@@ -47,8 +47,8 @@ export default function Meters() {
                     const wu = (ml.cur.water !== '' && ml.prev.water !== '') ? Math.max(0, Number(ml.cur.water) - Number(ml.prev.water)) : '—'
                     return (
                       <tr key={r.id} className="hover:bg-lime-50/30 transition-colors">
-                        <td className="px-3 py-3.5"><span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{r.number}</span></td>
-                        <td className="px-3 py-3.5 text-neutral-700">{r.tenantName}</td>
+                        <td className="px-3 py-3.5"><span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{r.roomNumber || r.number}</span></td>
+                        <td className="px-3 py-3.5 text-neutral-700">{r.tenantName || '—'}</td>
                         <td className="px-3 py-3.5 text-neutral-700 font-mono text-xs">{ml.prev.elec || <span className="text-neutral-300">—</span>}</td>
                         <td className="px-3 py-3.5 text-neutral-700 font-mono text-xs">{ml.cur.elec || <span className="text-neutral-300">—</span>}</td>
                         <td className="px-3 py-3.5 text-sm font-semibold text-teal-600">{eu}</td>

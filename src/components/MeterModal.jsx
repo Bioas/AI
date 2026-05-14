@@ -52,8 +52,8 @@ export default function MeterModal({ room, onClose }) {
               <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">มิเตอร์ไฟฟ้า</h4>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Input label="เลขก่อนหน้า" type="number" value={prevElec} onChange={e => setPrevElec(e.target.value)} />
-              <Input label="เลขปัจจุบัน" type="number" value={curElec} onChange={e => setCurElec(e.target.value)} />
+              <Input label="เลขก่อนหน้า" type="number" value={prevElec} onChange={e => setPrevElec(e.target.value.replace(/\D/g, ''))} inputMode="numeric" />
+              <Input label="เลขปัจจุบัน" type="number" value={curElec} onChange={e => setCurElec(e.target.value.replace(/\D/g, ''))} inputMode="numeric" />
             </div>
             {eu !== null && <p className="text-xs text-teal-600 font-medium mt-2">ใช้ไป {eu} หน่วย = {(eu * re).toLocaleString()} บาท</p>}
           </div>
@@ -63,8 +63,8 @@ export default function MeterModal({ room, onClose }) {
               <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">มิเตอร์น้ำ</h4>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Input label="เลขก่อนหน้า" type="number" value={prevWater} onChange={e => setPrevWater(e.target.value)} />
-              <Input label="เลขปัจจุบัน" type="number" value={curWater} onChange={e => setCurWater(e.target.value)} />
+              <Input label="เลขก่อนหน้า" type="number" value={prevWater} onChange={e => setPrevWater(e.target.value.replace(/\D/g, ''))} inputMode="numeric" />
+              <Input label="เลขปัจจุบัน" type="number" value={curWater} onChange={e => setCurWater(e.target.value.replace(/\D/g, ''))} inputMode="numeric" />
             </div>
             {wu !== null && <p className="text-xs text-teal-600 font-medium mt-2">ใช้ไป {wu} หน่วย = {calcWaterCost(wu, rw).toLocaleString()} บาท{wu > 0 && wu <= 4 ? ' (เหมาจ่าย)' : ''}</p>}
           </div>

@@ -5,21 +5,14 @@ import Button from './ui/button'
 import Input from './ui/input'
 
 export default function RoomModal() {
-  const { editRoom, rooms, residents, saveRoom, setModal } = useApp()
+  const { editRoom, rooms, saveRoom, setModal } = useApp()
 
   const [roomNumber, setRoomNumber] = useState(editRoom?.roomNumber || editRoom?.number || '')
-  const [residentId, setResidentId] = useState(editRoom?.residentId || '')
   const [rentPrice, setRentPrice] = useState((editRoom?.rentPrice || editRoom?.rent || '').toString())
   const [roomType, setRoomType] = useState(editRoom?.roomType || 'ไม่มีทีวี')
   const [note, setNote] = useState(editRoom?.note || '')
 
   const [errors, setErrors] = useState({})
-
-  const occupiedRoomIds = rooms
-    .filter(r => r.residentId && r.id !== editRoom?.id)
-    .map(r => r.residentId)
-
-  const availableResidents = residents.filter(r => !occupiedRoomIds.includes(r.id))
 
   const formatRent = (val) => {
     const nums = val.replace(/[^\d]/g, '')
@@ -42,16 +35,16 @@ export default function RoomModal() {
 
   const handleSave = () => {
     if (!validate()) return
-    const selectedResident = residentId ? residents.find(r => r.id === residentId) : null
     saveRoom({
       id: editRoom?.id || undefined,
       roomNumber: roomNumber.trim(),
-      residentId: residentId || null,
       rentPrice: Number(rentPrice) || 0,
       roomType,
       note: note.trim(),
     })
   }
+
+  const residentName = editRoom?.tenantName || ''
 
   return (
     <Modal open={true} onClose={() => setModal(null)} maxWidth="max-w-xl">
@@ -82,24 +75,6 @@ export default function RoomModal() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ชื่อผู้เช่า</label>
-              <select value={residentId} onChange={e => setResidentId(e.target.value)}
-                className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100">
-                <option value="">— ว่าง —</option>
-                {availableResidents.map(r => (
-                  <option key={r.id} value={r.id}>{r.name} (ห้อง {r.roomNumber})</option>
-                ))}
-                {editRoom?.residentId && residents.find(r => r.id === editRoom.residentId) && (
-                  <option value={editRoom.residentId}>
-                    {residents.find(r => r.id === editRoom.residentId)?.name} (แก้ไข)
-                  </option>
-                )}
-              </select>
-              {residentId && (
-                <p className="text-xs text-lime-600 mt-1">✓ เชื่อมโยงผู้พักแล้ว</p>
-              )}
-            </div>
-            <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทห้องพัก *</label>
               <select value={roomType} onChange={e => setRoomType(e.target.value)}
                 className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100">
@@ -107,6 +82,14 @@ export default function RoomModal() {
                 <option value="มีทีวี">มีทีวี</option>
               </select>
             </div>
+            {editRoom && residentName && (
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">ผู้พักปัจจุบัน</label>
+                <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-500">
+                  {residentName}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
