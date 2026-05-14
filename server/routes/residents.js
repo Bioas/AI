@@ -11,7 +11,6 @@ function validateResident(data) {
   if (!data.phone?.trim()) errors.push('กรุณากรอกเบอร์โทร')
   else if (!/^\d{9,10}$/.test(data.phone.replace(/\D/g, ''))) errors.push('เบอร์โทรไม่ถูกต้อง')
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.push('รูปแบบอีเมลไม่ถูกต้อง')
-  if (!data.roomId) errors.push('กรุณาเลือกหมายเลขห้อง')
   if (!data.moveInDate) errors.push('กรุณาเลือกวันที่เข้าพัก')
   if (!data.moveOutDate) errors.push('กรุณาเลือกวันหมดสัญญา')
   if (data.deposit === undefined || data.deposit === '' || isNaN(Number(data.deposit))) errors.push('กรุณากรอกค่ามัดจำ')
@@ -64,11 +63,15 @@ router.post('/', async (req, res) => {
     const client = await connectDB()
     const db = client.db('dorm_billing')
 
-    const room = await db.collection('rooms').findOne({ id: req.body.roomId })
-    if (!room) return res.status(400).json({ error: 'ไม่พบหมายเลขห้องในระบบ' })
-
-    const existingResident = await db.collection('residents').findOne({ roomId: req.body.roomId })
-    if (existingResident) return res.status(400).json({ error: 'ห้องนี้มีผู้พักอาศัยอยู่แล้ว' })
+    const roomId = req.body.roomId || ''
+    let roomNumber = ''
+    if (roomId) {
+      const room = await db.collection('rooms').findOne({ id: roomId })
+      if (!room) return res.status(400).json({ error: 'ไม่พบหมายเลขห้องในระบบ' })
+      roomNumber = room.roomNumber || room.number
+      const existingResident = await db.collection('residents').findOne({ roomId })
+      if (existingResident) return res.status(400).json({ error: 'ห้องนี้มีผู้พักอาศัยอยู่แล้ว' })
+    }
 
     const resident = {
       id: Date.now().toString(36) + Math.random().toString(36).substring(2, 7),
@@ -76,8 +79,8 @@ router.post('/', async (req, res) => {
       idCard: req.body.idCard.replace(/\D/g, ''),
       phone: req.body.phone.replace(/\D/g, ''),
       email: req.body.email?.trim() || '',
-      roomId: req.body.roomId,
-      roomNumber: room.roomNumber || room.number,
+      roomId,
+      roomNumber,
       moveInDate: req.body.moveInDate,
       moveOutDate: req.body.moveOutDate,
       deposit: Number(req.body.deposit) || 0,
@@ -96,10 +99,12 @@ router.post('/', async (req, res) => {
     }
 
     await db.collection('residents').insertOne(resident)
-    await db.collection('rooms').updateOne(
-      { id: req.body.roomId },
-      { $set: { residentId: resident.id, status: 'มีผู้เช่า', updatedAt: new Date().toISOString() } }
-    )
+    if (roomId) {
+      await db.collection('rooms').updateOne(
+        { id: roomId },
+        { $set: { residentId: resident.id, status: 'มีผู้เช่า', updatedAt: new Date().toISOString() } }
+      )
+    }
     res.status(200).json(resident)
   } catch (e) {
     console.error('POST /api/residents error:', e)
@@ -118,19 +123,23 @@ router.put('/', async (req, res) => {
     const client = await connectDB()
     const db = client.db('dorm_billing')
 
-    const room = await db.collection('rooms').findOne({ id: data.roomId })
-    if (!room) return res.status(400).json({ error: 'ไม่พบหมายเลขห้องในระบบ' })
-
-    const duplicate = await db.collection('residents').findOne({ roomId: data.roomId, id: { $ne: id } })
-    if (duplicate) return res.status(400).json({ error: 'ห้องนี้มีผู้พักอาศัยอยู่แล้ว' })
+    const newRoomId = data.roomId || ''
+    let roomNumber = ''
+    if (newRoomId) {
+      const room = await db.collection('rooms').findOne({ id: newRoomId })
+      if (!room) return res.status(400).json({ error: 'ไม่พบหมายเลขห้องในระบบ' })
+      roomNumber = room.roomNumber || room.number
+      const duplicate = await db.collection('residents').findOne({ roomId: newRoomId, id: { $ne: id } })
+      if (duplicate) return res.status(400).json({ error: 'ห้องนี้มีผู้พักอาศัยอยู่แล้ว' })
+    }
 
     const update = {
       name: data.name.trim(),
       idCard: data.idCard.replace(/\D/g, ''),
       phone: data.phone.replace(/\D/g, ''),
       email: data.email?.trim() || '',
-      roomId: data.roomId,
-      roomNumber: room.roomNumber || room.number,
+      roomId: newRoomId,
+      roomNumber,
       moveInDate: data.moveInDate,
       moveOutDate: data.moveOutDate,
       deposit: Number(data.deposit) || 0,
@@ -142,13 +151,15 @@ router.put('/', async (req, res) => {
 
     const oldResident = await db.collection('residents').findOne({ id })
 
-    if (oldResident?.roomId && oldResident.roomId !== data.roomId) {
+    if (oldResident?.roomId && oldResident.roomId !== newRoomId) {
       await db.collection('rooms').updateOne(
         { id: oldResident.roomId },
         { $set: { residentId: null, status: 'ว่าง', updatedAt: new Date().toISOString() } }
       )
+    }
+    if (newRoomId && oldResident?.roomId !== newRoomId) {
       await db.collection('rooms').updateOne(
-        { id: data.roomId },
+        { id: newRoomId },
         { $set: { residentId: id, status: 'มีผู้เช่า', updatedAt: new Date().toISOString() } }
       )
     }

@@ -93,7 +93,6 @@ export default function ResidentModal() {
     if (!phone) errs.phone = 'กรุณากรอกเบอร์โทร'
     else if (phone.length < 9) errs.phone = 'เบอร์โทรไม่ถูกต้อง'
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'รูปแบบอีเมลไม่ถูกต้อง'
-    if (!roomId) errs.roomId = 'กรุณาเลือกหมายเลขห้อง'
     if (!miDay || !miMonth || !miYear) errs.moveInDate = 'กรุณาเลือกวันที่เข้าพัก'
     if (!moDay || !moMonth || !moYear) errs.moveOutDate = 'กรุณาเลือกวันหมดสัญญา'
     if (deposit === '' || isNaN(Number(deposit))) errs.deposit = 'กรุณากรอกค่ามัดจำ'
@@ -151,7 +150,7 @@ export default function ResidentModal() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1.5">หมายเลขห้องพัก *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">หมายเลขห้องพัก</label>
             <select value={roomId} onChange={e => setRoomId(e.target.value)}
               className={`w-full h-10 px-3.5 bg-white border rounded-xl text-sm text-neutral-800 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 ${errors.roomId ? 'border-rose-300' : 'border-neutral-200'}`}>
               <option value="">-- เลือกห้อง --</option>
