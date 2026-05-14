@@ -10,6 +10,8 @@ export default function RoomModal() {
   const [roomNumber, setRoomNumber] = useState(editRoom?.roomNumber || editRoom?.number || '')
   const [rentPrice, setRentPrice] = useState((editRoom?.rentPrice || editRoom?.rent || '').toString())
   const [roomType, setRoomType] = useState(editRoom?.roomType || 'ไม่มีทีวี')
+  const [prevElecMeter, setPrevElecMeter] = useState(editRoom?.prevElecMeter?.toString() || '')
+  const [prevWaterMeter, setPrevWaterMeter] = useState(editRoom?.prevWaterMeter?.toString() || '')
   const [note, setNote] = useState(editRoom?.note || '')
 
   const [errors, setErrors] = useState({})
@@ -40,6 +42,8 @@ export default function RoomModal() {
       roomNumber: roomNumber.trim(),
       rentPrice: Number(rentPrice) || 0,
       roomType,
+      prevElecMeter: prevElecMeter ? Number(prevElecMeter) : 0,
+      prevWaterMeter: prevWaterMeter ? Number(prevWaterMeter) : 0,
       note: note.trim(),
     })
   }
@@ -96,6 +100,8 @@ export default function RoomModal() {
                         roomNumber: roomNumber.trim(),
                         rentPrice: Number(rentPrice) || 0,
                         roomType,
+                        prevElecMeter: prevElecMeter ? Number(prevElecMeter) : 0,
+                        prevWaterMeter: prevWaterMeter ? Number(prevWaterMeter) : 0,
                         note: note.trim(),
                         residentId: null,
                       })
@@ -107,6 +113,14 @@ export default function RoomModal() {
                 </div>
               </div>
             )}
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">เลขมิเตอร์เริ่มต้น (ก่อนหน้า)</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="เลขมิเตอร์ไฟฟ้า" type="number" value={prevElecMeter} onChange={e => setPrevElecMeter(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="0" />
+              <Input label="เลขมิเตอร์น้ำ" type="number" value={prevWaterMeter} onChange={e => setPrevWaterMeter(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="0" />
+            </div>
           </div>
 
           <div>

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { api, getCurrentMonth } from '../lib/api'
-import { getPrevMonth, formatMonth, calcWaterCost } from '../lib/constants'
+import { formatMonth, calcWaterCost } from '../lib/constants'
 
 const AppContext = createContext(null)
 
@@ -58,8 +58,7 @@ export function AppProvider({ children }) {
 
   const calcInv = useCallback((room, m) => {
     const cur = meters.find(x => x.roomId === room.id && x.month === m) || { elec: 0, water: 0 }
-    const pm = getPrevMonth(m)
-    const prev = meters.find(x => x.roomId === room.id && x.month === pm) || { elec: 0, water: 0 }
+    const prev = { elec: room.prevElecMeter || 0, water: room.prevWaterMeter || 0 }
     const eu = Math.max(0, Number(cur.elec || 0) - Number(prev.elec || 0))
     const wu = Math.max(0, Number(cur.water || 0) - Number(prev.water || 0))
     const waterCost = calcWaterCost(wu, settings.rateWater)
@@ -83,10 +82,9 @@ export function AppProvider({ children }) {
   const initMeterLocal = useCallback(() => {
     const local = {}
     rooms.filter(r => r.residentId || r.tenantName).forEach(r => {
-      const pm = getPrevMonth(meterMonth)
       const cur = meters.find(x => x.roomId === r.id && x.month === meterMonth) || { elec: '', water: '' }
-      const prev = meters.find(x => x.roomId === r.id && x.month === pm) || { elec: '', water: '' }
-      local[r.id] = { cur: { ...cur }, prev: { ...prev } }
+      const prev = { elec: r.prevElecMeter ?? '', water: r.prevWaterMeter ?? '' }
+      local[r.id] = { cur: { ...cur }, prev }
     })
     setMeterLocal(local)
   }, [rooms, meters, meterMonth])
@@ -120,22 +118,6 @@ export function AppProvider({ children }) {
           saved++
         } catch (e) {
           console.error(`saveMeter error for room ${rid}:`, e)
-          errors++
-        }
-      }
-      if (data.prev.elec !== '' || data.prev.water !== '') {
-        const pm = getPrevMonth(meterMonth)
-        const existing = meters.find(x => x.roomId === rid && x.month === pm)
-        const body = { roomId: rid, month: pm, elec: Number(data.prev.elec) || 0, water: Number(data.prev.water) || 0 }
-        try {
-          if (existing) {
-            await api('/api/meters', 'PUT', { roomId: rid, month: pm, elec: body.elec, water: body.water })
-          } else {
-            await api('/api/meters', 'POST', body)
-          }
-          saved++
-        } catch (e) {
-          console.error(`saveMeter error for room ${rid} (prev):`, e)
           errors++
         }
       }
