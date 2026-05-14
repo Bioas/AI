@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getPrevMonth } from '../lib/constants'
+import { getPrevMonth, calcWaterCost } from '../lib/constants'
 import Modal from './ui/modal'
 import Button from './ui/button'
 import Input from './ui/input'
@@ -65,7 +65,7 @@ export default function MeterModal({ room, onClose }) {
               <Input label="เลขก่อนหน้า" type="number" value={prevWater} onChange={e => setPrevWater(e.target.value)} />
               <Input label="เลขปัจจุบัน" type="number" value={curWater} onChange={e => setCurWater(e.target.value)} />
             </div>
-            {wu !== null && <p className="text-xs text-teal-600 font-medium mt-2">ใช้ไป {wu} หน่วย = {(wu * rw).toLocaleString()} บาท</p>}
+            {wu !== null && <p className="text-xs text-teal-600 font-medium mt-2">ใช้ไป {wu} หน่วย = {calcWaterCost(wu, rw).toLocaleString()} บาท{wu > 0 && wu <= 4 ? ' (เหมาจ่าย)' : ''}</p>}
           </div>
         </div>
         <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">

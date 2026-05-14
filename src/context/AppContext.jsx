@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { api, getCurrentMonth } from '../lib/api'
-import { getPrevMonth, formatMonth } from '../lib/constants'
+import { getPrevMonth, formatMonth, calcWaterCost } from '../lib/constants'
 
 const AppContext = createContext(null)
 
@@ -55,14 +55,15 @@ export function AppProvider({ children }) {
     const prev = meters.find(x => x.roomId === room.id && x.month === pm) || { elec: 0, water: 0 }
     const eu = Math.max(0, Number(cur.elec || 0) - Number(prev.elec || 0))
     const wu = Math.max(0, Number(cur.water || 0) - Number(prev.water || 0))
+    const waterCost = calcWaterCost(wu, settings.rateWater)
     return {
       room: room.number, tenant: room.tenantName, phone: room.tenantPhone,
       userId: room.tenantUserId, month: m, rent: room.rent,
       elecUnits: eu, elecCost: eu * settings.rateElec,
-      waterUnits: wu, waterCost: wu * settings.rateWater,
+      waterUnits: wu, waterCost,
       prevElec: prev.elec || 0, curElec: cur.elec || 0,
       prevWater: prev.water || 0, curWater: cur.water || 0,
-      total: room.rent + eu * settings.rateElec + wu * settings.rateWater,
+      total: room.rent + eu * settings.rateElec + waterCost,
       rateElec: settings.rateElec, rateWater: settings.rateWater,
     }
   }, [meters, settings.rateElec, settings.rateWater])
@@ -209,7 +210,7 @@ export function AppProvider({ children }) {
       const items = [
         { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
         { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
-        { desc: 'ค่าน้ำประปา', detail: `${inv.waterUnits} หน่วย × ${inv.rateWater} บาท`, amount: inv.waterCost },
+        { desc: 'ค่าน้ำประปา', detail: inv.waterUnits <= 4 && inv.waterUnits > 0 ? 'เหมาจ่าย' : `${inv.waterUnits} หน่วย × ${inv.rateWater} บาท`, amount: inv.waterCost },
       ]
       const cf = Number(settings.commonFee) || 0
       const inf = Number(settings.internetFee) || 0
