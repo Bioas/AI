@@ -17,5 +17,5 @@ export function getPrevMonth(ym) {
 export function calcWaterCost(units, rate) {
   if (units === 0) return 0
   if (units <= 4) return 150
-  return 150 + (units * rate)
+  return 150 + ((units - 4) * rate)
 }

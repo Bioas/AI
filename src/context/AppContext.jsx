@@ -165,7 +165,7 @@ export function AppProvider({ children }) {
     try {
       const { jsPDF } = await import('jspdf')
       const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' })
+      const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#ffffff' })
       const doc = new jsPDF('p', 'mm', 'a4')
       const mg = 10
       const pw = 210 - mg * 2
@@ -174,7 +174,7 @@ export function AppProvider({ children }) {
       const finalH = Math.min(ph, maxH)
       const finalW = (canvas.width * finalH) / canvas.height
       const offsetX = mg + (pw - finalW) / 2
-      doc.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', offsetX, mg, finalW, finalH)
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', offsetX, mg, finalW, finalH)
       doc.save(`invoice_${inv.room}_${inv.month}.pdf`)
       toast('ดาวน์โหลด PDF สำเร็จ')
     } catch (e) {
