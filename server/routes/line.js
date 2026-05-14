@@ -162,7 +162,10 @@ router.post('/sync-followers', async (req, res) => {
         : 'https://api.line.me/v2/bot/followers/ids'
       const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
       if (!resp.ok) {
-        const err = await resp.json()
+        const err = await resp.json().catch(() => ({}))
+        if (resp.status === 403) {
+          return res.status(400).json({ error: 'Token ไม่มีสิทธิ์ดึงรายชื่อผู้ติดตาม — ต้องเปิดใช้ Featurs "Webhook" และ "Auto-follow" ใน LINE Developers Console ก่อน หรือใช้ Channel Access Token (Long-lived) ที่มีสิทธิ์' })
+        }
         return res.status(resp.status).json({ error: err.message || 'LINE API error' })
       }
       const data = await resp.json()
