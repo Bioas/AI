@@ -11,6 +11,7 @@ import lineRouter from './routes/line.js'
 import uploadRouter from './routes/upload.js'
 import sendInvoiceRouter from './routes/send-invoice.js'
 import lineWebhookRouter from './routes/line-webhook.js'
+import exportPdfRouter from './routes/export-pdf.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -28,6 +29,7 @@ app.use('/api/line', lineRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/send-invoice', sendInvoiceRouter)
 app.use('/api/line/webhook', lineWebhookRouter)
+app.use('/api/export-pdf', exportPdfRouter)
 
 app.get('/api/ping', (req, res) => {
   res.json({ message: 'pong' })

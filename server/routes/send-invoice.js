@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { put } from '@vercel/blob'
+import { launchBrowser } from '../lib/puppeteer.js'
 
 const router = Router()
 
@@ -140,24 +141,6 @@ function buildInvoiceHtml(data) {
 function getFilename(roomNumber, billingMonth) {
   const safe = billingMonth.replace(/[/\\?%*:|"<>]/g, '-')
   return `invoices/${roomNumber}_${safe}.jpg`
-}
-
-async function launchBrowser() {
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    const { default: chromium } = await import('@sparticuz/chromium')
-    const puppeteer = await import('puppeteer-core')
-    return puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: { width: 1080, height: 1200, deviceScaleFactor: 1 },
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    })
-  }
-  const { launch } = await import('puppeteer')
-  return launch({
-    defaultViewport: { width: 1080, height: 1200, deviceScaleFactor: 1 },
-    headless: true,
-  })
 }
 
 router.post('/', async (req, res) => {

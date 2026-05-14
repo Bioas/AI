@@ -4,20 +4,6 @@ import { formatMonth, calcWaterCost, getPrevMeter } from '../lib/constants'
 
 const AppContext = createContext(null)
 
-function removeSupports(doc) {
-  try {
-    for (const sheet of doc.styleSheets) {
-      const rules = sheet.cssRules
-      if (!rules) continue
-      for (let i = rules.length - 1; i >= 0; i--) {
-        if (rules[i] instanceof CSSSupportsRule || rules[i].cssText?.startsWith('@supports')) {
-          sheet.deleteRule(i)
-        }
-      }
-    }
-  } catch (_) {}
-}
-
 export function AppProvider({ children }) {
   const [rooms, setRooms] = useState([])
   const [meters, setMeters] = useState([])
@@ -292,60 +278,87 @@ export function AppProvider({ children }) {
   }, [fetchLineUsers, toast])
 
   const downloadPdf = useCallback(async (inv) => {
-    const el = document.getElementById('invoicePdfContent')
-    if (!el) return
     try {
-      const { jsPDF } = await import('jspdf')
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#ffffff', onclone: removeSupports })
-      const doc = new jsPDF('p', 'mm', 'a4')
-      const mg = 10
-      const pw = 210 - mg * 2
-      const ph = (canvas.height * pw) / canvas.width
-      const maxH = 297 - mg * 2
-      const finalH = Math.min(ph, maxH)
-      const finalW = (canvas.width * finalH) / canvas.height
-      const offsetX = mg + (pw - finalW) / 2
-      doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', offsetX, mg, finalW, finalH)
-      doc.save(`invoice_${inv.room}_${inv.month}.pdf`)
+      const data = {
+        room: inv.room, tenant: inv.tenant, month: inv.month,
+        rent: inv.rent, elecUnits: inv.elecUnits, elecCost: inv.elecCost,
+        waterUnits: inv.waterUnits, waterCost: inv.waterCost,
+        total: inv.total, rateElec: inv.rateElec, rateWater: inv.rateWater,
+        prevElec: inv.prevElec, curElec: inv.curElec,
+        prevWater: inv.prevWater, curWater: inv.curWater,
+        dormName: settings.dormName, address: settings.address,
+        phone: settings.phone, logo: settings.logo, qrCode: settings.qrCode,
+        commonFee: settings.commonFee, internetFee: settings.internetFee,
+        filename: `invoice_${inv.room}_${inv.month}.pdf`,
+      }
+      const res = await fetch('/api/export-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'invoice', data }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'PDF export failed')
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `invoice_${inv.room}_${inv.month}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
       toast('ดาวน์โหลด PDF สำเร็จ')
     } catch (e) {
       toast(`PDF error: ${e.message}`, true)
     }
-  }, [toast])
+  }, [settings, toast])
 
   const downloadContractPdf = useCallback(async (resident) => {
-    const el = document.getElementById('contractPdfContent')
-    if (!el) return
     try {
-      const { jsPDF } = await import('jspdf')
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', onclone: removeSupports })
-      const doc = new jsPDF('p', 'mm', 'a4')
-      const mg = 10
-      const pw = 210 - mg * 2
-      const ph = 297 - mg * 2
-      const imgW = canvas.width
-      const imgH = canvas.height
-      const ratio = pw / imgW
-      const pageH = ph / ratio
-      const pages = Math.ceil(imgH / pageH)
-      for (let i = 0; i < pages; i++) {
-        if (i > 0) doc.addPage()
-        const srcY = pageH * i
-        const canvasCrop = document.createElement('canvas')
-        canvasCrop.width = imgW
-        canvasCrop.height = Math.min(pageH, imgH - srcY)
-        const ctx = canvasCrop.getContext('2d')
-        ctx.drawImage(canvas, 0, srcY, imgW, canvasCrop.height, 0, 0, imgW, canvasCrop.height)
-        doc.addImage(canvasCrop.toDataURL('image/jpeg', 0.95), 'JPEG', mg, mg, pw, canvasCrop.height * ratio)
+      const room = rooms.find(x => x.id === resident.roomId)
+      const data = {
+        residentName: resident.name,
+        residentId: resident.id,
+        idCard: resident.idCard,
+        phone: resident.phone,
+        roomId: resident.roomId,
+        moveInDate: resident.moveInDate,
+        moveOutDate: resident.moveOutDate,
+        deposit: resident.deposit,
+        emergencyContact: resident.emergencyContact,
+        emergencyPhone: resident.emergencyPhone,
+        roomNumber: room?.roomNumber || room?.number || '—',
+        rentPrice: room?.rentPrice || room?.rent || 0,
+        roomType: room?.roomType || '—',
+        dormName: settings.dormName,
+        address: settings.address,
+        dormPhone: settings.phone,
+        logo: settings.logo,
+        rateElec: settings.rateElec,
+        rateWater: settings.rateWater,
+        filename: `contract_${resident.name?.replace(/\s/g, '_')}.pdf`,
       }
-      doc.save(`contract_${resident.name?.replace(/\s/g, '_')}.pdf`)
+      const res = await fetch('/api/export-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'contract', data }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'PDF export failed')
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `contract_${resident.name?.replace(/\s/g, '_')}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
       toast('ดาวน์โหลดสัญญา PDF สำเร็จ')
     } catch (e) {
       toast(`PDF error: ${e.message}`, true)
     }
-  }, [toast])
+  }, [rooms, settings, toast])
 
   const sendLineMsg = useCallback(async (to, text) => {
     if (!settings.channelToken) {
