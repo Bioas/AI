@@ -164,7 +164,7 @@ router.post('/sync-followers', async (req, res) => {
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}))
         if (resp.status === 403) {
-          return res.status(400).json({ error: 'Token ไม่มีสิทธิ์ดึงรายชื่อผู้ติดตาม — ต้องเปิดใช้ Featurs "Webhook" และ "Auto-follow" ใน LINE Developers Console ก่อน หรือใช้ Channel Access Token (Long-lived) ที่มีสิทธิ์' })
+          return res.status(400).json({ error: 'LINE API 403 — ไปที่ LINE Developers Console → Messaging API → เลื่อนล่างสุด "LINE Official Account features" → กด Apply ที่ "Get follower IDs" แล้วลองใหม่' })
         }
         return res.status(resp.status).json({ error: err.message || 'LINE API error' })
       }
