@@ -15,7 +15,7 @@ function formatDate(iso) {
 }
 
 export default function LineUsers() {
-  const { lineUsers, residents, fetchLineUsers, toggleLineUser, mapLineUser, unmapLineUser, toast } = useApp()
+  const { lineUsers, residents, fetchLineUsers, toggleLineUser, mapLineUser, unmapLineUser, syncLineFollowers, toast } = useApp()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [mappedFilter, setMappedFilter] = useState('all')
@@ -61,7 +61,10 @@ export default function LineUsers() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <PageHeader title="จัดการผู้ใช้ LINE" description="จัดการผู้ที่ Add Friend LINE Official Account" />
+      <PageHeader title="จัดการผู้ใช้ LINE" description="จัดการผู้ที่ Add Friend LINE Official Account"
+        action={<Button onClick={() => {
+          if (window.confirm('ดึงรายชื่อผู้ติดตาม LINE ล่าสุด?\nระบบจะนำเข้าผู้ติดตามที่มีอยู่แล้วทั้งหมด')) syncLineFollowers()
+        }}>🔁 ซิงค์ผู้ติดตาม</Button>} />
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="relative flex-1 min-w-[200px] max-w-sm">

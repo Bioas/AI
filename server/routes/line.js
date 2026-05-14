@@ -145,4 +145,78 @@ router.put('/users/:userId/unmap', async (req, res) => {
   }
 })
 
+router.post('/sync-followers', async (req, res) => {
+  try {
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+    const settings = await db.collection('settings').findOne({ _id: 'default' })
+    const token = settings?.channelToken
+    if (!token) return res.status(400).json({ error: 'ไม่ได้ตั้งค่า Channel Access Token' })
+
+    let allUserIds = []
+    let nextCursor
+
+    do {
+      const url = nextCursor
+        ? `https://api.line.me/v2/bot/followers/ids?start=${nextCursor}`
+        : 'https://api.line.me/v2/bot/followers/ids'
+      const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      if (!resp.ok) {
+        const err = await resp.json()
+        return res.status(resp.status).json({ error: err.message || 'LINE API error' })
+      }
+      const data = await resp.json()
+      allUserIds = allUserIds.concat(data.userIds || [])
+      nextCursor = data.next
+    } while (nextCursor)
+
+    let imported = 0
+    let updated = 0
+
+    for (const userId of allUserIds) {
+      const existing = await db.collection('lineUsers').findOne({ userId })
+      if (existing) {
+        await db.collection('lineUsers').updateOne(
+          { userId },
+          { $set: { isFollowing: true, unfollowedAt: null, updatedAt: new Date().toISOString() } }
+        )
+        updated++
+      } else {
+        let displayName = userId
+        let pictureUrl = ''
+        try {
+          const profileResp = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          if (profileResp.ok) {
+            const profile = await profileResp.json()
+            displayName = profile.displayName || userId
+            pictureUrl = profile.pictureUrl || ''
+          }
+        } catch {}
+
+        await db.collection('lineUsers').insertOne({
+          userId,
+          displayName,
+          pictureUrl,
+          statusMessage: '',
+          isActive: true,
+          isFollowing: true,
+          residentId: null,
+          followedAt: new Date().toISOString(),
+          unfollowedAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        imported++
+      }
+    }
+
+    res.json({ success: true, total: allUserIds.length, imported, updated })
+  } catch (e) {
+    console.error('POST /api/line/sync-followers error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
 export default router

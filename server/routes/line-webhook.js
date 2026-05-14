@@ -12,19 +12,21 @@ function validateSignature(body, signature, secret) {
 
 router.post('/', async (req, res) => {
   try {
+    const rawBody = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : JSON.stringify(req.body)
+    const body = JSON.parse(rawBody)
+
     const client = await connectDB()
     const db = client.db('dorm_billing')
     const settings = await db.collection('settings').findOne({ _id: 'default' })
     const channelSecret = settings?.channelSecret || ''
 
     const signature = req.headers['x-line-signature']
-    const rawBody = JSON.stringify(req.body)
 
     if (!validateSignature(rawBody, signature, channelSecret)) {
       return res.status(401).json({ error: 'Invalid signature' })
     }
 
-    const events = req.body.events || []
+    const events = body.events || []
 
     for (const event of events) {
       const { type, source, timestamp } = event
@@ -42,8 +44,7 @@ router.post('/', async (req, res) => {
           let displayName = userId
           let pictureUrl = ''
           try {
-            const s = await db.collection('settings').findOne({ _id: 'default' })
-            const token = s?.channelToken
+            const token = settings?.channelToken
             if (token) {
               const resp = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` },

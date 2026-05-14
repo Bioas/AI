@@ -202,6 +202,26 @@ export function AppProvider({ children }) {
     }
   }, [fetchResidents, toast])
 
+  const syncLineFollowers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/line/sync-followers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await res.json()
+      if (res.ok) {
+        await fetchLineUsers()
+        toast(`นำเข้าข้อมูลสำเร็จ: เพิ่มใหม่ ${data.imported} อัปเดต ${data.updated} รวม ${data.total} คน`)
+        return true
+      }
+      toast(`ไม่สำเร็จ: ${data.error || 'Unknown error'}`, true)
+      return false
+    } catch (e) {
+      toast(`ไม่สำเร็จ: ${e.message}`, true)
+      return false
+    }
+  }, [fetchLineUsers, toast])
+
   const fetchLineUsers = useCallback(async (params = '') => {
     try {
       const res = await api(`/api/line/users${params}`, 'GET')
@@ -424,7 +444,7 @@ export function AppProvider({ children }) {
     calcInv, saveAllMeters, initMeterLocal,
     saveRoom, deleteRoom,
     fetchResidents, saveResident, deleteResident,
-    fetchLineUsers, toggleLineUser, mapLineUser, unmapLineUser,
+    fetchLineUsers, toggleLineUser, mapLineUser, unmapLineUser, syncLineFollowers,
     downloadPdf, sendLineMsg, sendPdfToLine,
     saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr,
     exportData, importData,
