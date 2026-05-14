@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { path: '/', icon: '📊', label: 'แดชบอร์ด', desc: 'ภาพรวมระบบ' },
   { path: '/rooms', icon: '🚪', label: 'จัดการห้อง', desc: 'ห้องพักและผู้เช่า' },
   { path: '/residents', icon: '👥', label: 'ผู้พักอาศัย', desc: 'จัดการผู้เช่า' },
+  { path: '/line-users', icon: '📱', label: 'ผู้ใช้ LINE', desc: 'จัดการบัญชี LINE' },
   { path: '/meters', icon: '⚡', label: 'บันทึกมิเตอร์', desc: 'ไฟฟ้าและน้ำประปา' },
   { path: '/invoices', icon: '🧾', label: 'ใบแจ้งหนี้', desc: 'ค่าเช่ารายเดือน' },
   { path: '/settings', icon: '⚙️', label: 'ตั้งค่า', desc: 'จัดการระบบ' },
@@ -15,8 +16,8 @@ const NAV_ITEMS = [
 export default function Sidebar({ dormName }) {
   const [open, setOpen] = useState(false)
   const location = useLocation()
-  const { rooms } = useApp()
-  const occupied = rooms.filter(r => r.tenantName).length
+  const { rooms, residents } = useApp()
+  const occupied = rooms.filter(r => r.residentId || r.tenantName).length
 
   return (
     <>

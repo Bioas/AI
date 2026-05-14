@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { THAI_MONTHS } from '../lib/constants'
+import Badge from './ui/badge'
 import Modal from './ui/modal'
 import Button from './ui/button'
 import Input from './ui/input'
@@ -18,7 +19,7 @@ function dateToStr(year, month, day) {
 }
 
 export default function ResidentModal() {
-  const { editResident, rooms, residents, saveResident, setModal } = useApp()
+  const { editResident, rooms, residents, lineUsers, saveResident, setModal } = useApp()
 
   const initDate = (dateStr) => {
     if (!dateStr) return { day: '', month: '', year: '' }
@@ -37,6 +38,7 @@ export default function ResidentModal() {
   const [deposit, setDeposit] = useState(editResident?.deposit?.toString() || '')
   const [emergencyContact, setEmergencyContact] = useState(editResident?.emergencyContact || '')
   const [emergencyPhone, setEmergencyPhone] = useState(editResident?.emergencyPhone || '')
+  const [lineUserId, setLineUserId] = useState(editResident?.lineUserId || '')
 
   const [miDay, setMiDay] = useState(initMoveIn.day)
   const [miMonth, setMiMonth] = useState(initMoveIn.month)
@@ -114,6 +116,7 @@ export default function ResidentModal() {
       deposit: Number(deposit) || 0,
       emergencyContact: emergencyContact.trim(),
       emergencyPhone,
+      lineUserId,
     }
     await saveResident(data)
     setSaving(false)
@@ -153,17 +156,17 @@ export default function ResidentModal() {
               className={`w-full h-10 px-3.5 bg-white border rounded-xl text-sm text-neutral-800 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 ${errors.roomId ? 'border-rose-300' : 'border-neutral-200'}`}>
               <option value="">-- เลือกห้อง --</option>
               {availableRooms.map(r => (
-                <option key={r.id} value={r.id}>ห้อง {r.number}{r.tenantName ? ` (${r.tenantName})` : ' (ว่าง)'}</option>
+                <option key={r.id} value={r.id}>ห้อง {r.roomNumber || r.number} ({r.tenantName || (r.status === 'มีผู้เช่า' ? 'มีผู้เช่า' : 'ว่าง')})</option>
               ))}
               {editResident && selectedRoom && !availableRooms.find(r => r.id === roomId) && (
-                <option value={roomId}>ห้อง {selectedRoom.number} (แก้ไข)</option>
+                <option value={roomId}>ห้อง {selectedRoom.roomNumber || selectedRoom.number} (แก้ไข)</option>
               )}
             </select>
             {errors.roomId && <p className="text-xs text-rose-500 mt-1">{errors.roomId}</p>}
             {selectedRoom && (
               <p className="text-xs text-neutral-400 mt-1.5">
-                ค่าเช่า {selectedRoom.rent?.toLocaleString()} บาท/เดือน
-                {selectedRoom.tenantName ? ` — ปัจจุบัน: ${selectedRoom.tenantName}` : ''}
+                ค่าเช่า {(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/เดือน
+                {selectedRoom.roomType ? ` — ${selectedRoom.roomType}` : ''}
               </p>
             )}
           </div>
@@ -233,6 +236,23 @@ export default function ResidentModal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="เบอร์โทรฉุกเฉิน" value={emergencyPhone} onChange={e => handleEmergencyPhone(e.target.value)}
               placeholder="0812345678" inputMode="numeric" maxLength={10} />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">เชื่อมโยงบัญชี LINE</label>
+            <select value={lineUserId} onChange={e => setLineUserId(e.target.value)}
+              className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100">
+              <option value="">-- ไม่เชื่อมโยง LINE --</option>
+              {lineUsers.filter(u => u.isFollowing && (!u.residentId || u.residentId === editResident?.id)).map(u => (
+                <option key={u.userId} value={u.userId}>
+                  {u.displayName} ({u.userId.slice(0, 12)}...)
+                  {!u.isActive ? ' [ปิดใช้งาน]' : ''}
+                </option>
+              ))}
+            </select>
+            {editResident?.lineUserId && !lineUserId && (
+              <p className="text-xs text-amber-600 mt-1">กำลังเชื่อมโยงกับ {lineUsers.find(u => u.userId === editResident.lineUserId)?.displayName || editResident.lineUserId}</p>
+            )}
           </div>
         </div>
 

@@ -20,7 +20,7 @@ export default function Dashboard() {
   const cm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
   const { stats, recentData } = useMemo(() => {
-    const occupied = rooms.filter(r => r.tenantName)
+    const occupied = rooms.filter(r => r.residentId || r.tenantName)
     let pendingCount = 0, revenue = 0
     occupied.forEach(r => {
       const hasMeter = meters.some(x => x.roomId === r.id && x.month === cm)

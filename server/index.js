@@ -10,6 +10,7 @@ import residentsRouter from './routes/residents.js'
 import lineRouter from './routes/line.js'
 import uploadRouter from './routes/upload.js'
 import sendInvoiceRouter from './routes/send-invoice.js'
+import lineWebhookRouter from './routes/line-webhook.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -25,6 +26,7 @@ app.use('/api/residents', residentsRouter)
 app.use('/api/line', lineRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/send-invoice', sendInvoiceRouter)
+app.use('/api/line/webhook', lineWebhookRouter)
 
 app.get('/api/ping', (req, res) => {
   res.json({ message: 'pong' })

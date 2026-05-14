@@ -152,13 +152,14 @@ export function QrModal({ onClose }) {
 export function LineModal({ onClose }) {
   const { settings, fetchAll, toast, sendLineMsg } = useApp()
   const [token, setToken] = useState(settings.channelToken || '')
+  const [secret, setSecret] = useState(settings.channelSecret || '')
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
     setSaving(true)
     try {
       const { api } = await import('../lib/api')
-      await api('/api/settings', 'POST', { ...settings, channelToken: token })
+      await api('/api/settings', 'POST', { ...settings, channelToken: token, channelSecret: secret })
       await fetchAll(); toast('บันทึก LINE Token เรียบร้อย'); onClose()
     } catch (e) { toast(`บันทึกไม่สำเร็จ: ${e.message}`, true) }
     setSaving(false)
@@ -178,6 +179,7 @@ export function LineModal({ onClose }) {
           <strong>วิธีตั้งค่า:</strong> ไปที่ LINE Developers Console → สร้าง Channel → เปิด Messaging API → คัดลอก Channel Access Token → วางด้านล่าง
         </div>
         <Input label="Channel Access Token" type="text" placeholder="วาง Token ที่นี่..." value={token} onChange={e => setToken(e.target.value)} />
+        <Input label="Channel Secret" type="text" placeholder="วาง Secret ที่นี่ (สำหรับ Webhook)..." value={secret} onChange={e => setSecret(e.target.value)} />
         <div className="mt-4">
           <Button variant="secondary" size="sm" onClick={async () => {
             const uid = prompt('กรอก LINE User ID (ขึ้นต้นด้วย U):')

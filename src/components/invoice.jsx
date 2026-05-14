@@ -36,7 +36,7 @@ export default function Invoice() {
             <div className="w-2 h-2 rounded-full bg-lime-400" />
             <h3 className="text-sm font-semibold text-neutral-800">รายการใบแจ้งหนี้</h3>
           </div>
-          {rooms.filter(r => r.tenantName).length === 0 ? (
+          {rooms.filter(r => r.residentId || r.tenantName).length === 0 ? (
             <EmptyState icon="🧾" title="ไม่มีข้อมูล" description="เพิ่มผู้พักในห้องก่อนจึงจะสร้างใบแจ้งหนี้ได้" />
           ) : (
             <div className="overflow-x-auto rounded-xl border border-neutral-100">
@@ -47,7 +47,7 @@ export default function Invoice() {
                   ))}
                 </tr></thead>
                 <tbody className="divide-y divide-neutral-50">
-                  {rooms.filter(r => r.tenantName).map(r => {
+                  {rooms.filter(r => r.residentId || r.tenantName).map(r => {
                     const inv = calcInv(r, invMonth)
                     return (
                       <tr key={r.id} className="hover:bg-lime-50/30 transition-colors">

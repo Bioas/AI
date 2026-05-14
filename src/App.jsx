@@ -11,6 +11,7 @@ const Room = lazy(() => import('./components/room'))
 const Meters = lazy(() => import('./components/meters'))
 const Invoice = lazy(() => import('./components/invoice'))
 const Resident = lazy(() => import('./components/resident'))
+const LineUsers = lazy(() => import('./components/line-users'))
 const Setting = lazy(() => import('./components/setting'))
 const RoomModal = lazy(() => import('./components/RoomModal'))
 const ResidentModal = lazy(() => import('./components/ResidentModal'))
@@ -34,6 +35,7 @@ export default function App() {
                 <Route path="/meters" element={<Meters />} />
                 <Route path="/invoices" element={<Invoice />} />
                 <Route path="/residents" element={<Resident />} />
+                <Route path="/line-users" element={<LineUsers />} />
                 <Route path="/settings" element={<Setting />} />
               </Routes>
             </AnimatePresence>

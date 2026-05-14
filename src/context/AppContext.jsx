@@ -9,7 +9,7 @@ export function AppProvider({ children }) {
   const [meters, setMeters] = useState([])
   const [settings, setSettings] = useState({
     dormName: '', address: '', phone: '', rateElec: 7, rateWater: 20,
-    channelToken: '', logo: '', commonFee: 0, internetFee: 0,
+    channelToken: '', channelSecret: '', logo: '', commonFee: 0, internetFee: 0,
   })
   const [toasts, setToasts] = useState([])
   const [modal, setModal] = useState(null)
@@ -21,6 +21,7 @@ export function AppProvider({ children }) {
   const [error, setError] = useState(null)
   const [residents, setResidents] = useState([])
   const [editResident, setEditResident] = useState(null)
+  const [lineUsers, setLineUsers] = useState([])
   const [meterLocal, setMeterLocal] = useState({})
 
   const toast = useCallback((msg, err = false) => {
@@ -60,21 +61,26 @@ export function AppProvider({ children }) {
     const eu = Math.max(0, Number(cur.elec || 0) - Number(prev.elec || 0))
     const wu = Math.max(0, Number(cur.water || 0) - Number(prev.water || 0))
     const waterCost = calcWaterCost(wu, settings.rateWater)
+    const resident = room.residentId ? residents.find(r => r.id === room.residentId) : null
+    const roomNumber = room.roomNumber || room.number
+    const rentPrice = room.rentPrice || room.rent
     return {
-      room: room.number, tenant: room.tenantName, phone: room.tenantPhone,
-      userId: room.tenantUserId, month: m, rent: room.rent,
+      room: roomNumber, tenant: resident?.name || room.tenantName || 'ไม่ระบุ',
+      phone: resident?.phone || room.tenantPhone || '',
+      userId: resident?.lineUserId || room.tenantUserId || '',
+      month: m, rent: rentPrice,
       elecUnits: eu, elecCost: eu * settings.rateElec,
       waterUnits: wu, waterCost,
       prevElec: prev.elec || 0, curElec: cur.elec || 0,
       prevWater: prev.water || 0, curWater: cur.water || 0,
-      total: room.rent + eu * settings.rateElec + waterCost,
+      total: rentPrice + eu * settings.rateElec + waterCost,
       rateElec: settings.rateElec, rateWater: settings.rateWater,
     }
-  }, [meters, settings.rateElec, settings.rateWater])
+  }, [meters, residents, settings.rateElec, settings.rateWater])
 
   const initMeterLocal = useCallback(() => {
     const local = {}
-    rooms.filter(r => r.tenantName).forEach(r => {
+    rooms.filter(r => r.residentId || r.tenantName).forEach(r => {
       const pm = getPrevMonth(meterMonth)
       const cur = meters.find(x => x.roomId === r.id && x.month === meterMonth) || { elec: '', water: '' }
       const prev = meters.find(x => x.roomId === r.id && x.month === pm) || { elec: '', water: '' }
@@ -195,6 +201,45 @@ export function AppProvider({ children }) {
       toast(`ลบไม่สำเร็จ: ${e.message}`, true)
     }
   }, [fetchResidents, toast])
+
+  const fetchLineUsers = useCallback(async (params = '') => {
+    try {
+      const res = await api(`/api/line/users${params}`, 'GET')
+      setLineUsers(res || [])
+    } catch (e) {
+      console.error('fetchLineUsers error:', e)
+    }
+  }, [])
+
+  const toggleLineUser = useCallback(async (userId) => {
+    try {
+      const res = await api(`/api/line/users/${userId}/toggle`, 'PUT')
+      setLineUsers(prev => prev.map(u => u.userId === userId ? { ...u, isActive: res.isActive } : u))
+      toast(res.isActive ? 'เปิดใช้งานผู้ใช้นี้แล้ว' : 'ปิดใช้งานผู้ใช้นี้แล้ว')
+    } catch (e) {
+      toast(`ไม่สำเร็จ: ${e.message}`, true)
+    }
+  }, [toast])
+
+  const mapLineUser = useCallback(async (userId, residentId) => {
+    try {
+      await api(`/api/line/users/${userId}/map`, 'PUT', { residentId })
+      await fetchLineUsers()
+      toast('เชื่อมโยง LINE กับผู้พักสำเร็จ')
+    } catch (e) {
+      toast(`ไม่สำเร็จ: ${e.message}`, true)
+    }
+  }, [fetchLineUsers, toast])
+
+  const unmapLineUser = useCallback(async (userId) => {
+    try {
+      await api(`/api/line/users/${userId}/unmap`, 'PUT')
+      await fetchLineUsers()
+      toast('ยกเลิกการเชื่อมโยง LINE สำเร็จ')
+    } catch (e) {
+      toast(`ไม่สำเร็จ: ${e.message}`, true)
+    }
+  }, [fetchLineUsers, toast])
 
   const downloadPdf = useCallback(async (inv) => {
     const el = document.getElementById('invoicePdfContent')
@@ -369,7 +414,7 @@ export function AppProvider({ children }) {
   }, [fetchAll, toast])
 
   const value = {
-    rooms, residents, settings, loading, error,
+    rooms, residents, lineUsers, settings, loading, error,
     modal, setModal, editRoom, setEditRoom,
     editResident, setEditResident,
     meterMonth, setMeterMonth, invMonth, setInvMonth,
@@ -379,6 +424,7 @@ export function AppProvider({ children }) {
     calcInv, saveAllMeters, initMeterLocal,
     saveRoom, deleteRoom,
     fetchResidents, saveResident, deleteResident,
+    fetchLineUsers, toggleLineUser, mapLineUser, unmapLineUser,
     downloadPdf, sendLineMsg, sendPdfToLine,
     saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr,
     exportData, importData,

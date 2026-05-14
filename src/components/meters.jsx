@@ -10,7 +10,7 @@ import MeterModal from './MeterModal'
 export default function Meters() {
   const { rooms, settings, meterMonth, setMeterMonth, meterLocal } = useApp()
   const [editRoom, setEditRoom] = useState(null)
-  const occRooms = rooms.filter(r => r.tenantName)
+  const occRooms = rooms.filter(r => r.residentId || r.tenantName)
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>

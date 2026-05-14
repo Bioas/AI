@@ -83,8 +83,16 @@ router.post('/', async (req, res) => {
       deposit: Number(req.body.deposit) || 0,
       emergencyContact: req.body.emergencyContact?.trim() || '',
       emergencyPhone: req.body.emergencyPhone?.replace(/\D/g, '') || '',
+      lineUserId: req.body.lineUserId || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+    }
+
+    if (resident.lineUserId) {
+      await db.collection('lineUsers').updateOne(
+        { userId: resident.lineUserId },
+        { $set: { residentId: resident.id, updatedAt: new Date().toISOString() } }
+      )
     }
 
     await db.collection('residents').insertOne(resident)
@@ -124,7 +132,22 @@ router.put('/', async (req, res) => {
       deposit: Number(data.deposit) || 0,
       emergencyContact: data.emergencyContact?.trim() || '',
       emergencyPhone: data.emergencyPhone?.replace(/\D/g, '') || '',
+      lineUserId: data.lineUserId || '',
       updatedAt: new Date().toISOString(),
+    }
+
+    const oldResident = await db.collection('residents').findOne({ id })
+    if (oldResident?.lineUserId && oldResident.lineUserId !== update.lineUserId) {
+      await db.collection('lineUsers').updateOne(
+        { userId: oldResident.lineUserId },
+        { $set: { residentId: null, updatedAt: new Date().toISOString() } }
+      )
+    }
+    if (update.lineUserId) {
+      await db.collection('lineUsers').updateOne(
+        { userId: update.lineUserId },
+        { $set: { residentId: id, updatedAt: new Date().toISOString() } }
+      )
     }
 
     await db.collection('residents').updateOne({ id }, { $set: update })

@@ -85,6 +85,10 @@ export default function Setting() {
             <span className={`w-2 h-2 rounded-full ${settings.channelToken ? 'bg-emerald-500' : 'bg-rose-400'}`} />
             <span className="text-xs text-neutral-500">{settings.channelToken ? 'เชื่อมต่อ LINE แล้ว' : 'ยังไม่ได้ตั้งค่า LINE Token'}</span>
           </div>
+          <div className="flex items-center gap-2 mt-2">
+            <span className={`w-2 h-2 rounded-full ${settings.channelSecret ? 'bg-emerald-500' : 'bg-amber-400'}`} />
+            <span className="text-xs text-neutral-500">{settings.channelSecret ? 'ตั้งค่า Webhook แล้ว' : 'ยังไม่ได้ตั้งค่า Webhook Secret'}</span>
+          </div>
         </CardContent></Card>
 
         <Card><CardContent className="pt-6">

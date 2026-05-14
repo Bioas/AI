@@ -9,7 +9,7 @@ import Badge from './ui/badge'
 import Button from './ui/button'
 
 export default function Resident() {
-  const { residents, rooms, setEditResident, setModal, deleteResident } = useApp()
+  const { residents, lineUsers, setEditResident, setModal, deleteResident } = useApp()
   const [search, setSearch] = useState('')
 
   const filtered = useMemo(() => {
@@ -22,6 +22,17 @@ export default function Resident() {
       r.idCard?.includes(q)
     )
   }, [residents, search])
+
+  const getLineName = (lineUserId) => {
+    if (!lineUserId) return null
+    const u = lineUsers.find(x => x.userId === lineUserId)
+    return u ? u.displayName : null
+  }
+  const getLineActive = (lineUserId) => {
+    if (!lineUserId) return null
+    const u = lineUsers.find(x => x.userId === lineUserId)
+    return u ? u.isActive : null
+  }
 
   const handleDelete = (resident) => {
     if (!window.confirm(`⚠️ ต้องการลบข้อมูลผู้พัก "${resident.name}" ใช่หรือไม่?`)) return
@@ -54,7 +65,7 @@ export default function Resident() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-neutral-50/80">
-                    {['ชื่อผู้พักอาศัย', 'หมายเลขห้อง', 'เบอร์โทร', 'วันที่เข้าพัก', 'วันหมดสัญญา', 'สถานะสัญญา', 'จัดการ'].map(h => (
+                    {['ชื่อผู้พักอาศัย', 'หมายเลขห้อง', 'เบอร์โทร', 'LINE', 'วันที่เข้าพัก', 'วันหมดสัญญา', 'สถานะสัญญา', 'จัดการ'].map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -79,6 +90,16 @@ export default function Resident() {
                           <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">{r.roomNumber}</span>
                         </td>
                         <td className="px-4 py-3.5 text-neutral-700 whitespace-nowrap">{r.phone}</td>
+                        <td className="px-4 py-3.5">
+                          {r.lineUserId ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-neutral-600 truncate max-w-[100px]">{getLineName(r.lineUserId) || r.lineUserId.slice(0, 12)}</span>
+                              {getLineActive(r.lineUserId) === false && <Badge variant="danger">ปิด</Badge>}
+                            </div>
+                          ) : (
+                            <span className="text-neutral-300 italic">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3.5 text-neutral-600 whitespace-nowrap text-xs">{formatThaiDate(r.moveInDate)}</td>
                         <td className="px-4 py-3.5 text-neutral-600 whitespace-nowrap text-xs">{formatThaiDate(r.moveOutDate)}</td>
                         <td className="px-4 py-3.5"><Badge variant={status.variant}>{status.label}</Badge></td>

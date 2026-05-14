@@ -38,10 +38,11 @@ export default function MeterModal({ room, onClose }) {
     <Modal open={true} onClose={onClose}>
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
-          <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-xs font-bold shadow-sm">{room.number}</span>
+          <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-xs font-bold shadow-sm">{room.roomNumber || room.number}</span>
           <div>
             <h3 className="text-base font-semibold text-neutral-800">บันทึกหน่วยมิเตอร์</h3>
             <p className="text-xs text-neutral-400">{room.tenantName || 'ไม่มีผู้พัก'}</p>
+            {room.roomType && <p className="text-xs text-lime-600 mt-0.5">{room.roomType}</p>}
           </div>
         </div>
         <div className="space-y-6">
