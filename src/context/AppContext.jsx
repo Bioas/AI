@@ -434,7 +434,7 @@ export function AppProvider({ children }) {
   }, [fetchAll, toast])
 
   const value = {
-    rooms, residents, lineUsers, settings, loading, error,
+    rooms, meters, residents, lineUsers, settings, loading, error,
     modal, setModal, editRoom, setEditRoom,
     editResident, setEditResident,
     meterMonth, setMeterMonth, invMonth, setInvMonth,
