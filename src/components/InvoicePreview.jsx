@@ -19,7 +19,7 @@ export default function InvoicePreview({ inv }) {
   const issueDate = `30 ${m} ${y}`
 
   return (
-    <div id="invoicePdfContent" className="bg-white mx-auto font-sans text-[11px] text-neutral-700 leading-relaxed" style={{ padding: 40 }}>
+    <div id="invoicePdfContent" className="bg-white mx-auto font-sans text-[13px] text-neutral-700 leading-relaxed" style={{ padding: 40 }}>
       {/* Top accent bar */}
       <div className="h-1.5 bg-gradient-to-r from-amber-600 to-amber-400 rounded-full mb-6" />
 
@@ -41,7 +41,7 @@ export default function InvoicePreview({ inv }) {
 
       {/* Bill To */}
       <div className="mb-6 px-4 py-3 bg-gradient-to-r from-amber-50/80 to-amber-50/30 rounded-lg border border-amber-100/60">
-        <div className="grid grid-cols-2 gap-y-1.5 text-[11px]">
+        <div className="grid grid-cols-2 gap-y-1.5">
           <div><span className="text-amber-500">ผู้พัก</span> <span className="font-medium text-neutral-800 ml-2">{inv.tenant}</span></div>
           <div className="text-right"><span className="text-amber-500">ห้อง</span> <span className="font-medium text-neutral-800 ml-2">{inv.room}</span></div>
           <div><span className="text-amber-500">เดือน</span> <span className="font-medium text-neutral-800 ml-2">{formatMonth(inv.month)}</span></div>
@@ -53,17 +53,17 @@ export default function InvoicePreview({ inv }) {
       <table className="w-full mb-6">
         <thead>
           <tr className="border-b-2 border-amber-200/60">
-            <th className="text-left pb-2 font-semibold text-[10px] text-amber-700 uppercase tracking-wider">รายการ</th>
-            <th className="text-left pb-2 font-semibold text-[10px] text-amber-700 uppercase tracking-wider">รายละเอียด</th>
-            <th className="text-right pb-2 font-semibold text-[10px] text-amber-700 uppercase tracking-wider">จำนวนเงิน</th>
+            <th className="text-left pb-2 font-semibold text-[12px] text-amber-700 uppercase tracking-wider">รายการ</th>
+            <th className="text-left pb-2 font-semibold text-[12px] text-amber-700 uppercase tracking-wider">รายละเอียด</th>
+            <th className="text-right pb-2 font-semibold text-[12px] text-amber-700 uppercase tracking-wider">จำนวนเงิน</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item, i) => (
             <tr key={i} className="border-b border-amber-50">
-              <td className="py-2 pr-2 text-[11px] text-neutral-800">{item.desc}</td>
-              <td className="py-2 pr-2 text-[10px] text-neutral-400">{item.detail}</td>
-              <td className="py-2 text-right text-[11px] font-medium text-neutral-800">{item.amount.toLocaleString()}</td>
+              <td className="py-2 pr-2 text-neutral-800">{item.desc}</td>
+              <td className="py-2 pr-2 text-[12px] text-neutral-400">{item.detail}</td>
+              <td className="py-2 text-right font-medium text-neutral-800">{item.amount.toLocaleString()}</td>
             </tr>
           ))}
         </tbody>
@@ -80,12 +80,12 @@ export default function InvoicePreview({ inv }) {
       {/* Payment */}
       <div className="flex gap-6">
         <div className="flex-1 space-y-2">
-          <div className="text-[10px] text-neutral-500 leading-snug">
+          <div className="text-[12px] text-neutral-500 leading-snug">
             <div className="font-semibold text-amber-700 mb-0.5">💳 ช่องทางการชำระเงิน</div>
             พร้อมเพย์ <span className="font-semibold text-neutral-700">0902439797</span><br />
             นงลักษณ์ นิพรรัมย์ — ธนาคารกรุงไทย
           </div>
-          <div className="text-[10px] text-amber-600/70 leading-snug pt-2 border-t border-amber-100">
+          <div className="text-[12px] text-amber-600/70 leading-snug pt-2 border-t border-amber-100">
             ⚠️ กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
             หากชำระหลังกำหนด คิดค่าปรับวันละ 50 บาท
           </div>
@@ -93,16 +93,16 @@ export default function InvoicePreview({ inv }) {
         {settings.qrCode && (
           <div className="shrink-0 flex flex-col items-center justify-center">
             <div className="p-2 border-2 border-dashed border-amber-200 rounded-xl">
-              <img src={settings.qrCode} alt="QR" className="w-20 h-20 object-contain" />
+              <img src={settings.qrCode} alt="QR" className="w-32 h-32 object-contain" />
             </div>
-            <span className="text-[8px] text-amber-400 mt-1">สแกนชำระเงิน</span>
+            <span className="text-[10px] text-amber-400 mt-1">สแกนชำระเงิน</span>
           </div>
         )}
       </div>
 
       {/* Footer */}
       <div className="text-center mt-6 pt-4 border-t border-amber-100">
-        <p className="text-[9px] text-amber-400">{settings.dormName || 'หอพัก'} • โทร {settings.phone}</p>
+        <p className="text-[11px] text-amber-400">{settings.dormName || 'หอพัก'} • โทร {settings.phone}</p>
       </div>
     </div>
   )
