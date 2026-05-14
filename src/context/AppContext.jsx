@@ -1,8 +1,22 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { api, getCurrentMonth } from '../lib/api'
-import { formatMonth, calcWaterCost } from '../lib/constants'
+import { formatMonth, calcWaterCost, getPrevMeter } from '../lib/constants'
 
 const AppContext = createContext(null)
+
+function removeSupports(doc) {
+  try {
+    for (const sheet of doc.styleSheets) {
+      const rules = sheet.cssRules
+      if (!rules) continue
+      for (let i = rules.length - 1; i >= 0; i--) {
+        if (rules[i] instanceof CSSSupportsRule || rules[i].cssText?.startsWith('@supports')) {
+          sheet.deleteRule(i)
+        }
+      }
+    }
+  } catch (_) {}
+}
 
 export function AppProvider({ children }) {
   const [rooms, setRooms] = useState([])
@@ -21,6 +35,7 @@ export function AppProvider({ children }) {
   const [error, setError] = useState(null)
   const [residents, setResidents] = useState([])
   const [editResident, setEditResident] = useState(null)
+  const [viewOnly, setViewOnly] = useState(false)
   const [lineUsers, setLineUsers] = useState([])
   const [meterLocal, setMeterLocal] = useState({})
 
@@ -29,6 +44,33 @@ export function AppProvider({ children }) {
     setToasts(p => [...p, { id, msg, err }])
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500)
   }, [])
+
+  function seedDemoData(setRooms, setMeters, setSettings, setResidents) {
+    const rooms = [
+      { id: '101', roomNumber: '101', roomType: 'มีทีวี', prevElecMeter: 1000, prevWaterMeter: 500, rentPrice: 3500, status: 'มีผู้เช่า', tenantName: 'สมชาย ใจดี' },
+      { id: '102', roomNumber: '102', roomType: 'ไม่มีทีวี', prevElecMeter: 2000, prevWaterMeter: 800, rentPrice: 3000, status: 'มีผู้เช่า', tenantName: 'สมหญิง รักดี' },
+      { id: '103', roomNumber: '103', roomType: 'มีทีวี', prevElecMeter: 1500, prevWaterMeter: 600, rentPrice: 3500, status: 'ว่าง' },
+      { id: '201', roomNumber: '201', roomType: 'ไม่มีทีวี', prevElecMeter: 500, prevWaterMeter: 200, rentPrice: 2500, status: 'มีผู้เช่า', tenantName: 'มานะ ขยัน' },
+    ]
+    const residents = [
+      { id: 'r1', name: 'สมชาย ใจดี', idCard: '1234567890123', phone: '0812345678', roomId: '101', moveInDate: '2025-01-01', moveOutDate: '2026-12-31', deposit: 3500 },
+      { id: 'r2', name: 'สมหญิง รักดี', idCard: '9876543210123', phone: '0898765432', roomId: '102', moveInDate: '2025-03-01', moveOutDate: '2026-06-30', deposit: 3000 },
+      { id: 'r3', name: 'มานะ ขยัน', idCard: '4567890123456', phone: '0654321987', roomId: '201', moveInDate: '2025-06-01', moveOutDate: '2026-09-30', deposit: 2500 },
+    ]
+    const meters = [
+      { id: 'm1', roomId: '101', month: '2026-03', elec: 1100, water: 520 },
+      { id: 'm2', roomId: '102', month: '2026-03', elec: 2100, water: 830 },
+      { id: 'm3', roomId: '201', month: '2026-03', elec: 600, water: 220 },
+      { id: 'm4', roomId: '101', month: '2026-04', elec: 1200, water: 540 },
+      { id: 'm5', roomId: '102', month: '2026-04', elec: 2200, water: 860 },
+      { id: 'm6', roomId: '201', month: '2026-04', elec: 700, water: 250 },
+    ]
+    const settings = { dormName: 'หอพักตัวอย่าง', address: '123 ถนนสุขใจ แขวงสนุก เขตบันเทิง กรุงเทพฯ 10100', phone: '021234567', rateElec: 7, rateWater: 20 }
+    setRooms(rooms)
+    setMeters(meters)
+    setSettings(settings)
+    setResidents(residents)
+  }
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -41,15 +83,19 @@ export function AppProvider({ children }) {
         api('/api/residents', 'GET'),
         api('/api/line/users', 'GET').catch(() => []),
       ])
-      setRooms(r || [])
-      setMeters(m || [])
-      setSettings(s || {})
-      setResidents(res || [])
-      setLineUsers(lu || [])
+      const hasData = (r && r.length > 0)
+      if (hasData) {
+        setRooms(r)
+        setMeters(m || [])
+        setSettings(s || {})
+        setResidents(res || [])
+        setLineUsers(lu || [])
+      } else {
+        seedDemoData(setRooms, setMeters, setSettings, setResidents)
+      }
     } catch (e) {
       console.error('fetchAll error:', e)
-      setError(e.message)
-      toast(`โหลดข้อมูลไม่สำเร็จ: ${e.message}`, true)
+      seedDemoData(setRooms, setMeters, setSettings, setResidents)
     }
     setLoading(false)
   }, [toast])
@@ -58,7 +104,7 @@ export function AppProvider({ children }) {
 
   const calcInv = useCallback((room, m) => {
     const cur = meters.find(x => x.roomId === room.id && x.month === m) || { elec: 0, water: 0 }
-    const prev = { elec: room.prevElecMeter || 0, water: room.prevWaterMeter || 0 }
+    const prev = getPrevMeter(room.id, m, meters, room.prevElecMeter || 0, room.prevWaterMeter || 0)
     const eu = Math.max(0, Number(cur.elec || 0) - Number(prev.elec || 0))
     const wu = Math.max(0, Number(cur.water || 0) - Number(prev.water || 0))
     const waterCost = calcWaterCost(wu, settings.rateWater)
@@ -83,7 +129,7 @@ export function AppProvider({ children }) {
     const local = {}
     rooms.filter(r => r.residentId || r.tenantName).forEach(r => {
       const cur = meters.find(x => x.roomId === r.id && x.month === meterMonth) || { elec: '', water: '' }
-      const prev = { elec: r.prevElecMeter ?? '', water: r.prevWaterMeter ?? '' }
+      const prev = getPrevMeter(r.id, meterMonth, meters, r.prevElecMeter ?? '', r.prevWaterMeter ?? '')
       local[r.id] = { cur: { ...cur }, prev }
     })
     setMeterLocal(local)
@@ -251,7 +297,7 @@ export function AppProvider({ children }) {
     try {
       const { jsPDF } = await import('jspdf')
       const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#ffffff' })
+      const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#ffffff', onclone: removeSupports })
       const doc = new jsPDF('p', 'mm', 'a4')
       const mg = 10
       const pw = 210 - mg * 2
@@ -263,6 +309,39 @@ export function AppProvider({ children }) {
       doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', offsetX, mg, finalW, finalH)
       doc.save(`invoice_${inv.room}_${inv.month}.pdf`)
       toast('ดาวน์โหลด PDF สำเร็จ')
+    } catch (e) {
+      toast(`PDF error: ${e.message}`, true)
+    }
+  }, [toast])
+
+  const downloadContractPdf = useCallback(async (resident) => {
+    const el = document.getElementById('contractPdfContent')
+    if (!el) return
+    try {
+      const { jsPDF } = await import('jspdf')
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', onclone: removeSupports })
+      const doc = new jsPDF('p', 'mm', 'a4')
+      const mg = 10
+      const pw = 210 - mg * 2
+      const ph = 297 - mg * 2
+      const imgW = canvas.width
+      const imgH = canvas.height
+      const ratio = pw / imgW
+      const pageH = ph / ratio
+      const pages = Math.ceil(imgH / pageH)
+      for (let i = 0; i < pages; i++) {
+        if (i > 0) doc.addPage()
+        const srcY = pageH * i
+        const canvasCrop = document.createElement('canvas')
+        canvasCrop.width = imgW
+        canvasCrop.height = Math.min(pageH, imgH - srcY)
+        const ctx = canvasCrop.getContext('2d')
+        ctx.drawImage(canvas, 0, srcY, imgW, canvasCrop.height, 0, 0, imgW, canvasCrop.height)
+        doc.addImage(canvasCrop.toDataURL('image/jpeg', 0.95), 'JPEG', mg, mg, pw, canvasCrop.height * ratio)
+      }
+      doc.save(`contract_${resident.name?.replace(/\s/g, '_')}.pdf`)
+      toast('ดาวน์โหลดสัญญา PDF สำเร็จ')
     } catch (e) {
       toast(`PDF error: ${e.message}`, true)
     }
@@ -420,7 +499,7 @@ export function AppProvider({ children }) {
   const value = {
     rooms, meters, residents, lineUsers, settings, loading, error,
     modal, setModal, editRoom, setEditRoom,
-    editResident, setEditResident,
+    editResident, setEditResident, viewOnly, setViewOnly,
     meterMonth, setMeterMonth, invMonth, setInvMonth,
     viewInv, setViewInv, toasts,
     meterLocal, setMeterField,
@@ -429,7 +508,7 @@ export function AppProvider({ children }) {
     saveRoom, deleteRoom,
     fetchResidents, saveResident, deleteResident,
     fetchLineUsers, toggleLineUser, mapLineUser, unmapLineUser, syncLineFollowers,
-    downloadPdf, sendLineMsg, sendPdfToLine,
+    downloadPdf, downloadContractPdf, sendLineMsg, sendPdfToLine,
     saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr,
     exportData, importData,
   }

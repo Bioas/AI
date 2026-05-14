@@ -6,6 +6,13 @@ import PageHeader from './ui/page-header'
 import EmptyState from './ui/empty-state'
 import Badge from './ui/badge'
 import Button from './ui/button'
+import Select from './ui/select'
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'ทั้งหมด' },
+  { value: 'มีผู้เช่า', label: 'มีผู้เช่า' },
+  { value: 'ว่าง', label: 'ว่าง' },
+]
 
 export default function Room() {
   const { rooms, residents, setEditRoom, setModal, deleteRoom } = useApp()
@@ -62,12 +69,9 @@ export default function Room() {
             placeholder="ค้นหาห้องหรือผู้เช่า..."
             className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
         </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="h-10 px-3 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:border-lime-400">
-          <option value="all">ทั้งหมด</option>
-          <option value="มีผู้เช่า">มีผู้เช่า</option>
-          <option value="ว่าง">ว่าง</option>
-        </select>
+        <div className="w-40">
+          <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} placeholder="ทั้งหมด" />
+        </div>
         <div className="text-xs text-neutral-400">{filtered.length} ห้อง</div>
       </div>
 

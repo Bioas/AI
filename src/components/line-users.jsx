@@ -7,6 +7,21 @@ import EmptyState from './ui/empty-state'
 import Badge from './ui/badge'
 import Modal from './ui/modal'
 import Button from './ui/button'
+import Select from './ui/select'
+
+const FILTER_OPTIONS = [
+  { value: 'all', label: 'ทั้งหมด' },
+  { value: 'active', label: 'เปิดใช้งาน' },
+  { value: 'inactive', label: 'ปิดใช้งาน' },
+  { value: 'following', label: 'กำลังติดตาม' },
+  { value: 'unfollowed', label: 'เลิกติดตาม' },
+]
+
+const MAPPED_OPTIONS = [
+  { value: 'all', label: 'เชื่อมโยงทั้งหมด' },
+  { value: 'yes', label: 'เชื่อมโยงแล้ว' },
+  { value: 'no', label: 'ยังไม่เชื่อมโยง' },
+]
 
 function formatDate(iso) {
   if (!iso) return '—'
@@ -66,20 +81,12 @@ export default function LineUsers() {
             placeholder="ค้นหาชื่อ LINE หรือ User ID..."
             className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
         </div>
-        <select value={filter} onChange={e => setFilter(e.target.value)}
-          className="h-10 px-3 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:border-lime-400">
-          <option value="all">ทั้งหมด</option>
-          <option value="active">เปิดใช้งาน</option>
-          <option value="inactive">ปิดใช้งาน</option>
-          <option value="following">กำลังติดตาม</option>
-          <option value="unfollowed">เลิกติดตาม</option>
-        </select>
-        <select value={mappedFilter} onChange={e => setMappedFilter(e.target.value)}
-          className="h-10 px-3 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:border-lime-400">
-          <option value="all">เชื่อมโยงทั้งหมด</option>
-          <option value="yes">เชื่อมโยงแล้ว</option>
-          <option value="no">ยังไม่เชื่อมโยง</option>
-        </select>
+        <div className="w-40">
+          <Select value={filter} onChange={setFilter} options={FILTER_OPTIONS} placeholder="ทั้งหมด" />
+        </div>
+        <div className="w-44">
+          <Select value={mappedFilter} onChange={setMappedFilter} options={MAPPED_OPTIONS} placeholder="เชื่อมโยงทั้งหมด" />
+        </div>
         <div className="text-xs text-neutral-400">{lineUsers.length} รายการ</div>
       </div>
 

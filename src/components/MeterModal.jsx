@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { calcWaterCost } from '../lib/constants'
+import { calcWaterCost, getPrevMeter } from '../lib/constants'
 import Modal from './ui/modal'
 import Button from './ui/button'
 import Input from './ui/input'
@@ -13,8 +13,9 @@ export default function MeterModal({ room, onClose }) {
   const [curWater, setCurWater] = useState(existingCur.water?.toString() || '')
   const [saving, setSaving] = useState(false)
 
-  const prevElec = room.prevElecMeter?.toString() || ''
-  const prevWater = room.prevWaterMeter?.toString() || ''
+  const prev = useMemo(() => getPrevMeter(room.id, meterMonth, meters, room.prevElecMeter ?? '', room.prevWaterMeter ?? ''), [room.id, meterMonth, meters, room.prevElecMeter, room.prevWaterMeter])
+  const prevElec = prev.elec?.toString() || ''
+  const prevWater = prev.water?.toString() || ''
 
   const eu = (curElec && prevElec) ? Math.max(0, Number(curElec) - Number(prevElec)) : null
   const wu = (curWater && prevWater) ? Math.max(0, Number(curWater) - Number(prevWater)) : null

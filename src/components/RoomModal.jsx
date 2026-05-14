@@ -3,6 +3,12 @@ import { useApp } from '../context/AppContext'
 import Modal from './ui/modal'
 import Button from './ui/button'
 import Input from './ui/input'
+import Select from './ui/select'
+
+const ROOM_TYPE_OPTIONS = [
+  { value: 'ไม่มีทีวี', label: 'ไม่มีทีวี' },
+  { value: 'มีทีวี', label: 'มีทีวี' },
+]
 
 export default function RoomModal() {
   const { editRoom, rooms, saveRoom, setModal } = useApp()
@@ -80,11 +86,7 @@ export default function RoomModal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทห้องพัก *</label>
-              <select value={roomType} onChange={e => setRoomType(e.target.value)}
-                className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100">
-                <option value="ไม่มีทีวี">ไม่มีทีวี</option>
-                <option value="มีทีวี">มีทีวี</option>
-              </select>
+              <Select value={roomType} onChange={setRoomType} options={ROOM_TYPE_OPTIONS} placeholder="เลือกประเภท" />
             </div>
             {editRoom && residentName && (
               <div>

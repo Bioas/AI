@@ -35,6 +35,14 @@ export function getPrevMonth(ym) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+export function getPrevMeter(roomId, monthStr, allMeters, fallbackElec = 0, fallbackWater = 0) {
+  const prev = allMeters
+    .filter(m => m.roomId === roomId && m.month < monthStr)
+    .sort((a, b) => b.month.localeCompare(a.month))[0]
+  if (prev) return { elec: prev.elec, water: prev.water }
+  return { elec: fallbackElec, water: fallbackWater }
+}
+
 export function calcWaterCost(units, rate) {
   if (units === 0) return 0
   if (units <= 4) return 150

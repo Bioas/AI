@@ -7,10 +7,12 @@ import PageHeader from './ui/page-header'
 import EmptyState from './ui/empty-state'
 import Badge from './ui/badge'
 import Button from './ui/button'
+import ContractPreview from './ContractPreview'
 
 export default function Resident() {
-  const { residents, lineUsers, setEditResident, setModal, deleteResident } = useApp()
+  const { residents, lineUsers, setEditResident, setModal, setViewOnly, deleteResident, downloadContractPdf } = useApp()
   const [search, setSearch] = useState('')
+  const [contractResident, setContractResident] = useState(null)
 
   const filtered = useMemo(() => {
     if (!search.trim()) return residents
@@ -42,7 +44,7 @@ export default function Resident() {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="ผู้พักอาศัย" description="จัดการข้อมูลผู้เช่าห้องพักทั้งหมด"
-        action={<Button onClick={() => { setEditResident(null); setModal('resident') }}>＋ เพิ่มผู้พัก</Button>} />
+        action={<Button onClick={() => { setEditResident(null); setViewOnly(false); setModal('resident') }}>＋ เพิ่มผู้พัก</Button>} />
 
       <div className="flex items-center gap-3 mb-6">
         <div className="relative flex-1 max-w-md">
@@ -59,7 +61,7 @@ export default function Resident() {
           {filtered.length === 0 ? (
             <EmptyState icon="👥" title={search ? 'ไม่พบข้อมูลที่ค้นหา' : 'ยังไม่มีผู้พักอาศัย'}
               description={search ? 'ลองเปลี่ยนคำค้นหาหรือตรวจสอบการสะกด' : 'เพิ่มผู้พักคนแรกเพื่อเริ่มต้นจัดการ'}
-              action={!search ? <Button onClick={() => { setEditResident(null); setModal('resident') }}>เพิ่มผู้พัก</Button> : undefined} />
+              action={!search ? <Button onClick={() => { setEditResident(null); setViewOnly(false); setModal('resident') }}>เพิ่มผู้พัก</Button> : undefined} />
           ) : (
             <div className="overflow-x-auto rounded-xl border border-neutral-100">
               <table className="w-full text-sm">
@@ -105,8 +107,10 @@ export default function Resident() {
                         <td className="px-4 py-3.5"><Badge variant={status.variant}>{status.label}</Badge></td>
                         <td className="px-4 py-3.5">
                           <div className="flex gap-1.5">
-                            <button onClick={() => { setEditResident(r); setModal('resident') }}
-                              className="h-8 px-3.5 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-100">แก้ไข</button>
+                            <button onClick={() => { setEditResident(r); setViewOnly(true); setModal('resident') }}
+                              className="h-8 px-3.5 rounded-lg text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors border border-sky-100">ดู</button>
+                            <button onClick={() => { setContractResident(r); setTimeout(() => downloadContractPdf(r), 100); setTimeout(() => setContractResident(null), 200) }}
+                              className="h-8 px-3.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-100">สัญญา</button>
                             <button onClick={() => handleDelete(r)}
                               className="h-8 px-3.5 rounded-lg text-xs font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors border border-rose-100">ลบ</button>
                           </div>
@@ -120,6 +124,12 @@ export default function Resident() {
           )}
         </CardContent>
       </Card>
+
+      {contractResident && (
+        <div className="fixed left-0 top-0 -z-50 opacity-0 pointer-events-none" aria-hidden="true">
+          <ContractPreview resident={contractResident} />
+        </div>
+      )}
     </motion.div>
   )
 }
