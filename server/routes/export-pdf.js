@@ -474,9 +474,10 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'PDF generation returned empty buffer' })
     }
 
+    const safeFilename = filename.replace(/[^\x20-\x7E]/g, '_')
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Disposition': `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
       'Content-Length': pdfBuffer.length,
     })
     res.send(pdfBuffer)
