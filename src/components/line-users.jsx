@@ -15,13 +15,11 @@ function formatDate(iso) {
 }
 
 export default function LineUsers() {
-  const { lineUsers, residents, fetchLineUsers, toggleLineUser, mapLineUser, unmapLineUser, syncLineFollowers, toast } = useApp()
+  const { lineUsers, residents, fetchLineUsers, toggleLineUser, syncLineFollowers, toast } = useApp()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [mappedFilter, setMappedFilter] = useState('all')
   const [detailUser, setDetailUser] = useState(null)
-  const [mapModal, setMapModal] = useState(null)
-  const [selectedResident, setSelectedResident] = useState('')
 
   useEffect(() => {
     const p = new URLSearchParams()
@@ -41,11 +39,6 @@ export default function LineUsers() {
     if (!window.confirm(msg)) return
     toggleLineUser(user.userId)
   }
-
-  const availableResidents = useMemo(() => {
-    const mappedIds = lineUsers.filter(u => u.residentId && u.userId !== mapModal?.userId).map(u => u.residentId)
-    return residents.filter(r => !mappedIds.includes(r.id))
-  }, [residents, lineUsers, mapModal])
 
   const getResidentName = (residentId) => {
     if (!residentId) return null
@@ -144,15 +137,6 @@ export default function LineUsers() {
                           <div className="flex gap-1.5">
                             <button onClick={() => setDetailUser(u)}
                               className="h-8 px-3 rounded-lg text-xs font-medium bg-neutral-50 text-neutral-600 hover:bg-neutral-100 transition-colors border border-neutral-200">ดู</button>
-                            {u.isFollowing && (
-                              residentName ? (
-                                <button onClick={() => { setMapModal(u); setSelectedResident('') }}
-                                  className="h-8 px-3 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors border border-amber-200">เปลี่ยน</button>
-                              ) : (
-                                <button onClick={() => { setMapModal(u); setSelectedResident('') }}
-                                  className="h-8 px-3 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-200">เชื่อมโยง</button>
-                              )
-                            )}
                             <button onClick={() => handleToggle(u)}
                               className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${u.isActive ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border-rose-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'}`}>
                               {u.isActive ? 'ปิด' : 'เปิด'}
@@ -218,44 +202,6 @@ export default function LineUsers() {
         )}
       </Modal>
 
-      <Modal open={!!mapModal} onClose={() => setMapModal(null)} maxWidth="max-w-md">
-        {mapModal && (
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-base shadow-sm">🔗</div>
-              <div>
-                <h3 className="text-base font-semibold text-neutral-800">เชื่อมโยง LINE กับผู้พัก</h3>
-                <p className="text-xs text-neutral-400">เลือกผู้พักอาศัยเพื่อเชื่อมโยงกับ {mapModal.displayName}</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-neutral-700">เลือกผู้พักอาศัย</label>
-              <select value={selectedResident} onChange={e => setSelectedResident(e.target.value)}
-                className="w-full h-10 px-3 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 focus:outline-none focus:border-lime-400">
-                <option value="">-- เลือกผู้พัก --</option>
-                {availableResidents.map(r => (
-                  <option key={r.id} value={r.id}>{r.name} (ห้อง {r.roomNumber})</option>
-                ))}
-              </select>
-            </div>
-            {mapModal.residentId && (
-              <div className="mt-4 pt-4 border-t border-neutral-100">
-                <Button variant="danger" size="sm" onClick={() => {
-                  if (window.confirm(`ยกเลิกการเชื่อมโยง "${mapModal.displayName}"?`)) {
-                    unmapLineUser(mapModal.userId)
-                    setMapModal(null)
-                  }
-                }}>ยกเลิกการเชื่อมโยง</Button>
-              </div>
-            )}
-            <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
-              <Button variant="ghost" onClick={() => setMapModal(null)}>ยกเลิก</Button>
-              <Button onClick={() => { if (selectedResident) { mapLineUser(mapModal.userId, selectedResident); setMapModal(null) } }}
-                disabled={!selectedResident}>เชื่อมโยง</Button>
-            </div>
-          </div>
-        )}
-      </Modal>
     </motion.div>
   )
 }
