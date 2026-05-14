@@ -202,6 +202,15 @@ export function AppProvider({ children }) {
     }
   }, [fetchResidents, toast])
 
+  const fetchLineUsers = useCallback(async (params = '') => {
+    try {
+      const res = await api(`/api/line/users${params}`, 'GET')
+      setLineUsers(res || [])
+    } catch (e) {
+      console.error('fetchLineUsers error:', e)
+    }
+  }, [])
+
   const syncLineFollowers = useCallback(async () => {
     try {
       const res = await fetch('/api/line/sync-followers', {
@@ -221,15 +230,6 @@ export function AppProvider({ children }) {
       return false
     }
   }, [fetchLineUsers, toast])
-
-  const fetchLineUsers = useCallback(async (params = '') => {
-    try {
-      const res = await api(`/api/line/users${params}`, 'GET')
-      setLineUsers(res || [])
-    } catch (e) {
-      console.error('fetchLineUsers error:', e)
-    }
-  }, [])
 
   const toggleLineUser = useCallback(async (userId) => {
     try {
