@@ -109,12 +109,12 @@ function buildInvoiceHtml(data) {
   <div style="display:flex;gap:48px;">
     <div style="flex:1;">
       <div style="font-size:22px;color:#6b7280;">
-        <div style="font-weight:600;color:#b45309;margin-bottom:2px;">💳 ช่องทางการชำระเงิน</div>
+        <div style="font-weight:600;color:#b45309;margin-bottom:2px;">ช่องทางการชำระเงิน</div>
         พร้อมเพย์ <strong style="font-weight:600;color:#374151;">0902439797</strong><br />
         นงลักษณ์ นิพรรัมย์ — ธนาคารกรุงไทย
       </div>
       <div style="font-size:22px;color:rgba(180,146,41,0.7);padding-top:8px;margin-top:8px;border-top:1px solid #fef3c7;">
-        ⚠️ กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
+        กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
         หากชำระหลังกำหนด คิดค่าปรับวันละ 50 บาท
       </div>
     </div>

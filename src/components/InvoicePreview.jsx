@@ -81,12 +81,12 @@ export default function InvoicePreview({ inv }) {
       <div className="flex gap-6">
         <div className="flex-1 space-y-2">
           <div className="text-[12px] text-neutral-500 leading-snug">
-            <div className="font-semibold text-amber-700 mb-0.5">💳 ช่องทางการชำระเงิน</div>
+            <div className="font-semibold text-amber-700 mb-0.5">ช่องทางการชำระเงิน</div>
             พร้อมเพย์ <span className="font-semibold text-neutral-700">0902439797</span><br />
             นงลักษณ์ นิพรรัมย์ — ธนาคารกรุงไทย
           </div>
           <div className="text-[12px] text-amber-600/70 leading-snug pt-2 border-t border-amber-100">
-            ⚠️ กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
+            กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
             หากชำระหลังกำหนด คิดค่าปรับวันละ 50 บาท
           </div>
         </div>
