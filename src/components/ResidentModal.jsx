@@ -236,20 +236,19 @@ export default function ResidentModal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="เบอร์โทรฉุกเฉิน" value={emergencyPhone} onChange={e => handleEmergencyPhone(e.target.value)}
               placeholder="0812345678" inputMode="numeric" maxLength={10} />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1.5">เชื่อมโยงบัญชี LINE</label>
-            <select value={lineUserId} onChange={e => setLineUserId(e.target.value)}
-              className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100">
-              <option value="">— ไม่เชื่อมโยง LINE —</option>
-              {lineUsers.filter(u => u.isFollowing && (!u.residentId || u.residentId === editResident?.id)).map(u => (
-                <option key={u.userId} value={u.userId}>
-                  {u.displayName} ({u.userId.slice(0, 12)}...)
-                  {!u.isActive ? ' [ปิดใช้งาน]' : ''}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">เชื่อมโยงบัญชี LINE</label>
+              <select value={lineUserId} onChange={e => setLineUserId(e.target.value)}
+                className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100">
+                <option value="">— ไม่เชื่อมโยง LINE —</option>
+                {lineUsers.filter(u => u.isFollowing && (!u.residentId || u.residentId === editResident?.id)).map(u => (
+                  <option key={u.userId} value={u.userId}>
+                    {u.displayName} ({u.userId.slice(0, 12)}...)
+                    {!u.isActive ? ' [ปิดใช้งาน]' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
