@@ -51,7 +51,6 @@ function buildInvoiceHtml(data) {
   }
   #invoice {
     width:960px;
-    min-height:1390px;
     margin:0 auto;
     padding:36px;
     background:#ffffff;
@@ -63,9 +62,9 @@ function buildInvoiceHtml(data) {
 
   <div style="height:8px;background:linear-gradient(90deg,#b45309,#f59e0b);border-radius:999px;margin-bottom:24px;"></div>
 
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid rgba(253,230,138,0.6);">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;margin-bottom:32px;border-bottom:1px solid rgba(253,230,138,0.6);">
     <div style="display:flex;align-items:center;gap:14px;">
-      ${logo ? `<img src="${logo}" alt="" style="height:80px;width:80px;object-fit:contain;flex-shrink:0;">` : ''}
+      ${logo ? `<img src="${logo}" alt="" style="height:150px;width:150px;object-fit:contain;flex-shrink:0;">` : ''}
       <div>
         <div style="font-size:36px;font-weight:700;color:#92400e;">${dormName || 'หอพัก'}</div>
         <div style="font-size:20px;color:#9ca3af;margin-top:2px;">${dormAddress || ''}</div>
@@ -78,7 +77,7 @@ function buildInvoiceHtml(data) {
     </div>
   </div>
 
-  <div style="margin-bottom:16px;padding:14px 20px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:10px;">
+  <div style="margin-bottom:32px;padding:14px 20px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:10px;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <div><span style="color:#d97706;">ผู้พัก</span><span style="font-weight:500;color:#1f2937;margin-left:10px;">${tenantName || ''}</span></div>
       <div style="text-align:right;"><span style="color:#d97706;">ห้อง</span><span style="font-weight:500;color:#1f2937;margin-left:10px;">${roomNumber || ''}</span></div>
@@ -87,7 +86,7 @@ function buildInvoiceHtml(data) {
     </div>
   </div>
 
-  <table style="width:100%;margin-bottom:16px;border-collapse:collapse;">
+  <table style="width:100%;margin-bottom:32px;border-collapse:collapse;">
     <thead>
       <tr style="border-bottom:2px solid rgba(180,146,41,0.3);">
         <th style="text-align:left;padding-bottom:10px;font-size:24px;font-weight:600;color:#b45309;text-transform:uppercase;letter-spacing:1px;">รายการ</th>
@@ -100,14 +99,14 @@ function buildInvoiceHtml(data) {
     </tbody>
   </table>
 
-  <div style="display:flex;justify-content:flex-end;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid rgba(180,146,41,0.3);">
+  <div style="display:flex;justify-content:flex-end;padding-bottom:16px;margin-bottom:32px;border-bottom:1px solid rgba(180,146,41,0.3);">
     <div style="display:flex;align-items:baseline;gap:20px;">
       <span style="font-size:28px;font-weight:700;color:#b45309;">รวมทั้งสิ้น</span>
       <span style="font-size:32px;font-weight:700;color:#b45309;">${formatNumber(total)} บาท</span>
     </div>
   </div>
 
-  <div style="display:flex;gap:20px;">
+  <div style="display:flex;gap:48px;">
     <div style="flex:1;">
       <div style="font-size:22px;color:#6b7280;">
         <div style="font-weight:600;color:#b45309;margin-bottom:2px;">💳 ช่องทางการชำระเงิน</div>
