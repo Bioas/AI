@@ -28,7 +28,7 @@ function buildInvoiceHtml(data) {
   const itemRows = items.map((item, i) => `
     <tr key="${i}" style="border-bottom:1px solid #fef3c7;">
       <td style="padding:10px 12px 10px 0;color:#374151;">${item.desc}</td>
-      <td style="padding:10px 12px 10px 0;font-size:12px;color:#9ca3af;">${item.detail}</td>
+      <td style="padding:10px 12px 10px 0;font-size:22px;color:#9ca3af;">${item.detail}</td>
       <td style="padding:10px 0;text-align:right;font-weight:500;color:#374151;">${formatNumber(item.amount)}</td>
     </tr>
   `).join('')
@@ -37,22 +37,23 @@ function buildInvoiceHtml(data) {
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=1080">
+<meta name="viewport" content="width=960">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
     font-family:'Noto Sans Thai','Sarabun',Tahoma,sans-serif;
     background:#ffffff;
-    font-size:13px;
+    font-size:28px;
     color:#374151;
-    line-height:1.625;
+    line-height:2.0;
     -webkit-font-smoothing:antialiased;
   }
   #invoice {
     width:960px;
+    min-height:1390px;
     margin:0 auto;
-    padding:60px;
+    padding:36px;
     background:#ffffff;
   }
 </style>
@@ -60,38 +61,38 @@ function buildInvoiceHtml(data) {
 <body>
 <div id="invoice">
 
-  <div style="height:8px;background:linear-gradient(90deg,#b45309,#f59e0b);border-radius:999px;margin-bottom:36px;"></div>
+  <div style="height:8px;background:linear-gradient(90deg,#b45309,#f59e0b);border-radius:999px;margin-bottom:24px;"></div>
 
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:32px;margin-bottom:32px;border-bottom:1px solid rgba(253,230,138,0.6);">
-    <div style="display:flex;align-items:center;gap:16px;">
-      ${logo ? `<img src="${logo}" alt="" style="height:96px;width:96px;object-fit:contain;flex-shrink:0;">` : ''}
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid rgba(253,230,138,0.6);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      ${logo ? `<img src="${logo}" alt="" style="height:80px;width:80px;object-fit:contain;flex-shrink:0;">` : ''}
       <div>
-        <div style="font-size:16px;font-weight:700;color:#92400e;">${dormName || 'หอพัก'}</div>
-        <div style="font-size:10px;color:#9ca3af;margin-top:4px;">${dormAddress || ''}</div>
-        <div style="font-size:10px;color:#9ca3af;">${dormPhone ? 'โทร ' + dormPhone : ''}</div>
+        <div style="font-size:36px;font-weight:700;color:#92400e;">${dormName || 'หอพัก'}</div>
+        <div style="font-size:20px;color:#9ca3af;margin-top:2px;">${dormAddress || ''}</div>
+        <div style="font-size:20px;color:#9ca3af;">${dormPhone ? 'โทร ' + dormPhone : ''}</div>
       </div>
     </div>
-    <div style="text-align:right;padding-top:4px;">
-      <div style="font-size:16px;font-weight:700;color:#b45309;">ใบแจ้งหนี้</div>
-      <div style="font-size:10px;color:#9ca3af;margin-top:4px;">${issueDate}</div>
+    <div style="text-align:right;">
+      <div style="font-size:36px;font-weight:700;color:#b45309;">ใบแจ้งหนี้</div>
+      <div style="font-size:20px;color:#9ca3af;margin-top:2px;">${issueDate}</div>
     </div>
   </div>
 
-  <div style="margin-bottom:32px;padding:18px 24px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:12px;">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div><span style="color:#d97706;">ผู้พัก</span><span style="font-weight:500;color:#1f2937;margin-left:8px;">${tenantName || ''}</span></div>
-      <div style="text-align:right;"><span style="color:#d97706;">ห้อง</span><span style="font-weight:500;color:#1f2937;margin-left:8px;">${roomNumber || ''}</span></div>
-      <div><span style="color:#d97706;">เดือน</span><span style="font-weight:500;color:#1f2937;margin-left:8px;">${billingMonth || ''}</span></div>
-      <div style="text-align:right;"><span style="color:#d97706;">วันที่</span><span style="font-weight:500;color:#1f2937;margin-left:8px;">${issueDate}</span></div>
+  <div style="margin-bottom:16px;padding:14px 20px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:10px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div><span style="color:#d97706;">ผู้พัก</span><span style="font-weight:500;color:#1f2937;margin-left:10px;">${tenantName || ''}</span></div>
+      <div style="text-align:right;"><span style="color:#d97706;">ห้อง</span><span style="font-weight:500;color:#1f2937;margin-left:10px;">${roomNumber || ''}</span></div>
+      <div><span style="color:#d97706;">เดือน</span><span style="font-weight:500;color:#1f2937;margin-left:10px;">${billingMonth || ''}</span></div>
+      <div style="text-align:right;"><span style="color:#d97706;">วันที่</span><span style="font-weight:500;color:#1f2937;margin-left:10px;">${issueDate}</span></div>
     </div>
   </div>
 
-  <table style="width:100%;margin-bottom:32px;border-collapse:collapse;">
+  <table style="width:100%;margin-bottom:16px;border-collapse:collapse;">
     <thead>
       <tr style="border-bottom:2px solid rgba(180,146,41,0.3);">
-        <th style="text-align:left;padding-bottom:12px;font-size:12px;font-weight:600;color:#b45309;text-transform:uppercase;letter-spacing:1px;">รายการ</th>
-        <th style="text-align:left;padding-bottom:12px;font-size:12px;font-weight:600;color:#b45309;text-transform:uppercase;letter-spacing:1px;">รายละเอียด</th>
-        <th style="text-align:right;padding-bottom:12px;font-size:12px;font-weight:600;color:#b45309;text-transform:uppercase;letter-spacing:1px;">จำนวนเงิน</th>
+        <th style="text-align:left;padding-bottom:10px;font-size:24px;font-weight:600;color:#b45309;text-transform:uppercase;letter-spacing:1px;">รายการ</th>
+        <th style="text-align:left;padding-bottom:10px;font-size:24px;font-weight:600;color:#b45309;text-transform:uppercase;letter-spacing:1px;">รายละเอียด</th>
+        <th style="text-align:right;padding-bottom:10px;font-size:24px;font-weight:600;color:#b45309;text-transform:uppercase;letter-spacing:1px;">จำนวนเงิน</th>
       </tr>
     </thead>
     <tbody>
@@ -99,36 +100,36 @@ function buildInvoiceHtml(data) {
     </tbody>
   </table>
 
-  <div style="display:flex;justify-content:flex-end;padding-bottom:32px;margin-bottom:32px;border-bottom:1px solid rgba(180,146,41,0.3);">
-    <div style="display:flex;align-items:baseline;gap:32px;">
-      <span style="font-size:14px;font-weight:700;color:#b45309;">รวมทั้งสิ้น</span>
-      <span style="font-size:16px;font-weight:700;color:#b45309;">${formatNumber(total)} บาท</span>
+  <div style="display:flex;justify-content:flex-end;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid rgba(180,146,41,0.3);">
+    <div style="display:flex;align-items:baseline;gap:20px;">
+      <span style="font-size:28px;font-weight:700;color:#b45309;">รวมทั้งสิ้น</span>
+      <span style="font-size:32px;font-weight:700;color:#b45309;">${formatNumber(total)} บาท</span>
     </div>
   </div>
 
-  <div style="display:flex;gap:32px;">
+  <div style="display:flex;gap:20px;">
     <div style="flex:1;">
-      <div style="font-size:12px;color:#6b7280;line-height:1.5;">
-        <div style="font-weight:600;color:#b45309;margin-bottom:4px;">ช่องทางการชำระเงิน</div>
-        พร้อมเพย์ <strong style="font-weight:600;color:#374151;">0902439797</strong><br>
+      <div style="font-size:22px;color:#6b7280;">
+        <div style="font-weight:600;color:#b45309;margin-bottom:2px;">💳 ช่องทางการชำระเงิน</div>
+        พร้อมเพย์ <strong style="font-weight:600;color:#374151;">0902439797</strong><br />
         นงลักษณ์ นิพรรัมย์ — ธนาคารกรุงไทย
       </div>
-      <div style="font-size:12px;color:rgba(180,146,41,0.7);line-height:1.5;padding-top:12px;margin-top:12px;border-top:1px solid #fef3c7;">
-        กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br>
+      <div style="font-size:22px;color:rgba(180,146,41,0.7);padding-top:8px;margin-top:8px;border-top:1px solid #fef3c7;">
+        ⚠️ กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
         หากชำระหลังกำหนด คิดค่าปรับวันละ 50 บาท
       </div>
     </div>
     ${qrCode ? `
     <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-      <div style="padding:12px;border:3px dashed rgba(180,146,41,0.4);border-radius:16px;">
-        <img src="${qrCode}" alt="QR" style="width:128px;height:128px;object-fit:contain;">
+      <div style="padding:8px;border:3px dashed rgba(180,146,41,0.4);border-radius:12px;">
+        <img src="${qrCode}" alt="QR" style="width:220px;height:220px;object-fit:contain;">
       </div>
-      <span style="font-size:10px;color:#f59e0b;margin-top:6px;">สแกนชำระเงิน</span>
+      <span style="font-size:20px;color:#f59e0b;margin-top:4px;">สแกนชำระเงิน</span>
     </div>` : ''}
   </div>
 
-  <div style="text-align:center;margin-top:36px;padding-top:20px;border-top:1px solid #fef3c7;">
-    <p style="font-size:11px;color:#f59e0b;">${dormName || 'หอพัก'}${dormPhone ? ' • โทร ' + dormPhone : ''}</p>
+  <div style="text-align:center;margin-top:20px;padding-top:12px;border-top:1px solid #fef3c7;">
+    <p style="font-size:20px;color:#f59e0b;">${dormName || 'หอพัก'}${dormPhone ? ' • โทร ' + dormPhone : ''}</p>
   </div>
 
 </div>
@@ -147,14 +148,14 @@ async function launchBrowser() {
     const puppeteer = await import('puppeteer-core')
     return puppeteer.launch({
       args: chromium.args,
-      defaultViewport: { width: 1080, height: 1200, deviceScaleFactor: 2 },
+      defaultViewport: { width: 1080, height: 1200, deviceScaleFactor: 1 },
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     })
   }
   const { launch } = await import('puppeteer')
   return launch({
-    defaultViewport: { width: 1080, height: 1200, deviceScaleFactor: 2 },
+    defaultViewport: { width: 1080, height: 1200, deviceScaleFactor: 1 },
     headless: true,
   })
 }
