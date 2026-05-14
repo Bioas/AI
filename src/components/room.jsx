@@ -29,6 +29,10 @@ export default function Room() {
 
   const handleDelete = (room) => {
     const label = room.roomNumber || room.number
+    if (room.residentId || room.tenantName) {
+      window.alert(`⚠️ ไม่สามารถลบห้อง ${label} ได้ เนื่องจากมีผู้พัก (${room.tenantName}) อยู่ในห้อง กรุณาย้ายผู้พักออกก่อน`)
+      return
+    }
     if (!window.confirm(`⚠️ ต้องการลบห้อง ${label} ใช่หรือไม่?`)) return
     deleteRoom(room.id)
   }

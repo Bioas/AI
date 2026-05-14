@@ -96,6 +96,10 @@ router.post('/', async (req, res) => {
     }
 
     await db.collection('residents').insertOne(resident)
+    await db.collection('rooms').updateOne(
+      { id: req.body.roomId },
+      { $set: { residentId: resident.id, status: 'มีผู้เช่า', updatedAt: new Date().toISOString() } }
+    )
     res.status(200).json(resident)
   } catch (e) {
     console.error('POST /api/residents error:', e)
@@ -137,6 +141,18 @@ router.put('/', async (req, res) => {
     }
 
     const oldResident = await db.collection('residents').findOne({ id })
+
+    if (oldResident?.roomId && oldResident.roomId !== data.roomId) {
+      await db.collection('rooms').updateOne(
+        { id: oldResident.roomId },
+        { $set: { residentId: null, status: 'ว่าง', updatedAt: new Date().toISOString() } }
+      )
+      await db.collection('rooms').updateOne(
+        { id: data.roomId },
+        { $set: { residentId: id, status: 'มีผู้เช่า', updatedAt: new Date().toISOString() } }
+      )
+    }
+
     if (oldResident?.lineUserId && oldResident.lineUserId !== update.lineUserId) {
       await db.collection('lineUsers').updateOne(
         { userId: oldResident.lineUserId },
@@ -163,6 +179,13 @@ router.delete('/', async (req, res) => {
     const client = await connectDB()
     const db = client.db('dorm_billing')
     if (!req.body.id) return res.status(400).json({ error: 'id is required' })
+    const resident = await db.collection('residents').findOne({ id: req.body.id })
+    if (resident?.roomId) {
+      await db.collection('rooms').updateOne(
+        { id: resident.roomId },
+        { $set: { residentId: null, status: 'ว่าง', updatedAt: new Date().toISOString() } }
+      )
+    }
     await db.collection('residents').deleteOne({ id: req.body.id })
     res.status(200).json({ success: true })
   } catch (e) {

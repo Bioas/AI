@@ -143,6 +143,8 @@ router.delete('/', async (req, res) => {
     const client = await connectDB()
     const db = client.db('dorm_billing')
     if (!req.body.id) return res.status(400).json({ error: 'id is required' })
+    const room = await db.collection('rooms').findOne({ id: req.body.id })
+    if (room?.residentId) return res.status(400).json({ error: 'ไม่สามารถลบห้องที่มีผู้พักอาศัยอยู่ได้ กรณีย้ายผู้พักออกก่อน' })
     await db.collection('rooms').deleteOne({ id: req.body.id })
     res.status(200).json({ success: true })
   } catch (e) {
