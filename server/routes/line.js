@@ -153,39 +153,27 @@ router.post('/sync-followers', async (req, res) => {
     const token = settings?.channelToken
     if (!token) return res.status(400).json({ error: 'ไม่ได้ตั้งค่า Channel Access Token' })
 
-    let allUserIds = []
-    let nextCursor
-
-    do {
-      const url = nextCursor
-        ? `https://api.line.me/v2/bot/followers/ids?start=${nextCursor}`
-        : 'https://api.line.me/v2/bot/followers/ids'
-      const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}))
-        if (resp.status === 403) {
-          return res.status(400).json({ error: 'LINE API 403 — ไปที่ LINE Developers Console → Messaging API → เลื่อนล่างสุด "LINE Official Account features" → กด Apply ที่ "Get follower IDs" แล้วลองใหม่' })
-        }
-        return res.status(resp.status).json({ error: err.message || 'LINE API error' })
-      }
-      const data = await resp.json()
-      allUserIds = allUserIds.concat(data.userIds || [])
-      nextCursor = data.next
-    } while (nextCursor)
-
     let imported = 0
     let updated = 0
+    let fromResidents = 0
 
-    for (const userId of allUserIds) {
+    const residents = await db.collection('residents').find({ lineUserId: { $ne: '', $exists: true } }).toArray()
+
+    for (const resident of residents) {
+      const userId = resident.lineUserId
+      if (!userId) continue
+
       const existing = await db.collection('lineUsers').findOne({ userId })
       if (existing) {
-        await db.collection('lineUsers').updateOne(
-          { userId },
-          { $set: { isFollowing: true, unfollowedAt: null, updatedAt: new Date().toISOString() } }
-        )
-        updated++
+        if (!existing.residentId) {
+          await db.collection('lineUsers').updateOne(
+            { userId },
+            { $set: { residentId: resident.id, updatedAt: new Date().toISOString() } }
+          )
+          updated++
+        }
       } else {
-        let displayName = userId
+        let displayName = resident.name
         let pictureUrl = ''
         try {
           const profileResp = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
@@ -193,7 +181,7 @@ router.post('/sync-followers', async (req, res) => {
           })
           if (profileResp.ok) {
             const profile = await profileResp.json()
-            displayName = profile.displayName || userId
+            displayName = profile.displayName || resident.name
             pictureUrl = profile.pictureUrl || ''
           }
         } catch {}
@@ -205,7 +193,7 @@ router.post('/sync-followers', async (req, res) => {
           statusMessage: '',
           isActive: true,
           isFollowing: true,
-          residentId: null,
+          residentId: resident.id,
           followedAt: new Date().toISOString(),
           unfollowedAt: null,
           createdAt: new Date().toISOString(),
@@ -213,9 +201,10 @@ router.post('/sync-followers', async (req, res) => {
         })
         imported++
       }
+      fromResidents++
     }
 
-    res.json({ success: true, total: allUserIds.length, imported, updated })
+    res.json({ success: true, imported, updated, fromResidents })
   } catch (e) {
     console.error('POST /api/line/sync-followers error:', e)
     res.status(500).json({ error: e.message })
