@@ -27,70 +27,72 @@ export default function Sidebar({ dormName }) {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  const navContent = (isMobile = false) => (
-    <>
-      <div className="relative px-6 pt-10 pb-8 overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/5" />
-        <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5" />
-        <div className="relative flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white shadow-inner shrink-0 border border-white/10">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </div>
+  const headerContent = () => (
+    <div className="relative px-6 pt-10 pb-6 overflow-hidden shrink-0">
+      <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/5" />
+      <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5" />
+      <div className="relative flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white shadow-inner shrink-0 border border-white/10">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div className="min-w-0">
+          <div className="text-base font-bold truncate tracking-tight">{dormName || 'หอพักสุขใจ'}</div>
+          <div className="text-[11px] text-amber-200/80 font-medium">ระบบจัดการหอพัก</div>
+        </div>
+      </div>
+    </div>
+  )
+
+  const navItems = (isMobile = false) => (
+    <nav className="px-3 pb-4 space-y-1">
+      {NAV_ITEMS.map(item => (
+        <NavLink key={item.path} to={item.path} onClick={() => isMobile && setOpen(false)}
+          className={({ isActive }) =>
+            `group flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
+              isActive
+                ? 'bg-white/20 text-white shadow-md backdrop-blur-sm border border-white/10'
+                : 'text-amber-100/70 hover:text-white hover:bg-white/10'
+            }`
+          }>
+          <span className="text-xl w-7 text-center shrink-0 transition-transform duration-200 group-hover:scale-110">{item.icon}</span>
           <div className="min-w-0">
-            <div className="text-base font-bold truncate tracking-tight">{dormName || 'หอพักสุขใจ'}</div>
-            <div className="text-[11px] text-amber-200/80 font-medium">ระบบจัดการหอพัก</div>
+            <div>{item.label}</div>
+            {isMobile && <div className="text-[10px] text-amber-200/70">{item.desc}</div>}
+          </div>
+        </NavLink>
+      ))}
+    </nav>
+  )
+
+  const footerContent = () => (
+    <div className="px-4 pb-6 space-y-3 shrink-0">
+      <div className="h-px bg-white/10" />
+      <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] text-amber-200/80 font-medium uppercase tracking-wider">สถิติหอพัก</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div>
+            <div className="text-lg font-bold text-white">{rooms.length}</div>
+            <div className="text-[10px] text-amber-200/60">ห้องทั้งหมด</div>
+          </div>
+          <div className="w-px h-8 bg-white/10" />
+          <div>
+            <div className="text-lg font-bold text-white">{occupied}</div>
+            <div className="text-[10px] text-amber-200/60">มีผู้พัก</div>
+          </div>
+          <div className="w-px h-8 bg-white/10" />
+          <div>
+            <div className="text-lg font-bold text-white">{rooms.length - occupied}</div>
+            <div className="text-[10px] text-amber-200/60">ห้องว่าง</div>
           </div>
         </div>
       </div>
-
-      <nav className="flex-1 px-3 pb-4 space-y-1 mt-2">
-        {NAV_ITEMS.map(item => (
-          <NavLink key={item.path} to={item.path} onClick={() => isMobile && setOpen(false)}
-            className={({ isActive }) =>
-              `group flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
-                isActive
-                  ? 'bg-white/20 text-white shadow-md backdrop-blur-sm border border-white/10'
-                  : 'text-amber-100/70 hover:text-white hover:bg-white/10'
-              }`
-            }>
-            <span className="text-xl w-7 text-center shrink-0 transition-transform duration-200 group-hover:scale-110">{item.icon}</span>
-            <div className="min-w-0">
-              <div>{item.label}</div>
-              {isMobile && <div className="text-[10px] text-amber-200/70">{item.desc}</div>}
-            </div>
-          </NavLink>
-        ))}
-      </nav>
-
-      <div className="px-4 pb-6 space-y-3">
-        <div className="h-px bg-white/10" />
-        <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] text-amber-200/80 font-medium uppercase tracking-wider">สถิติหอพัก</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div>
-              <div className="text-lg font-bold text-white">{rooms.length}</div>
-              <div className="text-[10px] text-amber-200/60">ห้องทั้งหมด</div>
-            </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div>
-              <div className="text-lg font-bold text-white">{occupied}</div>
-              <div className="text-[10px] text-amber-200/60">มีผู้พัก</div>
-            </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div>
-              <div className="text-lg font-bold text-white">{rooms.length - occupied}</div>
-              <div className="text-[10px] text-amber-200/60">ห้องว่าง</div>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 px-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-300/50" />
-          <span className="text-[10px] text-amber-200/50">ระบบทำงานปกติ • v1.0.0</span>
-        </div>
+      <div className="flex items-center gap-2 px-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-300/50" />
+        <span className="text-[10px] text-amber-200/50">ระบบทำงานปกติ • v1.0.0</span>
       </div>
-    </>
+    </div>
   )
 
   return (
@@ -130,7 +132,7 @@ export default function Sidebar({ dormName }) {
         )}
       </AnimatePresence>
 
-      {/* Mobile Full-Height Drawer */}
+      {/* Mobile Full-Height Drawer - Header fixed, Nav scrollable */}
       <AnimatePresence>
         {open && (
           <motion.aside
@@ -138,16 +140,27 @@ export default function Sidebar({ dormName }) {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-amber-700 via-amber-600 to-amber-700 text-white shadow-xl shadow-amber-900/20 md:hidden overflow-y-auto"
+            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-amber-700 via-amber-600 to-amber-700 text-white shadow-xl shadow-amber-900/20 md:hidden"
           >
-            {navContent(true)}
+            {/* Fixed Header */}
+            {headerContent()}
+
+            {/* Scrollable Nav */}
+            <div className="flex-1 overflow-y-auto">
+              {navItems(true)}
+            </div>
+
+            {/* Fixed Footer */}
+            {footerContent()}
           </motion.aside>
         )}
       </AnimatePresence>
 
       {/* Desktop Sidebar - hidden on mobile */}
       <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-64 bg-gradient-to-b from-amber-700 via-amber-600 to-amber-700 text-white shadow-xl shadow-amber-900/20">
-        {navContent(false)}
+        {headerContent()}
+        {navItems(false)}
+        {footerContent()}
       </aside>
     </>
   )
