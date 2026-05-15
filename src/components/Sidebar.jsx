@@ -4,13 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 
 const NAV_ITEMS = [
-  { path: '/', icon: 'dashboard', label: 'แดชบอร์ด', desc: 'ภาพรวมระบบ' },
-  { path: '/rooms', icon: 'room', label: 'จัดการห้อง', desc: 'ห้องพักและผู้เช่า' },
-  { path: '/residents', icon: 'resident', label: 'ผู้พักอาศัย', desc: 'จัดการผู้เช่า' },
-  { path: '/line-users', icon: 'line', label: 'ผู้ใช้ LINE', desc: 'จัดการบัญชี LINE' },
-  { path: '/meters', icon: 'meter', label: 'บันทึกมิเตอร์', desc: 'ไฟฟ้าและน้ำประปา' },
-  { path: '/invoices', icon: 'invoice', label: 'ใบแจ้งหนี้', desc: 'ค่าเช่ารายเดือน' },
-  { path: '/settings', icon: 'settings', label: 'ตั้งค่า', desc: 'จัดการระบบ' },
+  { path: '/', icon: '📊', label: 'แดชบอร์ด', desc: 'ภาพรวมระบบ' },
+  { path: '/rooms', icon: '🚪', label: 'จัดการห้อง', desc: 'ห้องพักและผู้เช่า' },
+  { path: '/residents', icon: '👥', label: 'ผู้พักอาศัย', desc: 'จัดการผู้เช่า' },
+  { path: '/line-users', icon: '📱', label: 'ผู้ใช้ LINE', desc: 'จัดการบัญชี LINE' },
+  { path: '/meters', icon: '⚡', label: 'บันทึกมิเตอร์', desc: 'ไฟฟ้าและน้ำประปา' },
+  { path: '/invoices', icon: '🧾', label: 'ใบแจ้งหนี้', desc: 'ค่าเช่ารายเดือน' },
+  { path: '/settings', icon: '⚙️', label: 'ตั้งค่า', desc: 'จัดการระบบ' },
 ]
 
 export default function Sidebar({ dormName }) {
