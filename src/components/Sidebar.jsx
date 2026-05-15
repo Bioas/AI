@@ -29,7 +29,7 @@ export default function Sidebar({ dormName }) {
 
   const navContent = (isMobile = false) => (
     <>
-      <div className="relative px-6 pt-8 pb-6 overflow-hidden">
+      <div className="relative px-6 pt-10 pb-8 overflow-hidden">
         <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/5" />
         <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5" />
         <div className="relative flex items-center gap-4">
@@ -43,7 +43,7 @@ export default function Sidebar({ dormName }) {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 pb-4 space-y-1">
+      <nav className="flex-1 px-3 pb-4 space-y-1 mt-2">
         {NAV_ITEMS.map(item => (
           <NavLink key={item.path} to={item.path} onClick={() => isMobile && setOpen(false)}
             className={({ isActive }) =>
