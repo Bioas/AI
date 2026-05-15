@@ -74,20 +74,20 @@ export default function LineUsers() {
           if (window.confirm('ดึงรายชื่อผู้ติดตาม LINE ล่าสุด?\nระบบจะนำเข้าผู้ติดตามที่มีอยู่แล้วทั้งหมด')) syncLineFollowers()
         }}>🔁 ซิงค์ผู้ติดตาม</Button>} />
 
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 sm:mb-6">
+        <div className="relative flex-1 min-w-0">
           <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="ค้นหาชื่อ LINE หรือ User ID..."
             className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
         </div>
-        <div className="w-40">
+        <div className="w-full sm:w-40">
           <Select value={filter} onChange={setFilter} options={FILTER_OPTIONS} placeholder="ทั้งหมด" />
         </div>
-        <div className="w-44">
+        <div className="w-full sm:w-44">
           <Select value={mappedFilter} onChange={setMappedFilter} options={MAPPED_OPTIONS} placeholder="เชื่อมโยงทั้งหมด" />
         </div>
-        <div className="text-xs text-neutral-400">{lineUsers.length} รายการ</div>
+        <div className="text-xs text-neutral-400 text-center sm:text-left">{lineUsers.length} รายการ</div>
       </div>
 
       <Card>

@@ -26,7 +26,7 @@ export default function App() {
       <Sidebar dormName={settings.dormName} />
 
       <main className="flex-1 ml-0 md:ml-64 min-h-screen">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-8 sm:py-10 lg:py-12">
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 md:px-8 lg:px-10 py-4 sm:py-6 md:py-8 lg:py-10">
           <Suspense fallback={<Spinner />}>
             <AnimatePresence mode="wait">
               <Routes>

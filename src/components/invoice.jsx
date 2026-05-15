@@ -37,9 +37,9 @@ export default function Invoice() {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="ใบแจ้งหนี้" description="ดูและจัดการใบแจ้งหนี้ประจำเดือน" />
 
-      <div className="flex items-center gap-3 mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-6 py-4 w-fit">
-        <label className="text-sm font-medium text-neutral-600">เดือน:</label>
-        <div className="w-44">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
+        <label className="text-sm font-medium text-neutral-600 shrink-0">เดือน:</label>
+        <div className="w-full sm:w-44">
           <DatePickerField selected={invDate} onChange={handleMonthChange} showMonthPicker placeholder="เลือกเดือน" />
         </div>
       </div>

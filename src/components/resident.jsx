@@ -46,14 +46,14 @@ export default function Resident() {
       <PageHeader title="ผู้พักอาศัย" description="จัดการข้อมูลผู้เช่าห้องพักทั้งหมด"
         action={<Button onClick={() => { setEditResident(null); setViewOnly(false); setModal('resident') }}>＋ เพิ่มผู้พัก</Button>} />
 
-      <div className="flex items-center gap-3 mb-6">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 sm:mb-6">
+        <div className="relative flex-1 min-w-0">
           <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="ค้นหาชื่อ ห้อง เบอร์โทร หรือเลขบัตรประชาชน..."
+            placeholder="ค้นหาชื่อ ห้อง เบอร์โทร..."
             className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
         </div>
-        <div className="text-xs text-neutral-400">{filtered.length} รายการ</div>
+        <div className="text-xs text-neutral-400 text-center sm:text-left">{filtered.length} รายการ</div>
       </div>
 
       <Card>

@@ -99,7 +99,7 @@ export default function DatePickerField({ selected, onChange, showMonthPicker, p
       </button>
       <AnimatePresence>{open && (
         <motion.div initial={{ opacity: 0, y: -4, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.12 }}
-          className="absolute z-50 top-full mt-1 left-0 bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden origin-top">
+          className="absolute z-50 top-full mt-1 left-0 right-0 sm:right-auto bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden origin-top max-w-[calc(100vw-2rem)] sm:max-w-none">
           {content}
         </motion.div>
       )}</AnimatePresence>

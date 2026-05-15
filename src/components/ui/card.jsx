@@ -14,9 +14,9 @@ export default function Card({ className = '', children, hover = false, delay = 
 }
 
 export function CardHeader({ className = '', children }) {
-  return <div className={`px-7 pt-7 pb-4 ${className}`}>{children}</div>
+  return <div className={`px-4 sm:px-7 pt-4 sm:pt-7 pb-3 sm:pb-4 ${className}`}>{children}</div>
 }
 
 export function CardContent({ className = '', children }) {
-  return <div className={`px-7 pb-7 ${className}`}>{children}</div>
+  return <div className={`px-4 sm:px-7 pb-4 sm:pb-7 ${className}`}>{children}</div>
 }

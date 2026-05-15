@@ -30,6 +30,20 @@
   input[type="number"] { -moz-appearance: textfield; }
 }
 
+@layer utilities {
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 @layer components {
   .card-lime {
     @apply bg-white rounded-2xl shadow-card border border-lime-100/40;
