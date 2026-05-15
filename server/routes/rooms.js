@@ -147,7 +147,7 @@ router.delete('/', async (req, res) => {
     if (room?.residentId) {
       await db.collection('residents').updateOne(
         { id: room.residentId },
-        { $set: { roomId: '', updatedAt: new Date().toISOString() } }
+        { $set: { roomId: '', roomNumber: '', updatedAt: new Date().toISOString() } }
       )
     }
     await db.collection('rooms').deleteOne({ id: req.body.id })
