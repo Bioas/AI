@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useState, useCallback, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
+import { naturalSortRoomNumber } from '../lib/constants'
 import DatePickerField from './ui/datepicker'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
@@ -8,8 +9,12 @@ import EmptyState from './ui/empty-state'
 import InvoicePreview from './InvoicePreview'
 
 export default function Invoice() {
-  const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendPdfToLine, setViewInv, setModal } = useApp()
+  const { rooms, invMonth, setInvMonth, calcInv, downloadPdf, sendPdfToLine, setViewInv, setModal, fetchAll } = useApp()
   const [sendingInv, setSendingInv] = useState(null)
+
+  const handleReload = async () => {
+    await fetchAll()
+  }
 
   const invDate = useMemo(() => {
     if (!invMonth) return null
@@ -33,9 +38,16 @@ export default function Invoice() {
     }, 100)
   }, [sendPdfToLine])
 
+  const occRooms = useMemo(() => {
+    const filtered = rooms.filter(r => r.residentId || r.tenantName)
+    filtered.sort(naturalSortRoomNumber)
+    return filtered
+  }, [rooms])
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <PageHeader title="ใบแจ้งหนี้" description="ดูและจัดการใบแจ้งหนี้ประจำเดือน" />
+      <PageHeader title="ใบแจ้งหนี้" description="ดูและจัดการใบแจ้งหนี้ประจำเดือน"
+        onReload={handleReload} />
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
         <label className="text-sm font-medium text-neutral-600 shrink-0">เดือน:</label>
@@ -50,7 +62,7 @@ export default function Invoice() {
             <div className="w-2 h-2 rounded-full bg-lime-400" />
             <h3 className="text-sm font-semibold text-neutral-800">รายการใบแจ้งหนี้</h3>
           </div>
-          {rooms.filter(r => r.residentId || r.tenantName).length === 0 ? (
+          {occRooms.length === 0 ? (
             <EmptyState icon="🧾" title="ไม่มีข้อมูล" description="เพิ่มผู้พักในห้องก่อนจึงจะสร้างใบแจ้งหนี้ได้" />
           ) : (
             <div className="border border-neutral-100 rounded-xl overflow-hidden">
@@ -63,7 +75,7 @@ export default function Invoice() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
-                  {rooms.filter(r => r.residentId || r.tenantName).map(r => {
+                  {occRooms.map(r => {
                     const inv = calcInv(r, invMonth)
                     return (
                       <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">

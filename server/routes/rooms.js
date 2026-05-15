@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { connectDB } from '../lib/mongodb.js'
+import { naturalSortRoomNumber } from '../lib/utils.js'
 
 const router = Router()
 
@@ -28,7 +29,8 @@ router.get('/', async (req, res) => {
     if (status === 'ว่าง') query.status = 'ว่าง'
     if (status === 'มีผู้เช่า') query.status = 'มีผู้เช่า'
 
-    let rooms = await db.collection('rooms').find(query).sort({ roomNumber: 1 }).toArray()
+    let rooms = await db.collection('rooms').find(query).toArray()
+    rooms.sort(naturalSortRoomNumber)
 
     const residents = await db.collection('residents').find({}).toArray()
 
@@ -126,7 +128,7 @@ router.put('/', async (req, res) => {
     if (oldRoom?.residentId && !residentId) {
       await db.collection('residents').updateOne(
         { id: oldRoom.residentId },
-        { $set: { roomId: '', updatedAt: new Date().toISOString() } }
+        { $set: { roomId: '', roomNumber: '', updatedAt: new Date().toISOString() } }
       )
     }
 

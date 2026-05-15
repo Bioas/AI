@@ -8,12 +8,17 @@ import Button from './ui/button'
 import { DormInfoModal, LogoModal, RatesModal, LineModal, QrModal } from './SettingModal'
 
 export default function Setting() {
-  const { settings, exportData, importData } = useApp()
+  const { settings, exportData, importData, fetchAll } = useApp()
   const [activeSection, setActiveSection] = useState(null)
+
+  const handleReload = async () => {
+    await fetchAll()
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <PageHeader title="ตั้งค่าระบบ" description="จัดการข้อมูลหอพัก อัตราค่าใช้จ่าย และการเชื่อมต่อ LINE" />
+      <PageHeader title="ตั้งค่าระบบ" description="จัดการข้อมูลหอพัก อัตราค่าใช้จ่าย และการเชื่อมต่อ LINE"
+        onReload={handleReload} />
 
       <div className="space-y-6">
         <Card><CardContent className="pt-6">

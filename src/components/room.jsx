@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
+import { naturalSortRoomNumber } from '../lib/constants'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
 import EmptyState from './ui/empty-state'
@@ -15,9 +16,16 @@ const STATUS_OPTIONS = [
 ]
 
 export default function Room() {
-  const { rooms, residents, setEditRoom, setModal, deleteRoom } = useApp()
+  const { rooms, residents, setEditRoom, setModal, deleteRoom, fetchRooms } = useApp()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+
+  const handleReload = async () => {
+    const params = new URLSearchParams()
+    if (search.trim()) params.set('search', search.trim())
+    if (statusFilter !== 'all') params.set('status', statusFilter)
+    await fetchRooms(params.toString() ? `?${params.toString()}` : '')
+  }
 
   const filtered = useMemo(() => {
     let result = rooms
@@ -31,6 +39,7 @@ export default function Room() {
     }
     if (statusFilter === 'ว่าง') result = result.filter(r => r.status === 'ว่าง' || (!r.residentId && !r.tenantName))
     if (statusFilter === 'มีผู้เช่า') result = result.filter(r => r.status === 'มีผู้เช่า' || r.residentId || r.tenantName)
+    result.sort(naturalSortRoomNumber)
     return result
   }, [rooms, search, statusFilter])
 
@@ -61,6 +70,7 @@ export default function Room() {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="จัดการห้องพัก" description="เพิ่ม แก้ไข และจัดการห้องพักทั้งหมด"
+        onReload={handleReload}
         action={<Button onClick={() => { setEditRoom(null); setModal('room') }}>＋ เพิ่มห้อง</Button>} />
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 sm:mb-6">

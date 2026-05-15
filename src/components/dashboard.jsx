@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useApp } from '../context/AppContext'
-import { formatMonth } from '../lib/constants'
+import { formatMonth, naturalSortRoomNumber } from '../lib/constants'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
 import EmptyState from './ui/empty-state'
@@ -15,9 +15,13 @@ const statsConfig = [
 ]
 
 export default function Dashboard() {
-  const { rooms, meters, calcInv } = useApp()
+  const { rooms, meters, calcInv, fetchAll } = useApp()
   const now = new Date()
   const cm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+  const handleReload = async () => {
+    await fetchAll()
+  }
 
   const { stats, recentData } = useMemo(() => {
     const occupied = rooms.filter(r => r.residentId || r.tenantName)
@@ -35,13 +39,18 @@ export default function Dashboard() {
           if (meters.some(x => x.roomId === r.id && x.month === ym)) { last = ym; break }
         }
       return last ? { room: r, month: last, inv: calcInv(r, last) } : null
-    }).filter(Boolean).sort((a, b) => b.month.localeCompare(a.month)).slice(0, 10)
+    }).filter(Boolean).sort((a, b) => {
+      const monthCmp = b.month.localeCompare(a.month)
+      if (monthCmp !== 0) return monthCmp
+      return naturalSortRoomNumber(a.room, b.room)
+    }).slice(0, 10)
     return { stats: [rooms.length, occupied.length, pendingCount, revenue], recentData: recent }
   }, [rooms, meters, calcInv, cm, now])
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <PageHeader title="แดชบอร์ด" description={now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} />
+      <PageHeader title="แดชบอร์ด" description={now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        onReload={handleReload} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-10">
         {statsConfig.map((cfg, i) => (

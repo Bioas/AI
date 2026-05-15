@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { connectDB } from '../lib/mongodb.js'
+import { naturalSortRoomNumber } from '../lib/utils.js'
 
 const router = Router()
 
@@ -34,7 +35,13 @@ router.get('/', async (req, res) => {
         ],
       }
     }
-    const residents = await db.collection('residents').find(query).sort({ createdAt: -1 }).toArray()
+    const residents = await db.collection('residents').find(query).toArray()
+    residents.sort((a, b) => {
+      if (!a.roomNumber && !b.roomNumber) return 0
+      if (!a.roomNumber) return 1
+      if (!b.roomNumber) return -1
+      return naturalSortRoomNumber(a.roomNumber, b.roomNumber)
+    })
     res.status(200).json(residents)
   } catch (e) {
     console.error('GET /api/residents error:', e)

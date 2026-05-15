@@ -195,6 +195,33 @@ export function AppProvider({ children }) {
     }
   }, [toast])
 
+  const fetchRooms = useCallback(async (params = '') => {
+    try {
+      const res = await api(`/api/rooms${params}`, 'GET')
+      setRooms(res || [])
+    } catch (e) {
+      toast(`โหลดข้อมูลห้องไม่สำเร็จ: ${e.message}`, true)
+    }
+  }, [toast])
+
+  const fetchMeters = useCallback(async () => {
+    try {
+      const res = await api('/api/meters', 'GET')
+      setMeters(res || [])
+    } catch (e) {
+      toast(`โหลดข้อมูลมิเตอร์ไม่สำเร็จ: ${e.message}`, true)
+    }
+  }, [toast])
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await api('/api/settings', 'GET')
+      setSettings(res || {})
+    } catch (e) {
+      toast(`โหลดการตั้งค่าไม่สำเร็จ: ${e.message}`, true)
+    }
+  }, [toast])
+
   const saveResident = useCallback(async (data) => {
     try {
       const method = data.id ? 'PUT' : 'POST'
@@ -492,7 +519,7 @@ export function AppProvider({ children }) {
     fetchAll, toast,
     calcInv, saveAllMeters, initMeterLocal,
     saveRoom, deleteRoom,
-    fetchResidents, saveResident, deleteResident,
+    fetchResidents, fetchRooms, fetchMeters, fetchSettings, saveResident, deleteResident,
     fetchLineUsers, toggleLineUser, mapLineUser, unmapLineUser, syncLineFollowers,
     downloadPdf, downloadContractPdf, sendLineMsg, sendPdfToLine,
     saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr,

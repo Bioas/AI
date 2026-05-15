@@ -35,6 +35,11 @@ export default function LineUsers() {
   const [filter, setFilter] = useState('all')
   const [mappedFilter, setMappedFilter] = useState('all')
   const [detailUser, setDetailUser] = useState(null)
+  const [reloading, setReloading] = useState(false)
+
+  const doFetch = (q) => {
+    fetchLineUsers(q ? `?${q}` : '')
+  }
 
   useEffect(() => {
     const p = new URLSearchParams()
@@ -46,8 +51,26 @@ export default function LineUsers() {
     if (mappedFilter === 'yes') p.set('mapped', 'yes')
     if (mappedFilter === 'no') p.set('mapped', 'no')
     const q = p.toString()
-    fetchLineUsers(q ? `?${q}` : '')
+    doFetch(q)
   }, [search, filter, mappedFilter, fetchLineUsers])
+
+  const handleReload = async () => {
+    setReloading(true)
+    try {
+      const p = new URLSearchParams()
+      if (search.trim()) p.set('search', search.trim())
+      if (filter === 'active') p.set('status', 'active')
+      if (filter === 'inactive') p.set('status', 'inactive')
+      if (filter === 'following') p.set('status', 'following')
+      if (filter === 'unfollowed') p.set('status', 'unfollowed')
+      if (mappedFilter === 'yes') p.set('mapped', 'yes')
+      if (mappedFilter === 'no') p.set('mapped', 'no')
+      const q = p.toString()
+      await fetchLineUsers(q ? `?${q}` : '')
+    } finally {
+      setReloading(false)
+    }
+  }
 
   const handleToggle = (user) => {
     const msg = user.isActive ? `ปิดการใช้งาน "${user.displayName}"?` : `เปิดการใช้งาน "${user.displayName}"?`
@@ -70,6 +93,7 @@ export default function LineUsers() {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="จัดการผู้ใช้ LINE" description="จัดการผู้ที่ Add Friend LINE Official Account"
+        onReload={handleReload}
         action={<Button onClick={() => {
           if (window.confirm('ดึงรายชื่อผู้ติดตาม LINE ล่าสุด?\nระบบจะนำเข้าผู้ติดตามที่มีอยู่แล้วทั้งหมด')) syncLineFollowers()
         }}>🔁 ซิงค์ผู้ติดตาม</Button>} />

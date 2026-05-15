@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { formatMonth } from '../lib/constants'
+import { formatMonth, naturalSortRoomNumber } from '../lib/constants'
 import DatePickerField from './ui/datepicker'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
@@ -9,8 +9,12 @@ import EmptyState from './ui/empty-state'
 import MeterModal from './MeterModal'
 
 export default function Meters() {
-  const { rooms, settings, meterMonth, setMeterMonth, meterLocal } = useApp()
+  const { rooms: allRooms, settings, meterMonth, setMeterMonth, meterLocal, fetchAll } = useApp()
   const [editRoom, setEditRoom] = useState(null)
+
+  const handleReload = async () => {
+    await fetchAll()
+  }
 
   const meterDate = useMemo(() => {
     if (!meterMonth) return null
@@ -23,11 +27,16 @@ export default function Meters() {
       setMeterMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`)
     }
   }
-  const occRooms = rooms.filter(r => r.residentId || r.tenantName)
+  const occRooms = useMemo(() => {
+    const filtered = allRooms.filter(r => r.residentId || r.tenantName)
+    filtered.sort(naturalSortRoomNumber)
+    return filtered
+  }, [allRooms])
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <PageHeader title="บันทึกมิเตอร์" description="บันทึกเลขมาตรไฟฟ้าและน้ำประปารายเดือน" />
+      <PageHeader title="บันทึกมิเตอร์" description="บันทึกเลขมาตรไฟฟ้าและน้ำประปารายเดือน"
+        onReload={handleReload} />
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
         <label className="text-sm font-medium text-neutral-600 shrink-0">เดือน:</label>

@@ -10,9 +10,13 @@ import Button from './ui/button'
 import ContractPreview from './ContractPreview'
 
 export default function Resident() {
-  const { residents, lineUsers, setEditResident, setModal, setViewOnly, deleteResident, downloadContractPdf } = useApp()
+  const { residents, lineUsers, setEditResident, setModal, setViewOnly, deleteResident, downloadContractPdf, fetchResidents } = useApp()
   const [search, setSearch] = useState('')
   const [contractResident, setContractResident] = useState(null)
+
+  const handleReload = async () => {
+    await fetchResidents(search.trim())
+  }
 
   const filtered = useMemo(() => {
     if (!search.trim()) return residents
@@ -44,6 +48,7 @@ export default function Resident() {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="ผู้พักอาศัย" description="จัดการข้อมูลผู้เช่าห้องพักทั้งหมด"
+        onReload={handleReload}
         action={<Button onClick={() => { setEditResident(null); setViewOnly(false); setModal('resident') }}>＋ เพิ่มผู้พัก</Button>} />
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 sm:mb-6">

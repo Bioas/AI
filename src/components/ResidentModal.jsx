@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
+import { naturalSortRoomNumber } from '../lib/constants'
 import DatePickerField from './ui/datepicker'
 import Select from './ui/select'
 import Badge from './ui/badge'
@@ -48,7 +49,11 @@ export default function ResidentModal() {
     return residents.map(r => r.roomId)
   }, [residents, editResident])
 
-  const availableRooms = rooms.filter(r => !occupiedRoomIds.includes(r.id))
+  const availableRooms = useMemo(() => {
+    const filtered = rooms.filter(r => !occupiedRoomIds.includes(r.id))
+    filtered.sort(naturalSortRoomNumber)
+    return filtered
+  }, [rooms, occupiedRoomIds])
   const selectedRoom = rooms.find(r => r.id === roomId)
 
   const roomOptions = useMemo(() => {
