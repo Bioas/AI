@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
@@ -17,6 +17,15 @@ export default function Sidebar({ dormName }) {
   const [open, setOpen] = useState(false)
   const { rooms, residents } = useApp()
   const occupied = rooms.filter(r => r.residentId || r.tenantName).length
+
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [open])
 
   const navContent = (isMobile = false) => (
     <>
@@ -129,7 +138,7 @@ export default function Sidebar({ dormName }) {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-amber-700 via-amber-600 to-amber-700 text-white shadow-xl shadow-amber-900/20 md:hidden"
+            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-amber-700 via-amber-600 to-amber-700 text-white shadow-xl shadow-amber-900/20 md:hidden overflow-y-auto"
           >
             {navContent(true)}
           </motion.aside>
