@@ -63,9 +63,9 @@ export default function Resident() {
               description={search ? 'ลองเปลี่ยนคำค้นหาหรือตรวจสอบการสะกด' : 'เพิ่มผู้พักคนแรกเพื่อเริ่มต้นจัดการ'}
               action={!search ? <Button onClick={() => { setEditResident(null); setViewOnly(false); setModal('resident') }}>เพิ่มผู้พัก</Button> : undefined} />
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-neutral-100">
+            <div className="border border-neutral-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
                     {['ชื่อผู้พักอาศัย', 'หมายเลขห้อง', 'เบอร์โทร', 'LINE', 'วันที่เข้าพัก', 'วันหมดสัญญา', 'สถานะสัญญา', 'จัดการ'].map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
@@ -76,8 +76,9 @@ export default function Resident() {
                   {filtered.map(r => {
                     const status = getContractStatus(r.moveOutDate)
                     return (
-                      <tr key={r.id} className="hover:bg-lime-50/30 transition-colors">
-                        <td className="px-4 py-3.5">
+                      <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ชื่อ</span>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-xs font-bold shadow-sm shrink-0">
                               {r.name?.charAt(0) || '?'}
@@ -88,11 +89,16 @@ export default function Resident() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
                           <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">{r.roomNumber}</span>
                         </td>
-                        <td className="px-4 py-3.5 text-neutral-700 whitespace-nowrap">{r.phone}</td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">เบอร์โทร</span>
+                          <span className="text-neutral-700 whitespace-nowrap">{r.phone}</span>
+                        </td>
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">LINE</span>
                           {r.lineUserId ? (
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs text-neutral-600 truncate max-w-[100px]">{getLineName(r.lineUserId) || r.lineUserId.slice(0, 12)}</span>
@@ -102,10 +108,20 @@ export default function Resident() {
                             <span className="text-neutral-300 italic">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 text-neutral-600 whitespace-nowrap text-xs">{formatThaiDate(r.moveInDate)}</td>
-                        <td className="px-4 py-3.5 text-neutral-600 whitespace-nowrap text-xs">{formatThaiDate(r.moveOutDate)}</td>
-                        <td className="px-4 py-3.5"><Badge variant={status.variant}>{status.label}</Badge></td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">วันที่เข้าพัก</span>
+                          <span className="text-neutral-600 whitespace-nowrap text-xs">{formatThaiDate(r.moveInDate)}</span>
+                        </td>
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">วันหมดสัญญา</span>
+                          <span className="text-neutral-600 whitespace-nowrap text-xs">{formatThaiDate(r.moveOutDate)}</span>
+                        </td>
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
+                          <Badge variant={status.variant}>{status.label}</Badge>
+                        </td>
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
                           <div className="flex gap-1.5">
                             <button onClick={() => { setEditResident(r); setViewOnly(true); setModal('resident') }}
                               className="h-8 px-3.5 rounded-lg text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors border border-sky-100">ดู</button>

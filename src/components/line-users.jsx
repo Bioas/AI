@@ -95,9 +95,9 @@ export default function LineUsers() {
           {lineUsers.length === 0 ? (
             <EmptyState icon="📱" title="ยังไม่มีผู้ใช้ LINE" description="เมื่อมีผู้ใช้ Add Friend LINE OA ของคุณ ระบบจะบันทึกข้อมูลโดยอัตโนมัติ" />
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-neutral-100">
+            <div className="border border-neutral-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
                     {['รูปโปรไฟล์', 'ชื่อ LINE', 'LINE User ID', 'ผู้พักอาศัยที่เชื่อมโยง', 'วันที่ Add Friend', 'สถานะ', 'จัดการ'].map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
@@ -108,8 +108,9 @@ export default function LineUsers() {
                   {lineUsers.map(u => {
                     const residentName = getResidentName(u.residentId)
                     return (
-                      <tr key={u.userId} className="hover:bg-lime-50/30 transition-colors">
-                        <td className="px-4 py-3.5">
+                      <tr key={u.userId} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">รูปโปรไฟล์</span>
                           {u.pictureUrl ? (
                             <img src={u.pictureUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-neutral-200 shrink-0" />
                           ) : (
@@ -118,14 +119,19 @@ export default function LineUsers() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3.5">
-                          <div className="font-medium text-neutral-800">{u.displayName}</div>
-                          {!u.isFollowing && <Badge variant="default">เลิกติดตาม</Badge>}
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ชื่อ LINE</span>
+                          <div>
+                            <div className="font-medium text-neutral-800">{u.displayName}</div>
+                            {!u.isFollowing && <Badge variant="default">เลิกติดตาม</Badge>}
+                          </div>
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">User ID</span>
                           <code className="text-xs bg-neutral-100 px-2 py-1 rounded-lg text-neutral-600 font-mono">{u.userId}</code>
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
                           {residentName ? (
                             <div className="flex items-center gap-2">
                               <Badge variant="info">{residentName}</Badge>
@@ -134,13 +140,18 @@ export default function LineUsers() {
                             <span className="text-neutral-300 italic">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 text-xs text-neutral-500 whitespace-nowrap">{formatDate(u.followedAt)}</td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">วันที่ Add</span>
+                          <span className="text-xs text-neutral-500 whitespace-nowrap">{formatDate(u.followedAt)}</span>
+                        </td>
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
                           <Badge variant={u.isActive ? 'success' : 'danger'}>
                             {u.isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
                           <div className="flex gap-1.5">
                             <button onClick={() => setDetailUser(u)}
                               className="h-8 px-3 rounded-lg text-xs font-medium bg-neutral-50 text-neutral-600 hover:bg-neutral-100 transition-colors border border-neutral-200">ดู</button>

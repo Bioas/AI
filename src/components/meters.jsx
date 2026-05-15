@@ -47,29 +47,56 @@ export default function Meters() {
           {occRooms.length === 0 ? (
             <EmptyState icon="📝" title="ไม่มีห้องที่มีผู้พัก" description="เพิ่มผู้พักในห้องก่อนจึงจะบันทึกเลขมิเตอร์ได้" />
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-neutral-100">
+            <div className="border border-neutral-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead><tr className="bg-neutral-50/80">
-                  {['ห้อง', 'ผู้พัก', 'ไฟก่อน', 'ไฟปัจจุบัน', 'ใช้จริง', 'น้ำก่อน', 'น้ำปัจจุบัน', 'ใช้จริง', 'จัดการ'].map(h => (
-                    <th key={h} className="text-left px-3 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
-                  ))}
-                </tr></thead>
+                <thead className="hidden md:table-header-group">
+                  <tr className="bg-neutral-50/80">
+                    {['ห้อง', 'ผู้พัก', 'ไฟก่อน', 'ไฟปัจจุบัน', 'ใช้จริง', 'น้ำก่อน', 'น้ำปัจจุบัน', 'ใช้จริง', 'จัดการ'].map(h => (
+                      <th key={h} className="text-left px-3 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-neutral-50">
                   {occRooms.map(r => {
                     const ml = meterLocal[r.id] || { cur: { elec: '', water: '' }, prev: { elec: '', water: '' } }
                     const eu = (ml.cur.elec !== '' && ml.prev.elec !== '') ? Math.max(0, Number(ml.cur.elec) - Number(ml.prev.elec)) : '—'
                     const wu = (ml.cur.water !== '' && ml.prev.water !== '') ? Math.max(0, Number(ml.cur.water) - Number(ml.prev.water)) : '—'
                     return (
-                      <tr key={r.id} className="hover:bg-lime-50/30 transition-colors">
-                        <td className="px-3 py-3.5"><span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{r.roomNumber || r.number}</span></td>
-                        <td className="px-3 py-3.5 text-neutral-700">{r.tenantName || '—'}</td>
-                        <td className="px-3 py-3.5 text-neutral-700 font-mono text-xs">{ml.prev.elec || <span className="text-neutral-300">—</span>}</td>
-                        <td className="px-3 py-3.5 text-neutral-700 font-mono text-xs">{ml.cur.elec || <span className="text-neutral-300">—</span>}</td>
-                        <td className="px-3 py-3.5 text-sm font-semibold text-teal-600">{eu}</td>
-                        <td className="px-3 py-3.5 text-neutral-700 font-mono text-xs">{ml.prev.water || <span className="text-neutral-300">—</span>}</td>
-                        <td className="px-3 py-3.5 text-neutral-700 font-mono text-xs">{ml.cur.water || <span className="text-neutral-300">—</span>}</td>
-                        <td className="px-3 py-3.5 text-sm font-semibold text-teal-600">{wu}</td>
-                        <td className="px-3 py-3.5">
+                      <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{r.roomNumber || r.number}</span>
+                        </td>
+                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
+                          <span className="text-neutral-700">{r.tenantName || '—'}</span>
+                        </td>
+                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ไฟก่อน</span>
+                          <span className="text-neutral-700 font-mono text-xs">{ml.prev.elec || <span className="text-neutral-300">—</span>}</span>
+                        </td>
+                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ไฟปัจจุบัน</span>
+                          <span className="text-neutral-700 font-mono text-xs">{ml.cur.elec || <span className="text-neutral-300">—</span>}</span>
+                        </td>
+                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ใช้จริง</span>
+                          <span className="text-sm font-semibold text-teal-600">{eu}</span>
+                        </td>
+                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">น้ำก่อน</span>
+                          <span className="text-neutral-700 font-mono text-xs">{ml.prev.water || <span className="text-neutral-300">—</span>}</span>
+                        </td>
+                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">น้ำปัจจุบัน</span>
+                          <span className="text-neutral-700 font-mono text-xs">{ml.cur.water || <span className="text-neutral-300">—</span>}</span>
+                        </td>
+                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ใช้จริง</span>
+                          <span className="text-sm font-semibold text-teal-600">{wu}</span>
+                        </td>
+                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
                           <button onClick={() => setEditRoom(r)}
                             className="h-8 px-3.5 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-100">แก้ไข</button>
                         </td>

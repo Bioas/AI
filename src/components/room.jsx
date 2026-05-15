@@ -82,9 +82,9 @@ export default function Room() {
               description={search ? 'ลองเปลี่ยนคำค้นหาหรือตรวจสอบการสะกด' : 'เพิ่มห้องแรกของคุณเพื่อเริ่มต้น'}
               action={!search && statusFilter === 'all' ? <Button onClick={() => { setEditRoom(null); setModal('room') }}>เพิ่มห้อง</Button> : undefined} />
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-neutral-100">
+            <div className="border border-neutral-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
                     {['หมายเลขห้องพัก', 'ชื่อผู้เช่า', 'ประเภทห้อง', 'ค่าเช่า', 'สถานะห้อง', 'หมายเหตุ', 'จัดการ'].map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
@@ -98,11 +98,13 @@ export default function Room() {
                     const displayNumber = r.roomNumber || r.number
                     const displayRent = r.rentPrice || r.rent
                     return (
-                      <tr key={r.id} className="hover:bg-lime-50/30 transition-colors">
-                        <td className="px-4 py-3.5">
+                      <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
                           <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-sm font-bold shadow-sm">{displayNumber}</span>
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้เช่า</span>
                           {residentName ? (
                             <div className="flex items-center gap-2">
                               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -114,19 +116,26 @@ export default function Room() {
                             <span className="text-neutral-300 italic">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภท</span>
                           <Badge variant={r.roomType === 'มีทีวี' ? 'info' : 'default'}>
                             {r.roomType || 'ไม่มีทีวี'}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3.5 font-medium text-neutral-800 whitespace-nowrap">
-                          {displayRent?.toLocaleString()} บาท
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าเช่า</span>
+                          <span className="font-medium text-neutral-800 whitespace-nowrap">{displayRent?.toLocaleString()} บาท</span>
                         </td>
-                        <td className="px-4 py-3.5"><Badge variant={status.variant}>{status.label}</Badge></td>
-                        <td className="px-4 py-3.5 text-xs text-neutral-400 max-w-[150px] truncate">
-                          {r.note || <span className="text-neutral-200">—</span>}
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
+                          <Badge variant={status.variant}>{status.label}</Badge>
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">หมายเหตุ</span>
+                          <span className="text-xs text-neutral-400 max-w-[150px] truncate">{r.note || <span className="text-neutral-200">—</span>}</span>
+                        </td>
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
                           <div className="flex gap-1.5">
                             <button onClick={() => { setEditRoom(r); setModal('room') }}
                               className="h-8 px-3.5 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-100">แก้ไข</button>

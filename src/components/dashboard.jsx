@@ -68,24 +68,50 @@ export default function Dashboard() {
           {recentData.length === 0 ? (
             <EmptyState icon="🧾" title="ยังไม่มีใบแจ้งหนี้" description="ใบแจ้งหนี้จะแสดงที่นี่เมื่อคุณเริ่มบันทึกข้อมูล" />
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-neutral-100">
+            <div className="border border-neutral-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead><tr className="bg-neutral-50/80">
-                  {['ห้อง', 'ผู้พัก', 'เดือน', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'รวม', 'สถานะ'].map(h => (
-                    <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
-                  ))}
-                </tr></thead>
+                <thead className="hidden md:table-header-group">
+                  <tr className="bg-neutral-50/80">
+                    {['ห้อง', 'ผู้พัก', 'เดือน', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'รวม', 'สถานะ'].map(h => (
+                      <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-neutral-50">
                   {recentData.map((d, i) => (
-                    <tr key={i} className="hover:bg-lime-50/30 transition-colors">
-                      <td className="px-4 py-3.5"><span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{d.inv.room}</span></td>
-                      <td className="px-4 py-3.5 text-neutral-700">{d.inv.tenant}</td>
-                      <td className="px-4 py-3.5 text-neutral-500">{formatMonth(d.month)}</td>
-                      <td className="px-4 py-3.5 text-neutral-700 whitespace-nowrap">{d.inv.rent.toLocaleString()}</td>
-                      <td className="px-4 py-3.5 text-neutral-700 whitespace-nowrap">{d.inv.elecCost.toLocaleString()}</td>
-                      <td className="px-4 py-3.5 text-neutral-700 whitespace-nowrap">{d.inv.waterCost.toLocaleString()}</td>
-                      <td className="px-4 py-3.5 font-semibold text-neutral-800 whitespace-nowrap">{d.inv.total.toLocaleString()}</td>
-                      <td className="px-4 py-3.5"><Badge variant="warning">รอชำระ</Badge></td>
+                    <tr key={i} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{d.inv.room}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
+                        <span className="text-neutral-700">{d.inv.tenant}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">เดือน</span>
+                        <span className="text-neutral-500">{formatMonth(d.month)}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าเช่า</span>
+                        <span className="text-neutral-700 whitespace-nowrap">{d.inv.rent.toLocaleString()}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าไฟ</span>
+                        <span className="text-neutral-700 whitespace-nowrap">{d.inv.elecCost.toLocaleString()}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าน้ำ</span>
+                        <span className="text-neutral-700 whitespace-nowrap">{d.inv.waterCost.toLocaleString()}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">รวม</span>
+                        <span className="font-semibold text-neutral-800 whitespace-nowrap">{d.inv.total.toLocaleString()}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
+                        <Badge variant="warning">รอชำระ</Badge>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
