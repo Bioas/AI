@@ -66,25 +66,24 @@ export default function Sidebar({ dormName }) {
 
   const footerContent = () => (
     <div className="px-4 pb-6 space-y-3 shrink-0">
-      <div className="h-px bg-white/10" />
       <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] text-green-200/80 font-medium uppercase tracking-wider">สถิติหอพัก</span>
+        <div className="mb-3">
+          <span className="text-sm font-semibold text-green-100">สถิติหอพัก</span>
         </div>
-        <div className="flex items-center gap-4">
-          <div>
-            <div className="text-lg font-bold text-white">{rooms.length}</div>
-            <div className="text-[10px] text-green-200/60">ห้องทั้งหมด</div>
+        <div className="flex items-center justify-between">
+          <div className="text-center flex-1">
+            <div className="text-xl font-bold text-white">{rooms.length}</div>
+            <div className="text-[10px] text-green-200/70 mt-0.5">ห้องทั้งหมด</div>
           </div>
           <div className="w-px h-8 bg-white/10" />
-          <div>
-            <div className="text-lg font-bold text-white">{occupied}</div>
-            <div className="text-[10px] text-green-200/60">มีผู้พัก</div>
+          <div className="text-center flex-1">
+            <div className="text-xl font-bold text-white">{occupied}</div>
+            <div className="text-[10px] text-green-200/70 mt-0.5">มีผู้พัก</div>
           </div>
           <div className="w-px h-8 bg-white/10" />
-          <div>
-            <div className="text-lg font-bold text-white">{rooms.length - occupied}</div>
-            <div className="text-[10px] text-green-200/60">ห้องว่าง</div>
+          <div className="text-center flex-1">
+            <div className="text-xl font-bold text-white">{rooms.length - occupied}</div>
+            <div className="text-[10px] text-green-200/70 mt-0.5">ห้องว่าง</div>
           </div>
         </div>
       </div>
