@@ -37,7 +37,7 @@ export default function Sidebar({ dormName }) {
         </div>
         <div className="min-w-0">
           <div className="text-base font-bold truncate tracking-tight">{dormName || 'หอพักสุขใจ'}</div>
-          <div className="text-[11px] text-amber-200/80 font-medium">ระบบจัดการหอพัก</div>
+          <div className="text-[11px] text-green-200/80 font-medium">ระบบจัดการหอพัก</div>
         </div>
       </div>
     </div>
@@ -51,13 +51,13 @@ export default function Sidebar({ dormName }) {
             `group flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
               isActive
                 ? 'bg-white/20 text-white shadow-md backdrop-blur-sm border border-white/10'
-                : 'text-amber-100/70 hover:text-white hover:bg-white/10'
+                : 'text-green-100/70 hover:text-white hover:bg-white/10'
             }`
           }>
           <span className="text-xl w-7 text-center shrink-0 transition-transform duration-200 group-hover:scale-110">{item.icon}</span>
           <div className="min-w-0">
             <div>{item.label}</div>
-            {isMobile && <div className="text-[10px] text-amber-200/70">{item.desc}</div>}
+            {isMobile && <div className="text-[10px] text-green-200/70">{item.desc}</div>}
           </div>
         </NavLink>
       ))}
@@ -69,28 +69,28 @@ export default function Sidebar({ dormName }) {
       <div className="h-px bg-white/10" />
       <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] text-amber-200/80 font-medium uppercase tracking-wider">สถิติหอพัก</span>
+          <span className="text-[11px] text-green-200/80 font-medium uppercase tracking-wider">สถิติหอพัก</span>
         </div>
         <div className="flex items-center gap-4">
           <div>
             <div className="text-lg font-bold text-white">{rooms.length}</div>
-            <div className="text-[10px] text-amber-200/60">ห้องทั้งหมด</div>
+            <div className="text-[10px] text-green-200/60">ห้องทั้งหมด</div>
           </div>
           <div className="w-px h-8 bg-white/10" />
           <div>
             <div className="text-lg font-bold text-white">{occupied}</div>
-            <div className="text-[10px] text-amber-200/60">มีผู้พัก</div>
+            <div className="text-[10px] text-green-200/60">มีผู้พัก</div>
           </div>
           <div className="w-px h-8 bg-white/10" />
           <div>
             <div className="text-lg font-bold text-white">{rooms.length - occupied}</div>
-            <div className="text-[10px] text-amber-200/60">ห้องว่าง</div>
+            <div className="text-[10px] text-green-200/60">ห้องว่าง</div>
           </div>
         </div>
       </div>
       <div className="flex items-center gap-2 px-1">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-300/50" />
-        <span className="text-[10px] text-amber-200/50">ระบบทำงานปกติ • v1.0.0</span>
+        <span className="text-[10px] text-green-200/50">ระบบทำงานปกติ • v1.0.0</span>
       </div>
     </div>
   )
@@ -109,7 +109,7 @@ export default function Sidebar({ dormName }) {
             </svg>
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-700 to-green-800 flex items-center justify-center text-white">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
             <span className="text-sm font-bold text-neutral-800 truncate">{dormName || 'หอพักสุขใจ'}</span>
@@ -140,7 +140,7 @@ export default function Sidebar({ dormName }) {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-amber-700 via-amber-600 to-amber-700 text-white shadow-xl shadow-amber-900/20 md:hidden"
+            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white shadow-xl shadow-green-950/30 md:hidden"
           >
             {/* Fixed Header */}
             {headerContent()}
@@ -157,7 +157,7 @@ export default function Sidebar({ dormName }) {
       </AnimatePresence>
 
       {/* Desktop Sidebar - hidden on mobile */}
-      <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-64 bg-gradient-to-b from-amber-700 via-amber-600 to-amber-700 text-white shadow-xl shadow-amber-900/20">
+      <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-64 bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white shadow-xl shadow-green-950/30">
         {headerContent()}
         {navItems(false)}
         {footerContent()}
