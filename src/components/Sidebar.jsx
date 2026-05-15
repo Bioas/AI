@@ -157,8 +157,15 @@ export default function Sidebar({ dormName }) {
 
       {/* Desktop Sidebar - hidden on mobile */}
       <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-64 bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white shadow-xl shadow-green-950/30">
+        {/* Fixed Header */}
         {headerContent()}
-        {navItems(false)}
+
+        {/* Scrollable Nav - takes remaining space */}
+        <div className="flex-1 overflow-y-auto">
+          {navItems(false)}
+        </div>
+
+        {/* Fixed Footer */}
         {footerContent()}
       </aside>
     </>
