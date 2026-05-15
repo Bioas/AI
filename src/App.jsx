@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import Sidebar from './components/Sidebar'
 import ToastContainer from './components/Toast'
 import { useApp } from './context/AppContext'
@@ -44,6 +45,8 @@ export default function App() {
       </main>
 
       <ToastContainer />
+
+      <SpeedInsights />
 
       <Suspense fallback={null}>{modal === 'room' && <RoomModal />}</Suspense>
       <Suspense fallback={null}>{modal === 'resident' && <ResidentModal />}</Suspense>
