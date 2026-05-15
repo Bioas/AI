@@ -20,7 +20,6 @@ export default function Sidebar({ dormName }) {
 
   const navContent = (isMobile = false) => (
     <>
-      {/* Header */}
       <div className="relative px-6 pt-8 pb-6 overflow-hidden">
         <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/5" />
         <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5" />
@@ -35,7 +34,6 @@ export default function Sidebar({ dormName }) {
         </div>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-3 pb-4 space-y-1">
         {NAV_ITEMS.map(item => (
           <NavLink key={item.path} to={item.path} onClick={() => isMobile && setOpen(false)}
@@ -49,15 +47,12 @@ export default function Sidebar({ dormName }) {
             <span className="text-xl w-7 text-center shrink-0 transition-transform duration-200 group-hover:scale-110">{item.icon}</span>
             <div className="min-w-0">
               <div>{item.label}</div>
-              {isMobile && (
-                <div className="text-[10px] text-amber-200/70">{item.desc}</div>
-              )}
+              {isMobile && <div className="text-[10px] text-amber-200/70">{item.desc}</div>}
             </div>
           </NavLink>
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="px-4 pb-6 space-y-3">
         <div className="h-px bg-white/10" />
         <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
@@ -91,11 +86,26 @@ export default function Sidebar({ dormName }) {
 
   return (
     <>
-      {/* Mobile Hamburger Toggle */}
-      <button onClick={() => setOpen(true)} aria-label="เปิดเมนู"
-        className="fixed top-4 left-4 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-2xl bg-gradient-to-br from-amber-600 to-amber-700 text-white shadow-lg shadow-amber-200/50">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
+      {/* Mobile Top Navbar - visible only on mobile */}
+      <header className="fixed top-0 left-0 right-0 z-40 md:hidden bg-white/80 backdrop-blur-md border-b border-neutral-200/60">
+        <div className="flex items-center justify-between px-4 h-14">
+          <button onClick={() => setOpen(true)} aria-label="เปิดเมนู"
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-neutral-600 hover:bg-neutral-100 transition-colors">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center text-white">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span className="text-sm font-bold text-neutral-800 truncate">{dormName || 'หอพักสุขใจ'}</span>
+          </div>
+          <div className="w-10" />
+        </div>
+      </header>
 
       {/* Mobile Overlay */}
       <AnimatePresence>
