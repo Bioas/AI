@@ -7,6 +7,7 @@ import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
 import EmptyState from './ui/empty-state'
 import MeterModal from './MeterModal'
+import ReloadButton from './ui/reload-button'
 
 export default function Meters() {
   const { rooms: allRooms, settings, meterMonth, setMeterMonth, meterLocal, fetchAll } = useApp()
@@ -35,14 +36,14 @@ export default function Meters() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <PageHeader title="บันทึกมิเตอร์" description="บันทึกเลขมาตรไฟฟ้าและน้ำประปารายเดือน"
-        onReload={handleReload} />
+      <PageHeader title="บันทึกมิเตอร์" description="บันทึกเลขมาตรไฟฟ้าและน้ำประปารายเดือน" />
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
+      <div className="flex flex-row items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
         <label className="text-sm font-medium text-neutral-600 shrink-0">เดือน:</label>
-        <div className="w-full sm:w-44">
+        <div className="flex-1 sm:flex-none sm:w-44">
           <DatePickerField selected={meterDate} onChange={handleMeterMonthChange} showMonthPicker placeholder="เลือกเดือน" />
         </div>
+        <ReloadButton onReload={handleReload} className="ml-auto" />
       </div>
 
       <Card>

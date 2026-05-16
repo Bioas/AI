@@ -10,11 +10,18 @@ const ROOM_TYPE_OPTIONS = [
   { value: 'มีทีวี', label: 'มีทีวี' },
 ]
 
+const RENTAL_TYPE_OPTIONS = [
+  { value: 'รายเดือน', label: 'รายเดือน' },
+  { value: 'รายวัน', label: 'รายวัน' },
+]
+
 export default function RoomModal() {
   const { editRoom, rooms, saveRoom, setModal } = useApp()
 
   const [roomNumber, setRoomNumber] = useState(editRoom?.roomNumber || editRoom?.number || '')
+  const [roomCode, setRoomCode] = useState(editRoom?.roomCode || '')
   const [rentPrice, setRentPrice] = useState((editRoom?.rentPrice || editRoom?.rent || '').toString())
+  const [rentalType, setRentalType] = useState(editRoom?.rentalType || 'รายเดือน')
   const [roomType, setRoomType] = useState(editRoom?.roomType || 'ไม่มีทีวี')
   const [prevElecMeter, setPrevElecMeter] = useState(editRoom?.prevElecMeter?.toString() || '')
   const [prevWaterMeter, setPrevWaterMeter] = useState(editRoom?.prevWaterMeter?.toString() || '')
@@ -36,6 +43,7 @@ export default function RoomModal() {
   const validate = () => {
     const errs = {}
     if (!roomNumber.trim()) errs.roomNumber = 'กรุณากรอกหมายเลขห้อง'
+    if (!roomCode.trim()) errs.roomCode = 'กรุณากรอกรหัสห้อง'
     if (!rentPrice || isNaN(Number(rentPrice))) errs.rentPrice = 'กรุณากรอกค่าเช่า'
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -46,11 +54,14 @@ export default function RoomModal() {
     saveRoom({
       id: editRoom?.id || undefined,
       roomNumber: roomNumber.trim(),
+      roomCode: roomCode.trim(),
       rentPrice: Number(rentPrice) || 0,
+      rentalType,
       roomType,
-      prevElecMeter: prevElecMeter ? Number(prevElecMeter) : 0,
-      prevWaterMeter: prevWaterMeter ? Number(prevWaterMeter) : 0,
+      prevElecMeter: rentalType === 'รายวัน' ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
+      prevWaterMeter: rentalType === 'รายวัน' ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
       note: note.trim(),
+      residentId: editRoom?.residentId || null,
     })
   }
 
@@ -71,8 +82,13 @@ export default function RoomModal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="หมายเลขห้องพัก *" value={roomNumber} onChange={e => setRoomNumber(e.target.value)}
               placeholder="เช่น 101" error={errors.roomNumber} autoFocus />
+            <Input label="รหัสห้อง *" value={roomCode} onChange={e => setRoomCode(e.target.value)}
+              placeholder="เช่น A-101" error={errors.roomCode} />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ค่าเช่า/เดือน *</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ค่าเช่า/{rentalType === 'รายวัน' ? 'วัน' : 'เดือน'} *</label>
               <div className="relative">
                 <input type="text" value={rentPrice ? formatRent(rentPrice) : rentPrice} onChange={e => handleRentChange(e.target.value)}
                   placeholder="0" inputMode="numeric"
@@ -81,6 +97,10 @@ export default function RoomModal() {
               </div>
               {errors.rentPrice && <p className="text-xs text-rose-500 mt-1">{errors.rentPrice}</p>}
             </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทการเช่า *</label>
+              <Select value={rentalType} onChange={setRentalType} options={RENTAL_TYPE_OPTIONS} placeholder="เลือกประเภท" />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -88,42 +108,47 @@ export default function RoomModal() {
               <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทห้องพัก *</label>
               <Select value={roomType} onChange={setRoomType} options={ROOM_TYPE_OPTIONS} placeholder="เลือกประเภท" />
             </div>
-            {editRoom && residentName && (
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">ผู้พักปัจจุบัน</label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-500">
-                    {residentName}
-                  </div>
-                  <button onClick={() => {
-                    if (window.confirm(`ต้องการลบ "${residentName}" ออกจากห้องนี้?`)) {
-                      saveRoom({
-                        id: editRoom.id,
-                        roomNumber: roomNumber.trim(),
-                        rentPrice: Number(rentPrice) || 0,
-                        roomType,
-                        prevElecMeter: prevElecMeter ? Number(prevElecMeter) : 0,
-                        prevWaterMeter: prevWaterMeter ? Number(prevWaterMeter) : 0,
-                        note: note.trim(),
-                        residentId: null,
-                      })
-                    }
-                  }}
-                    className="h-10 px-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors border border-rose-200 shrink-0">
-                    ลบผู้เช่า
-                  </button>
-                </div>
-              </div>
-            )}
+            <div />
           </div>
 
-          <div>
-            <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">เลขมิเตอร์เริ่มต้น (ก่อนหน้า)</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <Input label="เลขมิเตอร์ไฟฟ้า" type="number" value={prevElecMeter} onChange={e => setPrevElecMeter(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="0" />
-              <Input label="เลขมิเตอร์น้ำ" type="number" value={prevWaterMeter} onChange={e => setPrevWaterMeter(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="0" />
+          {editRoom && residentName && (
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ผู้พักปัจจุบัน</label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-500">
+                  {residentName}
+                </div>
+                <button onClick={() => {
+                  if (window.confirm(`ต้องการลบ "${residentName}" ออกจากห้องนี้?`)) {
+                    saveRoom({
+                      id: editRoom.id,
+                      roomNumber: roomNumber.trim(),
+                      roomCode: roomCode.trim(),
+                      rentPrice: Number(rentPrice) || 0,
+                      roomType,
+                      prevElecMeter: prevElecMeter ? Number(prevElecMeter) : 0,
+                      prevWaterMeter: prevWaterMeter ? Number(prevWaterMeter) : 0,
+                      note: note.trim(),
+                      residentId: null,
+                    })
+                  }
+                }}
+                  className="h-10 px-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors border border-rose-200 shrink-0">
+                  ลบผู้เช่า
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {rentalType !== 'รายวัน' && (
+            <div>
+              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">เลขมิเตอร์เริ่มต้น (ก่อนหน้า)</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="เลขมิเตอร์ไฟฟ้า" type="number" value={prevElecMeter} onChange={e => setPrevElecMeter(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="0" />
+                <Input label="เลขมิเตอร์น้ำ" type="number" value={prevWaterMeter} onChange={e => setPrevWaterMeter(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="0" />
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1.5">หมายเหตุ</label>

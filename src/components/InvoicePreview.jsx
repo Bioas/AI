@@ -2,7 +2,7 @@ import { useApp } from '../context/AppContext'
 import { formatMonth } from '../lib/constants'
 
 export default function InvoicePreview({ inv }) {
-  const { settings } = useApp()
+  const { settings, rooms } = useApp()
   const cf = settings.commonFee || 0
   const inf = settings.internetFee || 0
   const items = [
@@ -18,6 +18,10 @@ export default function InvoicePreview({ inv }) {
   const y = now.getFullYear() + 543
   const m = now.toLocaleDateString('th-TH', { month: 'short' })
   const issueDate = `${lastDay} ${m} ${y}`
+  const signatureDate = `${String(lastDay).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${y}`
+  const invMonth = inv.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const roomData = rooms.find(r => r.roomNumber === inv.room || r.number === inv.room)
+  const invoiceNo = `INV-${roomData?.roomCode || inv.room}-${invMonth.replace('-', '')}`
 
   return (
     <div id="invoicePdfContent" className="bg-white mx-auto font-sans text-[13px] text-neutral-700 leading-relaxed" style={{ padding: 40 }}>
@@ -36,6 +40,7 @@ export default function InvoicePreview({ inv }) {
         </div>
         <div className="text-right pt-1">
           <div className="text-base font-bold text-amber-700">ใบแจ้งหนี้</div>
+          <div className="text-[10px] text-amber-600/80 mt-0.5 font-medium">{invoiceNo}</div>
           <div className="text-[10px] text-neutral-400 mt-0.5">{issueDate}</div>
         </div>
       </div>
@@ -71,7 +76,7 @@ export default function InvoicePreview({ inv }) {
       </table>
 
       {/* Total */}
-      <div className="flex justify-end pb-6 mb-6 border-b border-amber-200/60">
+      <div className="flex justify-end pb-2 mb-2 border-b border-amber-200/60">
         <div className="flex items-baseline gap-6">
           <span className="text-sm font-bold text-amber-700">รวมทั้งสิ้น</span>
           <span className="text-base font-bold text-amber-700">{total.toLocaleString()} บาท</span>
@@ -81,14 +86,26 @@ export default function InvoicePreview({ inv }) {
       {/* Payment */}
       <div className="flex gap-6">
         <div className="flex-1 space-y-2">
-          <div className="text-[12px] text-neutral-500 leading-snug">
+          <div className="text-[11px] text-neutral-500 leading-snug">
             <div className="font-semibold text-amber-700 mb-0.5">ช่องทางการชำระเงิน</div>
             พร้อมเพย์ <span className="font-semibold text-neutral-700">0902439797</span><br />
             นงลักษณ์ นิพรรัมย์ — ธนาคารกรุงไทย
           </div>
-          <div className="text-[12px] text-amber-600/70 leading-snug pt-2 border-t border-amber-100">
+          <div className="text-[10px] text-amber-600/70 leading-snug pt-2 border-t border-amber-100">
             กำหนดชำระภายในวันที่ 5 ของทุกเดือน<br />
             หากชำระหลังกำหนด คิดค่าปรับวันละ 50 บาท
+          </div>
+          {/* Signature */}
+          <div className="flex justify-center pt-1 mt-1">
+            <div className="text-center">
+              {settings.signature ? (
+                <img src={settings.signature} alt="ลายเซ็น" className="w-28 h-10 object-contain mx-auto mb-0.5" />
+              ) : (
+                <div className="border-b border-dotted border-neutral-300 w-40 mb-0.5">&nbsp;</div>
+              )}
+              <div className="text-[10px] text-neutral-500">ลงชื่อผู้แจ้งหนี้</div>
+              <div className="text-[10px] text-neutral-400 mt-0.5">วันที่ {signatureDate}</div>
+            </div>
           </div>
         </div>
         {settings.qrCode && (

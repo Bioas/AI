@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { naturalSortRoomNumber } from '../lib/constants'
 import Card, { CardContent } from './ui/card'
@@ -8,6 +9,7 @@ import EmptyState from './ui/empty-state'
 import Badge from './ui/badge'
 import Button from './ui/button'
 import Select from './ui/select'
+import ReloadButton from './ui/reload-button'
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'ทั้งหมด' },
@@ -16,9 +18,11 @@ const STATUS_OPTIONS = [
 ]
 
 export default function Room() {
+  const navigate = useNavigate()
   const { rooms, residents, setEditRoom, setModal, deleteRoom, fetchRooms } = useApp()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [viewMode, setViewMode] = useState('grid')
 
   const handleReload = async () => {
     const params = new URLSearchParams()
@@ -33,6 +37,7 @@ export default function Room() {
       const q = search.trim().toLowerCase()
       result = result.filter(r =>
         (r.roomNumber || r.number)?.toLowerCase().includes(q) ||
+        (r.roomCode || '').toLowerCase().includes(q) ||
         r.tenantName?.toLowerCase().includes(q) ||
         (r.note || '').toLowerCase().includes(q)
       )
@@ -43,7 +48,8 @@ export default function Room() {
     return result
   }, [rooms, search, statusFilter])
 
-  const handleDelete = (room) => {
+  const handleDelete = (room, e) => {
+    e.stopPropagation()
     const label = room.roomNumber || room.number
     const hasResident = room.residentId || room.tenantName
     if (hasResident) {
@@ -52,6 +58,12 @@ export default function Room() {
       if (!window.confirm(`⚠️ ต้องการลบห้อง ${label} ใช่หรือไม่?`)) return
     }
     deleteRoom(room.id)
+  }
+
+  const handleEdit = (room, e) => {
+    e.stopPropagation()
+    setEditRoom(room)
+    setModal('room')
   }
 
   const getResidentName = (room) => {
@@ -67,10 +79,13 @@ export default function Room() {
     return { label: 'ว่าง', variant: 'default' }
   }
 
+  const handleNavigate = (room) => {
+    navigate(`/rooms/${room.id}`)
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="จัดการห้องพัก" description="เพิ่ม แก้ไข และจัดการห้องพักทั้งหมด"
-        onReload={handleReload}
         action={<Button onClick={() => { setEditRoom(null); setModal('room') }}>＋ เพิ่มห้อง</Button>} />
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 sm:mb-6">
@@ -83,21 +98,84 @@ export default function Room() {
         <div className="w-full sm:w-40">
           <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} placeholder="ทั้งหมด" />
         </div>
-        <div className="text-xs text-neutral-400 text-center sm:text-left">{filtered.length} ห้อง</div>
+        <ReloadButton onReload={handleReload} />
+        <div className="flex items-center gap-2 ml-auto">
+          <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-lime-100 text-lime-700' : 'text-neutral-400 hover:bg-neutral-100'}`}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
+          <button onClick={() => setViewMode('table')} className={`p-2 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-lime-100 text-lime-700' : 'text-neutral-400 hover:bg-neutral-100'}`}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+          <div className="text-xs text-neutral-400">{filtered.length} ห้อง</div>
+        </div>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          {filtered.length === 0 ? (
-            <EmptyState icon="🚪" title={search || statusFilter !== 'all' ? 'ไม่พบห้องที่ค้นหา' : 'ยังไม่มีห้อง'}
-              description={search ? 'ลองเปลี่ยนคำค้นหาหรือตรวจสอบการสะกด' : 'เพิ่มห้องแรกของคุณเพื่อเริ่มต้น'}
-              action={!search && statusFilter === 'all' ? <Button onClick={() => { setEditRoom(null); setModal('room') }}>เพิ่มห้อง</Button> : undefined} />
-          ) : (
+      {filtered.length === 0 ? (
+        <Card><CardContent className="pt-6">
+          <EmptyState icon="🚪" title={search || statusFilter !== 'all' ? 'ไม่พบห้องที่ค้นหา' : 'ยังไม่มีห้อง'}
+            description={search ? 'ลองเปลี่ยนคำค้นหาหรือตรวจสอบการสะกด' : 'เพิ่มห้องแรกของคุณเพื่อเริ่มต้น'}
+            action={!search && statusFilter === 'all' ? <Button onClick={() => { setEditRoom(null); setModal('room') }}>เพิ่มห้อง</Button> : undefined} />
+        </CardContent></Card>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filtered.map(r => {
+            const status = getStatus(r)
+            const residentName = getResidentName(r)
+            const displayNumber = r.roomNumber || r.number
+            const displayRent = r.rentPrice || r.rent
+            return (
+              <motion.div key={r.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}
+                onClick={() => handleNavigate(r)}
+                className="bg-white rounded-2xl border border-neutral-200 shadow-sm hover:shadow-md hover:border-lime-200 cursor-pointer transition-all overflow-hidden group">
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base font-bold shadow-sm">
+                        {displayNumber}
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-neutral-800">ห้อง {displayNumber}</div>
+                        <Badge variant={status.variant}>{status.label}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={(e) => handleEdit(r, e)} className="p-1.5 rounded-lg text-neutral-400 hover:bg-lime-50 hover:text-lime-600 transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button onClick={(e) => handleDelete(r, e)} className="p-1.5 rounded-lg text-neutral-400 hover:bg-rose-50 hover:text-rose-600 transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {residentName ? (
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                        {residentName.charAt(0)}
+                      </div>
+                      <span className="text-xs text-neutral-600 truncate">{residentName}</span>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-neutral-300 italic mb-2">ไม่มีผู้เช่า</div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
+                    <span className="text-xs text-neutral-400">{r.roomType || 'ไม่มีทีวี'} • {r.rentalType || 'รายเดือน'}</span>
+                    <span className="text-sm font-semibold text-neutral-800">{displayRent?.toLocaleString()} ฿</span>
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="pt-6">
             <div className="border border-neutral-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
-                    {['หมายเลขห้องพัก', 'ชื่อผู้เช่า', 'ประเภทห้อง', 'ค่าเช่า', 'สถานะห้อง', 'หมายเหตุ', 'จัดการ'].map(h => (
+                    {['หมายเลขห้องพัก', 'ชื่อผู้เช่า', 'ประเภทห้อง', 'ค่าเช่า', 'สถานะห้อง', 'หมายเหตุ'].map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -109,7 +187,8 @@ export default function Room() {
                     const displayNumber = r.roomNumber || r.number
                     const displayRent = r.rentPrice || r.rent
                     return (
-                      <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                      <tr key={r.id} onClick={() => handleNavigate(r)}
+                        className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors cursor-pointer group">
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
                           <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-sm font-bold shadow-sm">{displayNumber}</span>
@@ -129,9 +208,14 @@ export default function Room() {
                         </td>
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภท</span>
-                          <Badge variant={r.roomType === 'มีทีวี' ? 'info' : 'default'}>
-                            {r.roomType || 'ไม่มีทีวี'}
-                          </Badge>
+                          <div className="flex gap-1">
+                            <Badge variant={r.roomType === 'มีทีวี' ? 'info' : 'default'}>
+                              {r.roomType || 'ไม่มีทีวี'}
+                            </Badge>
+                            <Badge variant={r.rentalType === 'รายวัน' ? 'warning' : 'success'}>
+                              {r.rentalType || 'รายเดือน'}
+                            </Badge>
+                          </div>
                         </td>
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าเช่า</span>
@@ -145,24 +229,15 @@ export default function Room() {
                           <span className="text-xs font-medium text-neutral-500 md:hidden">หมายเหตุ</span>
                           <span className="text-xs text-neutral-400 max-w-[150px] truncate">{r.note || <span className="text-neutral-200">—</span>}</span>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => { setEditRoom(r); setModal('room') }}
-                              className="h-8 px-3.5 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-100">แก้ไข</button>
-                            <button onClick={() => handleDelete(r)}
-                              className="h-8 px-3.5 rounded-lg text-xs font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors border border-rose-100">ลบ</button>
-                          </div>
-                        </td>
                       </tr>
                     )
                   })}
                 </tbody>
               </table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </motion.div>
   )
 }

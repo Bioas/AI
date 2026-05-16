@@ -29,6 +29,10 @@ module.exports = {
         'card-hover': '0 4px 20px rgba(203,229,78,0.15), 0 8px 32px -8px rgba(203,229,78,0.18)',
       },
       keyframes: {
+        spin: {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
+        },
         fadeInUp: {
           from: { opacity: '0', transform: 'translateY(20px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
@@ -47,6 +51,7 @@ module.exports = {
         },
       },
       animation: {
+        spin: 'spin 1s linear infinite',
         fadeInUp: 'fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
         scaleIn: 'scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         slideInRight: 'slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1)',

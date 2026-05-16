@@ -149,6 +149,40 @@ export function QrModal({ onClose }) {
   )
 }
 
+export function SignatureModal({ onClose }) {
+  const { settings, uploadSignature, removeSignature } = useApp()
+
+  return (
+    <Modal open={true} onClose={onClose}>
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">✍️</div>
+          <div>
+            <h3 className="text-base font-semibold text-neutral-800">จัดการลายเซ็น</h3>
+            <p className="text-xs text-neutral-400">อัปโหลดหรือลบลายเซ็นในใบแจ้งหนี้</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-4 p-6 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
+          {settings.signature ? (
+            <img src={settings.signature} alt="ลายเซ็น" className="w-32 h-16 object-contain rounded-lg border border-neutral-200 shadow-sm" />
+          ) : (
+            <div className="w-32 h-16 rounded-lg bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-3xl border border-dashed border-lime-200">✍️</div>
+          )}
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => document.getElementById('modalSignatureInput')?.click()}>อัปโหลดลายเซ็น</Button>
+            <Button variant="danger" size="sm" onClick={() => { removeSignature(); onClose() }}>ลบลายเซ็น</Button>
+          </div>
+          <input type="file" id="modalSignatureInput" accept="image/*" style={{ display: 'none' }} onChange={e => { uploadSignature(e); onClose() }} />
+          <p className="text-xs text-neutral-400">รองรับ PNG, JPG ขนาดไม่เกิน 2MB</p>
+        </div>
+        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
+          <Button variant="ghost" onClick={onClose}>ปิด</Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 export function LineModal({ onClose }) {
   const { settings, fetchAll, toast, sendLineMsg } = useApp()
   const [token, setToken] = useState(settings.channelToken || '')

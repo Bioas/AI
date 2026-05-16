@@ -17,3 +17,6 @@ out/
 coverage/
 .nyc_output/
 server/node_modules/
+data/
+server/data/
+server/data/uploads/

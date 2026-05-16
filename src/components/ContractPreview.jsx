@@ -104,14 +104,26 @@ export default function ContractPreview({ resident }) {
       )}
 
       <div className="flex justify-around mt-8 pt-6 border-t border-emerald-100">
-        <div className="text-center">
-          <div className="text-[12px] text-neutral-400 mb-8">ลงชื่อ .............................................. ผู้ให้เช่า</div>
-          <div className="text-[12px] text-neutral-400">({settings.dormName || 'ผู้จัดการหอพัก'})</div>
+        <div className="text-center w-64">
+          <div className="text-[12px] text-neutral-400 mb-1">ลงชื่อผู้ให้เช่า</div>
+          <div className="h-14 flex items-end justify-center">
+            {settings.signature ? (
+              <img src={settings.signature} alt="ลายเซ็นผู้ให้เช่า" className="max-w-32 max-h-12 object-contain" />
+            ) : (
+              <div className="text-[12px] text-neutral-400">..............................................</div>
+            )}
+          </div>
+          <div className="border-b border-dotted border-neutral-300 w-48 mx-auto mt-0.5">&nbsp;</div>
+          <div className="text-[12px] text-neutral-400 mt-0.5">({settings.dormName || 'ผู้จัดการหอพัก'})</div>
           <div className="text-[11px] text-neutral-300 mt-0.5">วันที่ ......../......../........</div>
         </div>
-        <div className="text-center">
-          <div className="text-[12px] text-neutral-400 mb-8">ลงชื่อ .............................................. ผู้เช่า</div>
-          <div className="text-[12px] text-neutral-400">({resident.name})</div>
+        <div className="text-center w-64">
+          <div className="text-[12px] text-neutral-400 mb-1">ลงชื่อผู้เช่า</div>
+          <div className="h-14 flex items-end justify-center">
+            <div className="text-[12px] text-neutral-400"></div>
+          </div>
+          <div className="border-b border-dotted border-neutral-300 w-48 mx-auto mt-0.5">&nbsp;</div>
+          <div className="text-[12px] text-neutral-400 mt-0.5">({resident.name})</div>
           <div className="text-[11px] text-neutral-300 mt-0.5">วันที่ ......../......../........</div>
         </div>
       </div>

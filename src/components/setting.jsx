@@ -5,7 +5,7 @@ import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
 import InfoRow from './ui/info-row'
 import Button from './ui/button'
-import { DormInfoModal, LogoModal, RatesModal, LineModal, QrModal } from './SettingModal'
+import { DormInfoModal, LogoModal, RatesModal, LineModal, QrModal, SignatureModal } from './SettingModal'
 
 export default function Setting() {
   const { settings, exportData, importData, fetchAll } = useApp()
@@ -17,8 +17,7 @@ export default function Setting() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <PageHeader title="ตั้งค่าระบบ" description="จัดการข้อมูลหอพัก อัตราค่าใช้จ่าย และการเชื่อมต่อ LINE"
-        onReload={handleReload} />
+      <PageHeader title="ตั้งค่าระบบ" description="จัดการข้อมูลหอพัก อัตราค่าใช้จ่าย และการเชื่อมต่อ LINE" />
 
       <div className="space-y-6">
         <Card><CardContent className="pt-6">
@@ -61,6 +60,21 @@ export default function Setting() {
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl border border-dashed border-lime-200">📱</div>
               )}
               <div className="text-xs text-neutral-500">{settings.qrCode ? 'มี QR Code' : 'ยังไม่มี QR Code'}</div>
+            </div>
+          </CardContent></Card>
+
+          <Card><CardContent className="pt-6">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-sm font-semibold text-neutral-800">✍️ ลายเซ็น</h3>
+              <Button size="sm" variant="secondary" onClick={() => setActiveSection('signature')}>จัดการ</Button>
+            </div>
+            <div className="flex items-center gap-4">
+              {settings.signature ? (
+                <img src={settings.signature} alt="ลายเซ็น" className="w-16 h-8 object-contain rounded-lg border border-neutral-200 shadow-sm" />
+              ) : (
+                <div className="w-16 h-8 rounded-lg bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-lg border border-dashed border-lime-200">✍️</div>
+              )}
+              <div className="text-xs text-neutral-500">{settings.signature ? 'มีลายเซ็น' : 'ยังไม่มีลายเซ็น'}</div>
             </div>
           </CardContent></Card>
         </div>
@@ -112,6 +126,7 @@ export default function Setting() {
       {activeSection === 'rates' && <RatesModal onClose={() => setActiveSection(null)} />}
       {activeSection === 'line' && <LineModal onClose={() => setActiveSection(null)} />}
       {activeSection === 'qr' && <QrModal onClose={() => setActiveSection(null)} />}
+      {activeSection === 'signature' && <SignatureModal onClose={() => setActiveSection(null)} />}
     </motion.div>
   )
 }

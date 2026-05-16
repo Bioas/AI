@@ -4,6 +4,11 @@ let cachedClient = null
 let cachedPromise = null
 
 export async function connectDB() {
+  if (process.env.USE_LOCAL_DB === 'true') {
+    const { connectDB: connectLocal } = await import('./local-db.js')
+    return connectLocal()
+  }
+
   const uri = process.env.MONGODB_URI || ''
   if (!uri) {
     throw new Error(

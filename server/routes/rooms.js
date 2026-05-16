@@ -7,9 +7,11 @@ const router = Router()
 function validate(data) {
   const errors = []
   if (!data.roomNumber?.trim()) errors.push('กรุณากรอกหมายเลขห้อง')
+  if (!data.roomCode?.trim()) errors.push('กรุณากรอกรหัสห้อง')
   if (!data.rentPrice && data.rentPrice !== 0) errors.push('กรุณากรอกค่าเช่า')
   else if (isNaN(Number(data.rentPrice))) errors.push('ค่าเช่าต้องเป็นตัวเลขเท่านั้น')
   if (data.roomType && !['มีทีวี', 'ไม่มีทีวี'].includes(data.roomType)) errors.push('ประเภทห้องไม่ถูกต้อง')
+  if (data.rentalType && !['รายวัน', 'รายเดือน'].includes(data.rentalType)) errors.push('ประเภทการเช่าไม่ถูกต้อง')
   return errors
 }
 
@@ -23,6 +25,7 @@ router.get('/', async (req, res) => {
       const s = search.trim()
       query.$or = [
         { roomNumber: { $regex: s, $options: 'i' } },
+        { roomCode: { $regex: s, $options: 'i' } },
         { note: { $regex: s, $options: 'i' } },
       ]
     }
@@ -73,8 +76,10 @@ router.post('/', async (req, res) => {
     const room = {
       id: Date.now().toString(36) + Math.random().toString(36).substring(2, 7),
       roomNumber: req.body.roomNumber.trim(),
+      roomCode: req.body.roomCode?.trim() || '',
       residentId,
       rentPrice: Number(req.body.rentPrice) || 0,
+      rentalType: req.body.rentalType || 'รายเดือน',
       roomType: req.body.roomType || 'ไม่มีทีวี',
       prevElecMeter: Number(req.body.prevElecMeter) || 0,
       prevWaterMeter: Number(req.body.prevWaterMeter) || 0,
@@ -106,7 +111,10 @@ router.put('/', async (req, res) => {
     const dup = await db.collection('rooms').findOne({ roomNumber: data.roomNumber.trim(), id: { $ne: id } })
     if (dup) return res.status(400).json({ error: 'หมายเลขห้องนี้มีอยู่ในระบบแล้ว' })
 
-    let residentId = data.residentId || null
+    const oldRoom = await db.collection('rooms').findOne({ id })
+
+    // Preserve existing residentId if not explicitly provided
+    let residentId = 'residentId' in data ? data.residentId : oldRoom?.residentId || null
     if (residentId) {
       const resCheck = await db.collection('residents').findOne({ id: residentId })
       if (!resCheck) return res.status(400).json({ error: 'ไม่พบผู้พักอาศัยที่เลือก' })
@@ -114,8 +122,10 @@ router.put('/', async (req, res) => {
 
     const update = {
       roomNumber: data.roomNumber.trim(),
+      roomCode: data.roomCode?.trim() || oldRoom?.roomCode || '',
       residentId,
       rentPrice: Number(data.rentPrice) || 0,
+      rentalType: data.rentalType || oldRoom?.rentalType || 'รายเดือน',
       roomType: data.roomType || 'ไม่มีทีวี',
       prevElecMeter: Number(data.prevElecMeter) || 0,
       prevWaterMeter: Number(data.prevWaterMeter) || 0,
@@ -124,7 +134,6 @@ router.put('/', async (req, res) => {
       updatedAt: new Date().toISOString(),
     }
 
-    const oldRoom = await db.collection('rooms').findOne({ id })
     if (oldRoom?.residentId && !residentId) {
       await db.collection('residents').updateOne(
         { id: oldRoom.residentId },

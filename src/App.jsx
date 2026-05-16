@@ -9,14 +9,15 @@ import Spinner from './components/ui/spinner'
 
 const Dashboard = lazy(() => import('./components/dashboard'))
 const Room = lazy(() => import('./components/room'))
+const RoomDetail = lazy(() => import('./components/RoomDetail'))
 const Meters = lazy(() => import('./components/meters'))
-const Invoice = lazy(() => import('./components/invoice'))
+const Document = lazy(() => import('./components/document'))
 const Resident = lazy(() => import('./components/resident'))
-const LineUsers = lazy(() => import('./components/line-users'))
 const Setting = lazy(() => import('./components/setting'))
 const RoomModal = lazy(() => import('./components/RoomModal'))
 const ResidentModal = lazy(() => import('./components/ResidentModal'))
 const InvoicePreview = lazy(() => import('./components/InvoicePreview'))
+const ReceiptPreview = lazy(() => import('./components/ReceiptPreview'))
 const ModalOverlay = lazy(() => import('./components/ui/modal'))
 
 export default function App() {
@@ -33,10 +34,10 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/rooms" element={<Room />} />
+                <Route path="/rooms/:id" element={<RoomDetail />} />
                 <Route path="/meters" element={<Meters />} />
-                <Route path="/invoices" element={<Invoice />} />
+                <Route path="/documents" element={<Document />} />
                 <Route path="/residents" element={<Resident />} />
-                <Route path="/line-users" element={<LineUsers />} />
                 <Route path="/settings" element={<Setting />} />
               </Routes>
             </AnimatePresence>
@@ -60,6 +61,19 @@ export default function App() {
               <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
                 <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
                 <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 hover:from-lime-300 hover:to-lime-400 transition-all shadow-md shadow-lime-200/50 font-semibold">📄 PDF</button>
+                <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>
+              </div>
+            </div>
+          </ModalOverlay>
+        )}
+        {modal === 'receipt' && viewInv && (
+              <ModalOverlay open={true} onClose={() => setModal(null)}>
+            <div className="p-6">
+              <h3 className="text-base font-semibold text-neutral-800 mb-4">🧾 ใบเสร็จรับเงิน</h3>
+              <ReceiptPreview inv={viewInv} />
+              <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
+                <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
+                <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-emerald-400 to-emerald-500 text-white hover:from-emerald-300 hover:to-emerald-400 transition-all shadow-md shadow-emerald-200/50 font-semibold">📄 PDF</button>
                 <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>
               </div>
             </div>
