@@ -94,6 +94,8 @@ router.post('/', async (req, res) => {
       emergencyContact: req.body.emergencyContact?.trim() || '',
       emergencyPhone: req.body.emergencyPhone?.replace(/\D/g, '') || '',
       lineUserId: req.body.lineUserId || '',
+      rentalType: req.body.rentalType || 'monthly',
+      licensePlate: req.body.licensePlate || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -153,6 +155,8 @@ router.put('/', async (req, res) => {
       emergencyContact: data.emergencyContact?.trim() || '',
       emergencyPhone: data.emergencyPhone?.replace(/\D/g, '') || '',
       lineUserId: data.lineUserId || '',
+      rentalType: data.rentalType || 'monthly',
+      licensePlate: data.licensePlate || '',
       updatedAt: new Date().toISOString(),
     }
 

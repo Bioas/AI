@@ -11,7 +11,8 @@ const Dashboard = lazy(() => import('./components/dashboard'))
 const Room = lazy(() => import('./components/room'))
 const RoomDetail = lazy(() => import('./components/RoomDetail'))
 const Meters = lazy(() => import('./components/meters'))
-const Document = lazy(() => import('./components/document'))
+const Billing = lazy(() => import('./components/billing'))
+const Documents = lazy(() => import('./components/documents'))
 const Resident = lazy(() => import('./components/resident'))
 const Setting = lazy(() => import('./components/setting'))
 const RoomModal = lazy(() => import('./components/RoomModal'))
@@ -36,7 +37,8 @@ export default function App() {
                 <Route path="/rooms" element={<Room />} />
                 <Route path="/rooms/:id" element={<RoomDetail />} />
                 <Route path="/meters" element={<Meters />} />
-                <Route path="/documents" element={<Document />} />
+                <Route path="/billing" element={<Billing />} />
+                <Route path="/documents" element={<Documents />} />
                 <Route path="/residents" element={<Resident />} />
                 <Route path="/settings" element={<Setting />} />
               </Routes>

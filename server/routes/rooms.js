@@ -11,7 +11,7 @@ function validate(data) {
   if (!data.rentPrice && data.rentPrice !== 0) errors.push('กรุณากรอกค่าเช่า')
   else if (isNaN(Number(data.rentPrice))) errors.push('ค่าเช่าต้องเป็นตัวเลขเท่านั้น')
   if (data.roomType && !['มีทีวี', 'ไม่มีทีวี'].includes(data.roomType)) errors.push('ประเภทห้องไม่ถูกต้อง')
-  if (data.rentalType && !['รายวัน', 'รายเดือน'].includes(data.rentalType)) errors.push('ประเภทการเช่าไม่ถูกต้อง')
+  if (data.rentalType && !['daily', 'monthly'].includes(data.rentalType)) errors.push('ประเภทการเช่าไม่ถูกต้อง')
   return errors
 }
 
@@ -79,7 +79,7 @@ router.post('/', async (req, res) => {
       roomCode: req.body.roomCode?.trim() || '',
       residentId,
       rentPrice: Number(req.body.rentPrice) || 0,
-      rentalType: req.body.rentalType || 'รายเดือน',
+      rentalType: req.body.rentalType || 'monthly',
       roomType: req.body.roomType || 'ไม่มีทีวี',
       prevElecMeter: Number(req.body.prevElecMeter) || 0,
       prevWaterMeter: Number(req.body.prevWaterMeter) || 0,
@@ -125,7 +125,7 @@ router.put('/', async (req, res) => {
       roomCode: data.roomCode?.trim() || oldRoom?.roomCode || '',
       residentId,
       rentPrice: Number(data.rentPrice) || 0,
-      rentalType: data.rentalType || oldRoom?.rentalType || 'รายเดือน',
+      rentalType: data.rentalType || oldRoom?.rentalType || 'monthly',
       roomType: data.roomType || 'ไม่มีทีวี',
       prevElecMeter: Number(data.prevElecMeter) || 0,
       prevWaterMeter: Number(data.prevWaterMeter) || 0,

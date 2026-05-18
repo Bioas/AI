@@ -105,6 +105,7 @@ export function AppProvider({ children }) {
         prevWater: saved.prevWater || 0, curWater: saved.curWater || 0,
         total: saved.total,
         rateElec: saved.rateElec, rateWater: saved.rateWater,
+        paid: saved.paid || false,
         _saved: true, _id: saved.id,
       }
     }
@@ -308,6 +309,7 @@ export function AppProvider({ children }) {
       if (!resident) { toast('ไม่พบข้อมูลผู้พัก', true); return }
       const room = rooms.find(r => r.id === roomId)
       if (!room) { toast('ไม่พบห้อง', true); return }
+      const resolvedRentalType = resident.rentalType || room.rentalType || 'monthly'
       await api('/api/residents', 'PUT', {
         id: residentId,
         name: resident.name,
@@ -322,7 +324,7 @@ export function AppProvider({ children }) {
         emergencyContact: resident.emergencyContact || '',
         emergencyPhone: resident.emergencyPhone || '',
         lineUserId: resident.lineUserId || '',
-        rentalType: resident.rentalType || 'monthly',
+        rentalType: resolvedRentalType,
       })
       await fetchResidents()
       await fetchRooms()

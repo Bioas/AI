@@ -18,7 +18,7 @@ export default function ReceiptPreview({ inv }) {
   const m = now.toLocaleDateString('th-TH', { month: 'short' })
   const d = now.getDate()
   const receiptDate = `${d} ${m} ${y}`
-  const receiptNo = `REC-${inv.room}-${inv.month?.replace('-', '') || ''}`
+  const receiptNo = inv.docNumber ? inv.docNumber.replace('INV-', 'REC-') : `REC-${inv.room}-${inv.month?.replace('-', '') || ''}`
   const roomData = rooms.find(r => r.roomNumber === inv.room || r.number === inv.room)
 
   const bahtText = numberToBahtText(total)

@@ -123,19 +123,24 @@ export default function Room() {
             const residentName = getResidentName(r)
             const displayNumber = r.roomNumber || r.number
             const displayRent = r.rentPrice || r.rent
+            const isOccupied = status.label === 'มีผู้เช่า'
             return (
               <motion.div key={r.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}
                 onClick={() => handleNavigate(r)}
-                className="bg-white rounded-2xl border border-neutral-200 shadow-sm hover:shadow-md hover:border-lime-200 cursor-pointer transition-all overflow-hidden group">
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-3">
+                className="relative bg-white rounded-2xl border border-neutral-100 shadow-sm hover:shadow-lg hover:border-lime-200 hover:-translate-y-1 cursor-pointer transition-all duration-300 overflow-hidden group">
+                <div className={`absolute top-0 left-0 right-0 h-1 ${isOccupied ? 'bg-gradient-to-r from-lime-400 to-lime-500' : 'bg-gradient-to-r from-neutral-200 to-neutral-300'}`}></div>
+                <div className="p-5">
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base font-bold shadow-sm">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-base font-bold shadow-sm transition-transform group-hover:scale-105 ${isOccupied ? 'bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900' : 'bg-gradient-to-br from-neutral-100 to-neutral-200 text-neutral-500'}`}>
                         {displayNumber}
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-neutral-800">ห้อง {displayNumber}</div>
-                        <Badge variant={status.variant}>{status.label}</Badge>
+                        <div className="text-sm font-bold text-neutral-800">ห้อง {displayNumber}</div>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className={`inline-block w-2 h-2 rounded-full ${isOccupied ? 'bg-lime-500' : 'bg-neutral-300'}`}></span>
+                          <span className={`text-xs font-medium ${isOccupied ? 'text-lime-600' : 'text-neutral-400'}`}>{status.label}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -149,19 +154,29 @@ export default function Room() {
                   </div>
 
                   {residentName ? (
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    <div className="flex items-center gap-2.5 mb-4 p-2.5 rounded-xl bg-lime-50/50 border border-lime-100/50">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
                         {residentName.charAt(0)}
                       </div>
-                      <span className="text-xs text-neutral-600 truncate">{residentName}</span>
+                      <span className="text-xs font-medium text-neutral-700 truncate">{residentName}</span>
                     </div>
                   ) : (
-                    <div className="text-xs text-neutral-300 italic mb-2">ไม่มีผู้เช่า</div>
+                    <div className="flex items-center gap-2 mb-4 p-2.5 rounded-xl bg-neutral-50 border border-neutral-100">
+                      <div className="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-400 text-xs">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      </div>
+                      <span className="text-xs text-neutral-400">ยังไม่มีผู้พัก</span>
+                    </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
-                    <span className="text-xs text-neutral-400">{r.roomType || 'ไม่มีทีวี'} • {r.rentalType || 'รายเดือน'}</span>
-                    <span className="text-sm font-semibold text-neutral-800">{displayRent?.toLocaleString()} ฿</span>
+                  <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${(r.rentalType === 'daily' || r.rentalType === 'รายวัน') ? 'bg-sky-50 text-sky-600 border border-sky-100' : 'bg-lime-50 text-lime-600 border border-lime-100'}`}>
+                        {r.rentalType === 'daily' ? 'รายวัน' : r.rentalType === 'monthly' ? 'รายเดือน' : r.rentalType || 'รายเดือน'}
+                      </span>
+                      <span className="text-[10px] text-neutral-400">{r.roomType || 'ไม่มีทีวี'}</span>
+                    </div>
+                    <span className="text-sm font-bold text-neutral-800">{displayRent?.toLocaleString()} <span className="text-xs font-normal text-neutral-400">฿/{(r.rentalType === 'daily' || r.rentalType === 'รายวัน') ? 'วัน' : 'เดือน'}</span></span>
                   </div>
                 </div>
               </motion.div>
@@ -212,8 +227,8 @@ export default function Room() {
                             <Badge variant={r.roomType === 'มีทีวี' ? 'info' : 'default'}>
                               {r.roomType || 'ไม่มีทีวี'}
                             </Badge>
-                            <Badge variant={r.rentalType === 'รายวัน' ? 'warning' : 'success'}>
-                              {r.rentalType || 'รายเดือน'}
+                            <Badge variant={(r.rentalType === 'daily' || r.rentalType === 'รายวัน') ? 'warning' : 'success'} className="text-xs font-semibold px-2.5 py-1">
+                              {r.rentalType === 'daily' ? 'รายวัน' : r.rentalType === 'monthly' ? 'รายเดือน' : r.rentalType || 'รายเดือน'}
                             </Badge>
                           </div>
                         </td>

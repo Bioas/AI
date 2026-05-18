@@ -39,7 +39,16 @@ export default function RoomDetailDaily() {
   }, [invoices, room])
 
   const unassignedResidents = useMemo(() => {
-    return residents.filter(r => !r.roomId || r.roomId === '').sort((a, b) => a.name.localeCompare(b.name))
+    const now = new Date()
+    return residents.filter(r => {
+      if (r.rentalType !== 'daily' && r.rentalType !== 'รายวัน') return false
+      if (!r.roomId || r.roomId === '') return true
+      if (r.moveOutDate) {
+        const outDate = new Date(r.moveOutDate)
+        if (outDate < now) return true
+      }
+      return false
+    }).sort((a, b) => a.name.localeCompare(b.name))
   }, [residents])
 
   const filteredUnassigned = useMemo(() => {
@@ -75,7 +84,7 @@ export default function RoomDetailDaily() {
 
   const displayNumber = room.roomNumber || room.number
   const displayRent = room.rentPrice || room.rent
-  const isDaily = room.rentalType === 'รายวัน'
+  const isDaily = room.rentalType === 'daily' || room.rentalType === 'รายวัน'
   const status = room.status === 'มีผู้พัก' || room.residentId || room.tenantName
     ? { label: 'มีผู้พัก', variant: 'success' }
     : { label: 'ว่าง', variant: 'default' }
@@ -189,7 +198,7 @@ export default function RoomDetailDaily() {
           </div>
           <div className="py-3 flex justify-between">
             <dt className="text-sm text-neutral-500">ประเภทการเช่า</dt>
-            <dd className="text-sm font-medium text-neutral-800">{room.rentalType || 'รายวัน'}</dd>
+            <dd className="text-sm font-medium text-neutral-800">{room.rentalType === 'daily' ? 'รายวัน' : room.rentalType === 'monthly' ? 'รายเดือน' : room.rentalType || 'รายวัน'}</dd>
           </div>
           <div className="py-3 flex justify-between">
             <dt className="text-sm text-neutral-500">ค่าเช่า/วัน</dt>
@@ -235,49 +244,6 @@ export default function RoomDetailDaily() {
               </button>
             </div>
           </CardContent></Card>
-
-          {showSelectResident && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { setShowSelectResident(false); setSearchResident('') }}>
-              <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="p-5 border-b border-neutral-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-semibold text-neutral-800">เลือกผู้พักที่มีอยู่แล้ว</h3>
-                      <p className="text-xs text-neutral-400 mt-0.5">ห้อง {displayNumber}</p>
-                    </div>
-                    <button onClick={() => { setShowSelectResident(false); setSearchResident('') }} className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  </div>
-                  <div className="mt-3 relative">
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" value={searchResident} onChange={e => setSearchResident(e.target.value)}
-                      placeholder="ค้นหาชื่อ เบอร์โทร..."
-                      className="w-full h-9 pl-9 pr-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
-                  </div>
-                </div>
-                <div className="max-h-80 overflow-y-auto p-2">
-                  {filteredUnassigned.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-neutral-400">ไม่พบผู้พักที่ยังไม่มีห้อง</div>
-                  ) : (
-                    filteredUnassigned.map(r => (
-                      <button key={r.id} onClick={() => handleAssignResident(r.id)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-lime-50 transition-colors text-left">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm font-bold shrink-0">
-                          {r.name?.charAt(0) || '?'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-neutral-800 truncate">{r.name}</div>
-                          <div className="text-xs text-neutral-400">{r.phone}{r.roomNumber ? ` • ห้อง ${r.roomNumber}` : ' • ยังไม่มีห้อง'}</div>
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-neutral-300 shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )
     }
@@ -425,7 +391,7 @@ export default function RoomDetailDaily() {
               <Badge variant={status.variant}>{status.label}</Badge>
             </div>
             <div className="text-sm text-neutral-500">
-              {room.roomType || 'ไม่มีทีวี'} • {room.rentalType || 'รายวัน'} • {displayRent?.toLocaleString()} บาท/วัน
+              {room.roomType || 'ไม่มีทีวี'} • {room.rentalType === 'daily' ? 'รายวัน' : room.rentalType === 'monthly' ? 'รายเดือน' : room.rentalType || 'รายวัน'} • {displayRent?.toLocaleString()} บาท/วัน
             </div>
             {resident && (
               <div className="flex items-center gap-2 mt-1">
@@ -471,6 +437,49 @@ export default function RoomDetailDaily() {
             </div>
           </div>
         </CardContent></Card>
+      )}
+
+      {showSelectResident && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { setShowSelectResident(false); setSearchResident('') }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-neutral-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-neutral-800">เลือกผู้พักที่มีอยู่แล้ว</h3>
+                  <p className="text-xs text-neutral-400 mt-0.5">ห้อง {displayNumber}</p>
+                </div>
+                <button onClick={() => { setShowSelectResident(false); setSearchResident('') }} className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div className="mt-3 relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" value={searchResident} onChange={e => setSearchResident(e.target.value)}
+                  placeholder="ค้นหาชื่อ เบอร์โทร..."
+                  className="w-full h-9 pl-9 pr-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+              </div>
+            </div>
+            <div className="max-h-80 overflow-y-auto p-2">
+              {filteredUnassigned.length === 0 ? (
+                <div className="text-center py-8 text-sm text-neutral-400">ไม่พบผู้พักที่สามารถเลือกได้</div>
+              ) : (
+                filteredUnassigned.map(r => (
+                  <button key={r.id} onClick={() => handleAssignResident(r.id)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-lime-50 transition-colors text-left">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm font-bold shrink-0">
+                      {r.name?.charAt(0) || '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-neutral-800 truncate">{r.name}</div>
+                      <div className="text-xs text-neutral-400">{r.phone}{r.roomId ? ` • ห้อง ${rooms.find(x => x.id === r.roomId)?.roomNumber || ''}` : ' • ยังไม่มีห้อง'}</div>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-neutral-300 shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {showDeleteOptions && resident && (

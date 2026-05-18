@@ -29,7 +29,7 @@ export default function ResidentModal() {
   const isNew = !editResident?.id && !isNewForRoom
 
   const [rentalTypeStep, setRentalTypeStep] = useState(isNew ? 'select' : 'form')
-  const [rentalType, setRentalType] = useState(editResident?.rentalType || 'monthly')
+  const [rentalType, setRentalType] = useState((editResident?.rentalType === 'daily' || editResident?.rentalType === 'รายวัน') ? 'daily' : 'monthly')
 
   const [name, setName] = useState(editResident?.name || '')
   const [idCard, setIdCard] = useState(editResident?.idCard || '')
@@ -58,8 +58,8 @@ export default function ResidentModal() {
   const availableRooms = useMemo(() => {
     const filtered = rooms.filter(r => {
       const isOccupied = occupiedRoomIds.includes(r.id)
-      if (rentalType === 'daily') return !isOccupied && r.rentalType === 'รายวัน'
-      return !isOccupied && r.rentalType !== 'รายวัน'
+      if (rentalType === 'daily') return !isOccupied && (r.rentalType === 'daily' || r.rentalType === 'รายวัน')
+      return !isOccupied && (r.rentalType !== 'daily' && r.rentalType !== 'รายวัน')
     })
     filtered.sort(naturalSortRoomNumber)
     return filtered
@@ -75,7 +75,7 @@ export default function ResidentModal() {
     }
     opts.push({ value: '', label: '-- เลือกห้อง --' })
     availableRooms.forEach(r => {
-      const rentLabel = r.rentalType === 'รายวัน' ? 'รายวัน' : 'รายเดือน'
+      const rentLabel = (r.rentalType === 'daily' || r.rentalType === 'รายวัน') ? 'รายวัน' : 'รายเดือน'
       opts.push({ value: r.id, label: `ห้อง ${r.roomNumber || r.number} (${rentLabel})` })
     })
     return opts
@@ -160,7 +160,7 @@ export default function ResidentModal() {
 
   const handleBackToSelect = () => {
     setRentalTypeStep('select')
-    setRentalType('monthly')
+    setRentalType('รายเดือน')
   }
 
   const lineName = lineUsers.find(u => u.userId === lineUserId)?.displayName
@@ -178,7 +178,7 @@ export default function ResidentModal() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button onClick={() => handleSelectRentalType('monthly')}
+        <button onClick={() => handleSelectRentalType('รายเดือน')}
           className="flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-dashed border-lime-300 bg-lime-50/30 hover:bg-lime-50/60 transition-all group">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-sm">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -190,7 +190,7 @@ export default function ResidentModal() {
           </div>
         </button>
 
-        <button onClick={() => handleSelectRentalType('daily')}
+        <button onClick={() => handleSelectRentalType('รายวัน')}
           className="flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-dashed border-sky-300 bg-sky-50/30 hover:bg-sky-50/60 transition-all group">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-sm">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
@@ -276,12 +276,12 @@ export default function ResidentModal() {
         {isNewForRoom ? (
           <div>
             <label className="block text-xs text-neutral-400 mb-0.5">หมายเลขห้องพัก</label>
-            <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{selectedRoom ? `ห้อง ${selectedRoom.roomNumber || selectedRoom.number} — ค่าเช่า ${(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/${selectedRoom.rentalType === 'รายวัน' ? 'วัน' : 'เดือน'}` : <span className="text-neutral-300 italic">—</span>}</div>
+            <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{selectedRoom ? `ห้อง ${selectedRoom.roomNumber || selectedRoom.number} — ค่าเช่า ${(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/${(selectedRoom.rentalType === 'daily' || selectedRoom.rentalType === 'รายวัน') ? 'วัน' : 'เดือน'}` : <span className="text-neutral-300 italic">—</span>}</div>
           </div>
         ) : ro ? (
           <div>
             <label className="block text-xs text-neutral-400 mb-0.5">หมายเลขห้องพัก</label>
-            <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{selectedRoom ? `ห้อง ${selectedRoom.roomNumber || selectedRoom.number} — ค่าเช่า ${(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/${selectedRoom.rentalType === 'รายวัน' ? 'วัน' : 'เดือน'}` : <span className="text-neutral-300 italic">—</span>}</div>
+            <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{selectedRoom ? `ห้อง ${selectedRoom.roomNumber || selectedRoom.number} — ค่าเช่า ${(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/${(selectedRoom.rentalType === 'daily' || selectedRoom.rentalType === 'รายวัน') ? 'วัน' : 'เดือน'}` : <span className="text-neutral-300 italic">—</span>}</div>
           </div>
         ) : (
           <div>
@@ -290,7 +290,7 @@ export default function ResidentModal() {
             {errors.roomId && <p className="text-xs text-rose-500 mt-1">{errors.roomId}</p>}
             {selectedRoom && (
               <p className="text-xs text-neutral-400 mt-1.5">
-                ค่าเช่า {(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/{selectedRoom.rentalType === 'รายวัน' ? 'วัน' : 'เดือน'}
+                ค่าเช่า {(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/{(selectedRoom.rentalType === 'daily' || selectedRoom.rentalType === 'รายวัน') ? 'วัน' : 'เดือน'}
                 {selectedRoom.roomType ? ` — ${selectedRoom.roomType}` : ''}
               </p>
             )}

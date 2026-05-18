@@ -48,12 +48,10 @@ export default function Resident() {
 
   const filtered = useMemo(() => {
     let result = residents
-    if (activeTab === 'monthly') {
-      const monthlyRoomIds = new Set(rooms.filter(r => r.rentalType !== 'รายวัน').map(r => r.id))
-      result = result.filter(r => !r.roomId || monthlyRoomIds.has(r.roomId))
+    if (activeTab === 'daily') {
+      result = result.filter(r => r.rentalType === 'รายวัน' || r.rentalType === 'daily')
     } else {
-      const dailyRoomIds = new Set(rooms.filter(r => r.rentalType === 'รายวัน').map(r => r.id))
-      result = result.filter(r => r.roomId && dailyRoomIds.has(r.roomId))
+      result = result.filter(r => r.rentalType !== 'รายวัน' && r.rentalType !== 'daily')
     }
     if (search.trim()) {
       const q = search.trim().toLowerCase()
@@ -65,17 +63,11 @@ export default function Resident() {
       )
     }
     return result
-  }, [residents, rooms, search, activeTab])
+  }, [residents, search, activeTab])
 
-  const monthlyCount = useMemo(() => {
-    const monthlyRoomIds = new Set(rooms.filter(r => r.rentalType !== 'รายวัน').map(r => r.id))
-    return residents.filter(r => !r.roomId || monthlyRoomIds.has(r.roomId)).length
-  }, [residents, rooms])
+  const monthlyCount = useMemo(() => residents.filter(r => r.rentalType !== 'รายวัน' && r.rentalType !== 'daily').length, [residents])
 
-  const dailyCount = useMemo(() => {
-    const dailyRoomIds = new Set(rooms.filter(r => r.rentalType === 'รายวัน').map(r => r.id))
-    return residents.filter(r => r.roomId && dailyRoomIds.has(r.roomId)).length
-  }, [residents, rooms])
+  const dailyCount = useMemo(() => residents.filter(r => r.rentalType === 'รายวัน' || r.rentalType === 'daily').length, [residents])
 
   const filteredLineUsers = useMemo(() => {
     let result = lineUsers
@@ -128,9 +120,10 @@ export default function Resident() {
   }
 
   const getResidentRoomType = (resident) => {
+    if (resident.rentalType) return resident.rentalType
     if (!resident.roomId) return 'รายเดือน'
     const room = rooms.find(r => r.id === resident.roomId)
-    return room?.rentalType || 'รายเดือน'
+    return room?.rentalType || 'monthly'
   }
 
   const getDailyStatus = (resident) => {

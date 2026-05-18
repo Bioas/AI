@@ -21,7 +21,7 @@ export default function RoomModal() {
   const [roomNumber, setRoomNumber] = useState(editRoom?.roomNumber || editRoom?.number || '')
   const [roomCode, setRoomCode] = useState(editRoom?.roomCode || '')
   const [rentPrice, setRentPrice] = useState((editRoom?.rentPrice || editRoom?.rent || '').toString())
-  const [rentalType, setRentalType] = useState(editRoom?.rentalType || 'รายเดือน')
+  const [rentalType, setRentalType] = useState(editRoom?.rentalType || 'monthly')
   const [roomType, setRoomType] = useState(editRoom?.roomType || 'ไม่มีทีวี')
   const [prevElecMeter, setPrevElecMeter] = useState(editRoom?.prevElecMeter?.toString() || '')
   const [prevWaterMeter, setPrevWaterMeter] = useState(editRoom?.prevWaterMeter?.toString() || '')
@@ -58,8 +58,8 @@ export default function RoomModal() {
       rentPrice: Number(rentPrice) || 0,
       rentalType,
       roomType,
-      prevElecMeter: rentalType === 'รายวัน' ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
-      prevWaterMeter: rentalType === 'รายวัน' ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
+      prevElecMeter: rentalType === 'daily' ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
+      prevWaterMeter: rentalType === 'daily' ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
       note: note.trim(),
       residentId: editRoom?.residentId || null,
     })
@@ -88,7 +88,7 @@ export default function RoomModal() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ค่าเช่า/{rentalType === 'รายวัน' ? 'วัน' : 'เดือน'} *</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ค่าเช่า/{rentalType === 'daily' ? 'วัน' : 'เดือน'} *</label>
               <div className="relative">
                 <input type="text" value={rentPrice ? formatRent(rentPrice) : rentPrice} onChange={e => handleRentChange(e.target.value)}
                   placeholder="0" inputMode="numeric"
@@ -140,7 +140,7 @@ export default function RoomModal() {
             </div>
           )}
 
-          {rentalType !== 'รายวัน' && (
+          {rentalType !== 'daily' && (
             <div>
               <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">เลขมิเตอร์เริ่มต้น (ก่อนหน้า)</h4>
               <div className="grid grid-cols-2 gap-4">

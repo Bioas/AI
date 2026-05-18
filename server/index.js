@@ -3,6 +3,7 @@ import cors from 'cors'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
+import { connectDB } from './lib/mongodb.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -73,6 +74,97 @@ app.get('/api/ping', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
+
+// Auto-checkout job for daily rooms
+async function runAutoCheckout() {
+  try {
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+    const now = new Date()
+    const todayStr = now.toISOString().split('T')[0]
+    const isAfterNoon = now.getHours() >= 12
+
+    if (!isAfterNoon) return
+
+    const dailyRooms = await db.collection('rooms').find({ rentalType: { $in: ['daily', 'รายวัน'] }, status: 'มีผู้เช่า', residentId: { $ne: null } }).toArray()
+    const residents = await db.collection('residents').find({}).toArray()
+
+    for (const room of dailyRooms) {
+      const resident = residents.find(r => r.id === room.residentId)
+      if (!resident || !resident.moveOutDate) continue
+
+      const moveOutDate = resident.moveOutDate.split('T')[0]
+      if (moveOutDate <= todayStr) {
+        await db.collection('residents').updateOne(
+          { id: resident.id },
+          { $set: { roomId: '', roomNumber: '', updatedAt: now.toISOString() } }
+        )
+        await db.collection('rooms').updateOne(
+          { id: room.id },
+          { $set: { residentId: null, status: 'ว่าง', updatedAt: now.toISOString() } }
+        )
+        console.log(`Auto-checkout: Room ${room.roomNumber} resident ${resident.name} moved out`)
+      }
+    }
+  } catch (e) {
+    console.error('Auto-checkout job error:', e)
+  }
+}
+
+// Run auto-checkout every hour
+setInterval(runAutoCheckout, 60 * 60 * 1000)
+runAutoCheckout()
+
+// Data migration: Add rentalType to existing residents based on their room type
+async function migrateRentalType() {
+  try {
+    const client = await connectDB()
+    const db = client.db('dorm_billing')
+    
+    // Find residents without rentalType
+    const residentsWithoutType = await db.collection('residents').find({ 
+      $or: [
+        { rentalType: { $exists: false } },
+        { rentalType: null }
+      ]
+    }).toArray()
+
+    if (residentsWithoutType.length === 0) return
+
+    console.log(`Migrating ${residentsWithoutType.length} residents...`)
+
+    const rooms = await db.collection('rooms').find({}).toArray()
+
+    for (const resident of residentsWithoutType) {
+      let newRentalType = 'monthly' // Default
+      
+      if (resident.roomId) {
+        const room = rooms.find(r => r.id === resident.roomId)
+        if (room && (room.rentalType === 'daily' || room.rentalType === 'รายวัน')) {
+          newRentalType = 'daily'
+        }
+      } else if (resident.roomNumber) {
+        // Try to find by room number if roomId is missing
+        const room = rooms.find(r => (r.roomNumber || r.number) === resident.roomNumber)
+        if (room && (room.rentalType === 'daily' || room.rentalType === 'รายวัน')) {
+          newRentalType = 'daily'
+        }
+      }
+
+      await db.collection('residents').updateOne(
+        { id: resident.id },
+        { $set: { rentalType: newRentalType, updatedAt: new Date().toISOString() } }
+      )
+      console.log(`Updated resident ${resident.name} to rentalType: ${newRentalType}`)
+    }
+    console.log('Migration complete.')
+  } catch (e) {
+    console.error('Migration error:', e)
+  }
+}
+
+// Run migration once on startup
+migrateRentalType()
 
 const distPath = path.join(__dirname, '..', 'dist')
 if (fs.existsSync(distPath)) {

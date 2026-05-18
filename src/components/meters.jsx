@@ -29,7 +29,7 @@ export default function Meters() {
     }
   }
   const occRooms = useMemo(() => {
-    const filtered = allRooms.filter(r => r.residentId || r.tenantName)
+    const filtered = allRooms.filter(r => (r.residentId || r.tenantName) && r.rentalType !== 'daily' && r.rentalType !== 'รายวัน')
     filtered.sort(naturalSortRoomNumber)
     return filtered
   }, [allRooms])

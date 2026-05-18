@@ -12,7 +12,7 @@ export default function RoomDetail() {
 
   if (!room) return null
 
-  const isDaily = room.rentalType === 'รายวัน'
+  const isDaily = room.rentalType === 'daily' || room.rentalType === 'รายวัน'
 
   return isDaily ? <RoomDetailDaily /> : <RoomDetailMonthly />
 }

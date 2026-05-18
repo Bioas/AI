@@ -21,7 +21,7 @@ export default function InvoicePreview({ inv }) {
   const signatureDate = `${String(lastDay).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${y}`
   const invMonth = inv.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   const roomData = rooms.find(r => r.roomNumber === inv.room || r.number === inv.room)
-  const invoiceNo = `INV-${roomData?.roomCode || inv.room}-${invMonth.replace('-', '')}`
+  const invoiceNo = inv.docNumber || `INV-${roomData?.roomCode || inv.room}-${invMonth.replace('-', '')}`
 
   return (
     <div id="invoicePdfContent" className="bg-white mx-auto font-sans text-[13px] text-neutral-700 leading-relaxed" style={{ padding: 40 }}>
