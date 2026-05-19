@@ -185,16 +185,11 @@ export default function Documents() {
         </div>
 
         {viewMode === 'month' ? (
-          <>
-            <label className="text-sm font-medium text-neutral-600 shrink-0">เดือน:</label>
-            <div className="flex-1 sm:flex-none sm:w-44">
-              <DatePickerField selected={invDate} onChange={handleMonthChange} showMonthPicker placeholder="เลือกเดือน" />
-            </div>
-          </>
+          <div className="flex-1 sm:flex-none sm:w-44">
+            <DatePickerField selected={invDate} onChange={handleMonthChange} showMonthPicker placeholder="เลือกเดือน" />
+          </div>
         ) : (
-          <>
-            <label className="text-sm font-medium text-neutral-600 shrink-0">ปี:</label>
-            <select
+          <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="h-10 px-3 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100"
