@@ -248,7 +248,7 @@ export default function Documents() {
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภท</span>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDaily ? 'bg-sky-50 text-sky-600 border-sky-100' : 'bg-lime-50 text-lime-600 border-lime-100'}`}>
-                            {rentalType}
+                            {rentalType === 'daily' || rentalType === 'รายวัน' ? 'รายวัน' : 'รายเดือน'}
                           </span>
                         </td>
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
