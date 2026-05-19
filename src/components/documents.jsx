@@ -38,6 +38,7 @@ export default function Documents() {
   const [actionId, setActionId] = useState(null)
   const [viewMode, setViewMode] = useState('month')
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [searchQuery, setSearchQuery] = useState('')
 
   const handleReload = async () => {
     await fetchAll()
@@ -94,6 +95,20 @@ export default function Documents() {
     return byTab
   }, [invoices, invMonth, activeTab, rooms, viewMode, selectedYear])
 
+  const filteredInvoices = useMemo(() => {
+    if (!searchQuery.trim()) return savedInvoices
+    const q = searchQuery.trim().toLowerCase()
+    return savedInvoices.filter(inv => {
+      const { number, tenant } = getRoomInfo(inv)
+      const docNum = generateDocNumber(inv, invoices, rooms).toLowerCase()
+      return (
+        tenant.toLowerCase().includes(q) ||
+        number.toLowerCase().includes(q) ||
+        docNum.includes(q)
+      )
+    })
+  }, [savedInvoices, searchQuery, invoices, rooms])
+
   const getRoomInfo = (inv) => {
     const room = rooms.find(r => r.id === inv.roomId)
     return {
@@ -130,84 +145,116 @@ export default function Documents() {
     }
   }
 
+  const periodLabel = viewMode === 'year' ? `ปี ${selectedYear + 543}` : formatMonth(invMonth)
+  const displayInvoices = searchQuery.trim() ? filteredInvoices : savedInvoices
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="เอกสาร" description="ดูใบแจ้งหนี้และใบเสร็จรับเงินทั้งหมดที่บันทึกไว้" />
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setActiveTab('invoice')}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-            activeTab === 'invoice'
-              ? 'bg-lime-500 text-white shadow-md shadow-lime-200/50'
-              : 'bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200'
-          }`}
-        >
-          ใบแจ้งหนี้
-        </button>
-        <button
-          onClick={() => setActiveTab('receipt')}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-            activeTab === 'receipt'
-              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200/50'
-              : 'bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200'
-          }`}
-        >
-          ใบเสร็จรับเงิน
-        </button>
-      </div>
+      {/* Controls Card */}
+      <div className="bg-white rounded-2xl shadow-card border border-lime-100/40 p-4 sm:p-5 mb-6">
+        {/* Row 1: Tabs */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <button
+            onClick={() => setActiveTab('invoice')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              activeTab === 'invoice'
+                ? 'bg-lime-500 text-white shadow-md shadow-lime-200/50'
+                : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
+            }`}
+          >
+            ใบแจ้งหนี้
+          </button>
+          <button
+            onClick={() => setActiveTab('receipt')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              activeTab === 'receipt'
+                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200/50'
+                : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
+            }`}
+          >
+            ใบเสร็จรับเงิน
+          </button>
 
-      {/* View Mode Toggle */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex bg-white rounded-xl border border-neutral-200 p-1">
-          <button
-            onClick={() => setViewMode('month')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              viewMode === 'month'
-                ? 'bg-lime-500 text-white shadow-sm'
-                : 'text-neutral-500 hover:text-neutral-700'
-            }`}
-          >
-            รายเดือน
-          </button>
-          <button
-            onClick={() => setViewMode('year')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              viewMode === 'year'
-                ? 'bg-lime-500 text-white shadow-sm'
-                : 'text-neutral-500 hover:text-neutral-700'
-            }`}
-          >
-            รายปี
-          </button>
+          <div className="w-px h-6 bg-neutral-200 mx-1 hidden sm:block" />
+
+          {/* View Mode Toggle */}
+          <div className="flex bg-neutral-50 rounded-xl border border-neutral-200 p-0.5">
+            <button
+              onClick={() => setViewMode('month')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                viewMode === 'month'
+                  ? 'bg-white text-neutral-800 shadow-sm'
+                  : 'text-neutral-400 hover:text-neutral-600'
+              }`}
+            >
+              รายเดือน
+            </button>
+            <button
+              onClick={() => setViewMode('year')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                viewMode === 'year'
+                  ? 'bg-white text-neutral-800 shadow-sm'
+                  : 'text-neutral-400 hover:text-neutral-600'
+              }`}
+            >
+              รายปี
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Month/Year Picker */}
-      <div className="flex flex-row items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
-        {viewMode === 'month' ? (
-          <>
-            <label className="text-sm font-medium text-neutral-600 shrink-0">เดือน:</label>
-            <div className="flex-1 sm:flex-none sm:w-44">
+        {/* Row 2: Period Picker + Search + Reload */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Period Picker */}
+          {viewMode === 'month' ? (
+            <div className="flex items-center gap-2 flex-1 sm:flex-none sm:w-auto">
+              <span className="text-sm text-neutral-500 shrink-0 hidden sm:inline">เดือน:</span>
               <DatePickerField selected={invDate} onChange={handleMonthChange} showMonthPicker placeholder="เลือกเดือน" />
             </div>
-          </>
-        ) : (
-          <>
-            <label className="text-sm font-medium text-neutral-600 shrink-0">ปี:</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="h-10 px-3 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100"
-            >
-              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
-                <option key={y} value={y}>{y + 543}</option>
-              ))}
-            </select>
-          </>
-        )}
-        <ReloadButton onReload={handleReload} className="ml-auto" />
+          ) : (
+            <div className="flex items-center gap-2 flex-1 sm:flex-none sm:w-auto">
+              <span className="text-sm text-neutral-500 shrink-0 hidden sm:inline">ปี:</span>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="h-10 px-3 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 w-full sm:w-32"
+              >
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+                  <option key={y} value={y}>{y + 543}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Search */}
+          <div className="relative flex-1">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="ค้นหาชื่อลูกค้า, ห้อง, เลขที่เอกสาร..."
+              className="w-full h-10 pl-9 pr-3 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-neutral-100 text-neutral-400"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <ReloadButton onReload={handleReload} />
+        </div>
       </div>
 
       {/* Table */}
@@ -216,11 +263,23 @@ export default function Documents() {
           <div className="flex items-center gap-2.5 mb-5">
             <div className={`w-2 h-2 rounded-full ${activeTab === 'invoice' ? 'bg-lime-400' : 'bg-emerald-400'}`} />
             <h3 className="text-sm font-semibold text-neutral-800">
-              {activeTab === 'invoice' ? 'ใบแจ้งหนี้ทั้งหมด' : 'ใบเสร็จรับเงินทั้งหมด'} — {viewMode === 'year' ? `ปี ${selectedYear + 543}` : formatMonth(invMonth)}
+              {activeTab === 'invoice' ? 'ใบแจ้งหนี้ทั้งหมด' : 'ใบเสร็จรับเงินทั้งหมด'} — {periodLabel}
             </h3>
+            {searchQuery && (
+              <span className="text-xs text-neutral-400 bg-neutral-50 px-2 py-0.5 rounded-full border border-neutral-100">
+                พบ {displayInvoices.length} รายการ
+              </span>
+            )}
           </div>
-          {savedInvoices.length === 0 ? (
-            <EmptyState icon="📄" title="ไม่มีเอกสารที่บันทึกไว้" description={`ยังไม่มี${activeTab === 'invoice' ? 'ใบแจ้งหนี้' : 'ใบเสร็จรับเงิน'}${viewMode === 'year' ? `ในปี ${selectedYear + 543}` : 'ในเดือนนี้'}`} />
+          {displayInvoices.length === 0 ? (
+            <EmptyState
+              icon="📄"
+              title={searchQuery ? 'ไม่พบผลลัพธ์' : 'ไม่มีเอกสารที่บันทึกไว้'}
+              description={searchQuery
+                ? `ไม่พบเอกสารที่ตรงกับ "${searchQuery}"`
+                : `ยังไม่มี${activeTab === 'invoice' ? 'ใบแจ้งหนี้' : 'ใบเสร็จรับเงิน'}${viewMode === 'year' ? `ในปี ${selectedYear + 543}` : 'ในเดือนนี้'}`
+              }
+            />
           ) : (
             <div className="border border-neutral-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
@@ -232,7 +291,7 @@ export default function Documents() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
-                  {savedInvoices.map(inv => {
+                  {displayInvoices.map(inv => {
                     const { number, tenant, rentalType } = getRoomInfo(inv)
                     const isDaily = rentalType === 'daily' || rentalType === 'รายวัน'
                     return (
@@ -248,7 +307,7 @@ export default function Documents() {
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภท</span>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDaily ? 'bg-sky-50 text-sky-600 border-sky-100' : 'bg-lime-50 text-lime-600 border-lime-100'}`}>
-                            {rentalType === 'daily' || rentalType === 'รายวัน' ? 'รายวัน' : 'รายเดือน'}
+                            {isDaily ? 'รายวัน' : 'รายเดือน'}
                           </span>
                         </td>
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
