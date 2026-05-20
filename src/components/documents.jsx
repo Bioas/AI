@@ -161,26 +161,26 @@ export default function Documents() {
       {/* View Mode Toggle + Picker */}
       <div className="flex flex-row items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
         {/* Pill Toggle */}
-        <div className="flex items-center bg-neutral-100 rounded-full p-1 shrink-0">
+        <div className="flex items-center bg-neutral-100 rounded-xl p-1 shrink-0">
           <button
             onClick={() => setViewMode('month')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
               viewMode === 'month'
                 ? 'bg-lime-500 text-white shadow-sm'
                 : 'text-neutral-500 hover:text-neutral-700'
             }`}
           >
-            รายเดือน
+            เดือน
           </button>
           <button
             onClick={() => setViewMode('year')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
               viewMode === 'year'
                 ? 'bg-lime-500 text-white shadow-sm'
                 : 'text-neutral-500 hover:text-neutral-700'
             }`}
           >
-            รายปี
+            ปี
           </button>
         </div>
 
@@ -198,7 +198,6 @@ export default function Documents() {
                 <option key={y} value={y}>{y + 543}</option>
               ))}
             </select>
-          </>
         )}
         <ReloadButton onReload={handleReload} className="ml-auto" />
       </div>

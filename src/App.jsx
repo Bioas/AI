@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { SpeedInsights } from '@vercel/speed-insights/react'
@@ -23,6 +23,10 @@ const ModalOverlay = lazy(() => import('./components/ui/modal'))
 
 export default function App() {
   const { modal, viewInv, downloadPdf, sendPdfToLine, setModal, settings } = useApp()
+
+  useEffect(() => {
+    document.title = settings.dormName || 'ระบบจัดการหอพัก'
+  }, [settings.dormName])
 
   return (
     <div className="flex min-h-screen bg-surface">

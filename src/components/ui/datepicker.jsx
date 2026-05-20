@@ -18,7 +18,14 @@ export default function DatePickerField({ selected, onChange, showMonthPicker, p
   const today = new Date()
   const [viewDate, setViewDate] = useState(selected || today)
   const ref = useRef(null)
+  const panelRef = useRef(null)
   const initRef = useRef(false)
+  const [portalPos, setPortalPos] = useState({ top: 0, left: 0, width: 0 })
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (initRef.current && selected) setViewDate(selected)
@@ -26,7 +33,17 @@ export default function DatePickerField({ selected, onChange, showMonthPicker, p
   }, [selected])
 
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setView(showMonthPicker ? 'month' : 'day') } }
+    if (initRef.current && selected) setViewDate(selected)
+    initRef.current = true
+  }, [selected])
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target) && panelRef.current && !panelRef.current.contains(e.target)) {
+        setOpen(false)
+        setView(showMonthPicker ? 'month' : 'day')
+      }
+    }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showMonthPicker])
@@ -92,14 +109,29 @@ export default function DatePickerField({ selected, onChange, showMonthPicker, p
 
   const panel = (content) => (
     <div ref={ref} className="relative">
-      <button type="button" onClick={() => { setOpen(!open); setView(showMonthPicker ? 'month' : 'day') }}
+      <button type="button" onClick={() => {
+        if (ref.current) {
+          const rect = ref.current.getBoundingClientRect()
+          const panelHeight = 320
+          const spaceBelow = window.innerHeight - rect.bottom
+          const flipUp = spaceBelow < panelHeight
+          setPortalPos({
+            top: flipUp ? rect.top - panelHeight - 4 : rect.bottom + 4,
+            left: rect.left,
+            width: rect.width
+          })
+        }
+        setOpen(!open)
+        setView(showMonthPicker ? 'month' : 'day')
+      }}
         className={`w-full h-10 px-3.5 flex items-center justify-between bg-white border rounded-xl text-sm transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 ${error ? 'border-rose-300' : 'border-neutral-200'} ${selected ? 'text-neutral-800' : 'text-neutral-400'}`}>
         <span className="truncate">{fmt(selected) || placeholder}</span>
         <svg className={`w-4 h-4 text-neutral-400 shrink-0 ml-2 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
       </button>
       <AnimatePresence>{open && (
-        <motion.div initial={{ opacity: 0, y: -4, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.12 }}
-          className="absolute z-50 top-full mt-1 left-0 right-0 sm:right-auto bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden origin-top max-w-[calc(100vw-2rem)] sm:max-w-none">
+        <motion.div ref={panelRef} initial={{ opacity: 0, y: -4, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.12 }}
+          className="fixed z-[9999] bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden origin-top min-w-[224px]"
+          style={{ top: portalPos.top, left: portalPos.left, width: Math.max(portalPos.width, 224) }}>
           {content}
         </motion.div>
       )}</AnimatePresence>
@@ -122,19 +154,19 @@ export default function DatePickerField({ selected, onChange, showMonthPicker, p
         <button type="button" onClick={goNext} className={`w-7 h-7 ${btnCls} hover:bg-lime-100 text-neutral-600 text-sm`}>▶</button>
       </div>
       {view === 'year' ? (
-        <div className="grid grid-cols-4 gap-1 w-56">
+        <div className="grid grid-cols-4 gap-1">
           {yearRange.map(y => (
             <button key={y} type="button" onClick={() => pickYear(y)}
-              className={`w-12 h-10 leading-10 text-center text-sm rounded-lg transition-colors hover:bg-lime-100 ${y === vy ? selCls : 'text-neutral-700'}`}>
+              className={`h-10 text-center text-sm rounded-lg transition-colors hover:bg-lime-100 ${y === vy ? selCls : 'text-neutral-700'}`}>
               {y + 543}
             </button>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-1 w-56">
+        <div className="grid grid-cols-4 gap-1">
           {MONTHS.map((name, i) => (
             <button key={name} type="button" onClick={() => pickMonth(i)}
-              className={`w-12 h-10 leading-10 text-center text-sm rounded-lg transition-colors hover:bg-lime-100 ${i === vm ? selCls : 'text-neutral-700'}`}>
+              className={`h-10 text-center text-sm rounded-lg transition-colors hover:bg-lime-100 ${i === vm ? selCls : 'text-neutral-700'}`}>
               {name.slice(0, 3)}
             </button>
           ))}
@@ -155,19 +187,19 @@ export default function DatePickerField({ selected, onChange, showMonthPicker, p
       </div>
 
       {view === 'month' ? (
-        <div className="grid grid-cols-4 gap-1 w-56 mt-2">
+        <div className="grid grid-cols-4 gap-1 mt-2">
           {MONTHS.map((name, i) => (
             <button key={name} type="button" onClick={() => pickMonth(i)}
-              className={`w-12 h-10 leading-10 text-center text-sm rounded-lg transition-colors hover:bg-lime-100 ${i === vm ? selCls : 'text-neutral-700'}`}>
+              className={`h-10 text-center text-sm rounded-lg transition-colors hover:bg-lime-100 ${i === vm ? selCls : 'text-neutral-700'}`}>
               {name.slice(0, 3)}
             </button>
           ))}
         </div>
       ) : view === 'year' ? (
-        <div className="grid grid-cols-4 gap-1 w-56 mt-2">
+        <div className="grid grid-cols-4 gap-1 mt-2">
           {yearRange.map(y => (
             <button key={y} type="button" onClick={() => pickYear(y)}
-              className={`w-12 h-10 leading-10 text-center text-sm rounded-lg transition-colors hover:bg-lime-100 ${y === vy ? selCls : 'text-neutral-700'}`}>
+              className={`h-10 text-center text-sm rounded-lg transition-colors hover:bg-lime-100 ${y === vy ? selCls : 'text-neutral-700'}`}>
               {y + 543}
             </button>
           ))}
@@ -175,9 +207,9 @@ export default function DatePickerField({ selected, onChange, showMonthPicker, p
       ) : (
         <>
           <div className="grid grid-cols-7 mt-2 mb-1">
-            {DAYS_TH.map(d => <div key={d} className="w-9 h-7 leading-7 text-center text-xs text-neutral-400">{d}</div>)}
+            {DAYS_TH.map(d => <div key={d} className="h-7 text-center text-xs text-neutral-400">{d}</div>)}
           </div>
-          <div className="grid grid-cols-7">
+          <div className="grid grid-cols-7 gap-0.5">
             {cells.map((c, i) => {
               const d = new Date(vy, vm, c.d)
               const isSel = isSameDay(d, selected)
@@ -185,7 +217,7 @@ export default function DatePickerField({ selected, onChange, showMonthPicker, p
               return (
                 <button key={i} type="button" disabled={disabled}
                   onClick={() => !c.other && pickDate(c.d)}
-                  className={`${cellCls} text-xs ${c.other ? 'text-neutral-200 cursor-default' : ''} ${isSel ? selCls : ''} ${isToday(d) && !isSel ? 'text-lime-600 font-semibold' : ''} ${disabled ? 'text-neutral-200 cursor-not-allowed hover:bg-transparent' : ''}`}>
+                  className={`h-9 text-center text-xs rounded-lg transition-colors hover:bg-lime-100 ${c.other ? 'text-neutral-200 cursor-default' : 'text-neutral-700'} ${isSel ? selCls : ''} ${isToday(d) && !isSel ? 'text-lime-600 font-semibold' : ''} ${disabled ? 'text-neutral-200 cursor-not-allowed hover:bg-transparent' : ''}`}>
                   {c.d}
                 </button>
               )

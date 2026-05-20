@@ -165,7 +165,7 @@ export default function Resident() {
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
                   {filtered.map(r => {
-                    const isDaily = getResidentRoomType(r) === 'รายวัน'
+                    const isDaily = getResidentRoomType(r) === 'daily' || getResidentRoomType(r) === 'รายวัน'
                     const status = isDaily ? getDailyStatus(r) : getContractStatus(r.moveOutDate)
                     return (
                       <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
@@ -415,7 +415,7 @@ export default function Resident() {
               ? 'bg-lime-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
           }`}>
-          <span>📅 รายเดือน</span>
+          <span className="hidden sm:inline">📅 </span>รายเดือน
           <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'monthly' ? 'bg-white/20' : 'bg-neutral-100'}`}>{monthlyCount}</span>
         </button>
         <button onClick={() => setActiveTab('daily')}
@@ -424,7 +424,7 @@ export default function Resident() {
               ? 'bg-amber-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
           }`}>
-          <span>🌙 รายวัน</span>
+          <span className="hidden sm:inline">🌙 </span>รายวัน
           <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'daily' ? 'bg-white/20' : 'bg-neutral-100'}`}>{dailyCount}</span>
         </button>
         <button onClick={() => setActiveTab('line')}
@@ -433,7 +433,7 @@ export default function Resident() {
               ? 'bg-teal-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
           }`}>
-          <span>📱 ผู้ใช้ LINE</span>
+          <span className="hidden sm:inline">📱 </span>ผู้ใช้ LINE
           <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'line' ? 'bg-white/20' : 'bg-neutral-100'}`}>{lineUsers.length}</span>
         </button>
       </div>

@@ -94,7 +94,7 @@ async function runAutoCheckout() {
       if (!resident || !resident.moveOutDate) continue
 
       const moveOutDate = resident.moveOutDate.split('T')[0]
-      if (moveOutDate <= todayStr) {
+        if (moveOutDate < todayStr) {
         await db.collection('residents').updateOne(
           { id: resident.id },
           { $set: { roomId: '', roomNumber: '', updatedAt: now.toISOString() } }

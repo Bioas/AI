@@ -24,13 +24,15 @@ function generateDocNumber(inv, invoices, rooms) {
   return `INV-${roomRef}-${inv.month.replace('-', '')}-${running}`
 }
 
-export default function Document() {
+export default function Billing() {
   const { rooms, invoices, invMonth, setInvMonth, calcInv, saveInvoice, downloadPdf, sendPdfToLine, setViewInv, setModal, fetchAll, toast } = useApp()
   const [activeTab, setActiveTab] = useState('invoice')
-  const [sendingInv, setSendingInv] = useState(null)
+  const [rentalTab, setRentalTab] = useState('monthly')
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [bulkProcessing, setBulkProcessing] = useState(false)
   const [savingIds, setSavingIds] = useState(new Set())
+  const [dailyDate, setDailyDate] = useState(new Date())
+  const [sendingInv, setSendingInv] = useState(null)
 
   const handleReload = async () => {
     await fetchAll()
@@ -86,11 +88,14 @@ export default function Document() {
     const allRooms = rooms.filter(r => {
       const hasResident = r.residentId || r.tenantName
       const hasSavedInvoice = savedRoomIds.has(r.id)
-      return hasResident || hasSavedInvoice
+      const isRightType = rentalTab === 'daily'
+        ? (r.rentalType === 'daily' || r.rentalType === 'รายวัน')
+        : (r.rentalType !== 'daily' && r.rentalType !== 'รายวัน')
+      return (hasResident || hasSavedInvoice) && isRightType
     })
     allRooms.sort(naturalSortRoomNumber)
     return allRooms
-  }, [rooms, invoices, invMonth])
+  }, [rooms, invoices, invMonth, rentalTab])
 
   const toggleSelectAll = () => {
     if (selectedIds.size === displayRooms.length) {
@@ -205,154 +210,206 @@ export default function Document() {
     }
   }
 
+  const selectedTotal = useMemo(() => {
+    return displayRooms.reduce((sum, r) => {
+      if (selectedIds.has(r.id)) {
+        const inv = calcInv(r, invMonth)
+        return sum + (inv.total || 0)
+      }
+      return sum
+    }, 0)
+  }, [displayRooms, invMonth, selectedIds, calcInv])
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="ออกบิลห้องพัก" description="ออกใบแจ้งหนี้และใบเสร็จรับเงิน" />
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      {/* Document Type Buttons - Large */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
         <button
           onClick={() => setActiveTab('invoice')}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${
             activeTab === 'invoice'
-              ? 'bg-lime-500 text-white shadow-md shadow-lime-200/50'
-              : 'bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200'
-          }`}
-        >
-          🧾 ใบแจ้งหนี้
+              ? 'border-lime-500 bg-lime-50 shadow-md shadow-lime-100'
+              : 'border-neutral-200 bg-white hover:border-neutral-300'
+          }`}>
+          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${
+            activeTab === 'invoice' ? 'bg-lime-500 text-white' : 'bg-neutral-100'
+          }`}>
+            🧾
+          </div>
+          <div className="min-w-0">
+            <div className={`text-sm sm:text-base font-bold truncate ${activeTab === 'invoice' ? 'text-lime-700' : 'text-neutral-700'}`}>ใบแจ้งหนี้</div>
+            <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">ออกใบแจ้งหนี้ให้ผู้พัก</div>
+          </div>
         </button>
         <button
           onClick={() => setActiveTab('receipt')}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${
             activeTab === 'receipt'
-              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200/50'
-              : 'bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200'
-          }`}
-        >
-          🧾 ใบเสร็จรับเงิน
+              ? 'border-emerald-500 bg-emerald-50 shadow-md shadow-emerald-100'
+              : 'border-neutral-200 bg-white hover:border-neutral-300'
+          }`}>
+          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${
+            activeTab === 'receipt' ? 'bg-emerald-500 text-white' : 'bg-neutral-100'
+          }`}>
+            📄
+          </div>
+          <div className="min-w-0">
+            <div className={`text-sm sm:text-base font-bold truncate ${activeTab === 'receipt' ? 'text-emerald-700' : 'text-neutral-700'}`}>ใบเสร็จรับเงิน</div>
+            <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">ออกใบเสร็จเมื่อชำระแล้ว</div>
+          </div>
         </button>
       </div>
 
-      {/* Month Picker */}
-      <div className="flex flex-row items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
-        <label className="text-sm font-medium text-neutral-600 shrink-0">เดือน:</label>
-        <div className="flex-1 sm:flex-none sm:w-44">
-          <DatePickerField selected={invDate} onChange={handleMonthChange} showMonthPicker placeholder="เลือกเดือน" />
-        </div>
-        <ReloadButton onReload={handleReload} className="ml-auto" />
-      </div>
-
-      {/* Table */}
+      {/* Main Card with Tabs Inside */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2.5">
-              <div className={`w-2 h-2 rounded-full ${activeTab === 'invoice' ? 'bg-lime-400' : 'bg-emerald-400'}`} />
-              <h3 className="text-sm font-semibold text-neutral-800">
-                {activeTab === 'invoice' ? 'รายการใบแจ้งหนี้' : 'รายการใบเสร็จรับเงิน'}
-              </h3>
-            </div>
-            {activeTab === 'invoice' && (
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleBulkSave} disabled={selectedIds.size === 0 || savingIds.size > 0} className="gap-1.5 bg-sky-500 hover:bg-sky-600 text-white">
-                  {savingIds.size > 0 ? '⏳ กำลังบันทึก...' : `💾 บันทึก (${selectedIds.size})`}
-                </Button>
-                <Button size="sm" onClick={handleBulkLine} disabled={selectedIds.size === 0 || bulkProcessing} className="gap-1.5 bg-teal-500 hover:bg-teal-600 text-white">
-                  {bulkProcessing ? '⏳ กำลังส่ง...' : `📱 ส่ง LINE (${selectedIds.size})`}
-                </Button>
-              </div>
-            )}
+        <CardContent className="pt-0">
+          {/* Rental Type Tabs */}
+          <div className="flex items-center border-b border-neutral-100">
+            <button
+              onClick={() => { setRentalTab('monthly'); setSelectedIds(new Set()) }}
+              className={`px-6 py-3 text-sm font-semibold transition-all border-b-2 -mb-px ${
+                rentalTab === 'monthly'
+                  ? 'border-lime-500 text-lime-600 bg-lime-50/50'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-600'
+              }`}>
+              รายเดือน
+            </button>
+            <button
+              onClick={() => { setRentalTab('daily'); setSelectedIds(new Set()) }}
+              className={`px-6 py-3 text-sm font-semibold transition-all border-b-2 -mb-px ${
+                rentalTab === 'daily'
+                  ? 'border-lime-500 text-lime-600 bg-lime-50/50'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-600'
+              }`}>
+              รายวัน
+            </button>
           </div>
+
+          {/* Month Picker + Actions */}
+          <div className="flex flex-wrap items-center gap-3 p-5 pb-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-neutral-600">{rentalTab === 'daily' ? 'วัน:' : 'เดือน:'}</span>
+              <div className="w-56">
+                <DatePickerField
+                  selected={rentalTab === 'daily' ? dailyDate : invDate}
+                  onChange={rentalTab === 'daily' ? setDailyDate : handleMonthChange}
+                  showMonthPicker={rentalTab !== 'daily'}
+                  placeholder={rentalTab === 'daily' ? 'เลือกวัน' : 'เลือกเดือน'}
+                />
+              </div>
+            </div>
+            <ReloadButton onReload={handleReload} />
+            <div className="flex gap-2 sm:ml-auto w-full sm:w-auto">
+              <Button size="sm" onClick={handleBulkSave} disabled={selectedIds.size === 0 || savingIds.size > 0} className="gap-1.5 bg-lime-500 hover:bg-lime-600 text-white">
+                + ออกบิลใหม่
+              </Button>
+              <Button size="sm" onClick={handleBulkLine} disabled={selectedIds.size === 0 || bulkProcessing} className="gap-1.5 bg-lime-500 hover:bg-lime-600 text-white">
+                ส่ง LINE
+              </Button>
+            </div>
+          </div>
+
+          {/* Table Header */}
+          <div className="flex items-center gap-2.5 px-5 pt-5 pb-3">
+            <div className={`w-2 h-2 rounded-full ${activeTab === 'invoice' ? 'bg-lime-400' : 'bg-emerald-400'}`} />
+            <h3 className="text-sm font-semibold text-neutral-800">
+              {activeTab === 'invoice' ? 'รายการใบแจ้งหนี้' : 'รายการใบเสร็จรับเงิน'}
+            </h3>
+          </div>
+
           {displayRooms.length === 0 ? (
             <EmptyState icon="🧾" title="ไม่มีข้อมูล" description="เพิ่มผู้พักในห้องก่อนจึงจะออกเอกสารได้" />
           ) : (
-            <div className="border border-neutral-100 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="hidden md:table-header-group">
-                  <tr className="bg-neutral-50/80">
-                    <th className="text-left px-4 py-3.5 w-10">
-                      <input type="checkbox" checked={selectedIds.size === displayRooms.length && displayRooms.length > 0} onChange={toggleSelectAll} className="w-4 h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400" />
-                    </th>
-                    {['ห้อง', 'ผู้พัก', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'รวม', 'สถานะ', 'การชำระ', 'จัดการ'].map(h => (
-                      <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-50">
-                  {displayRooms.map(r => {
-                    const inv = calcInv(r, invMonth)
-                    return (
-                      <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">เลือก</span>
-                          <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} className="w-4 h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400" />
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{inv.room}</span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
-                          <span className="text-neutral-700">{inv.tenant}</span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าเช่า</span>
-                          <span className="text-neutral-700 whitespace-nowrap">{inv.rent.toLocaleString()}</span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าไฟ</span>
-                          <span className="text-neutral-700 whitespace-nowrap">{inv.elecCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.elecUnits}u)</span></span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าน้ำ</span>
-                          <span className="text-neutral-700 whitespace-nowrap">{inv.waterCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.waterUnits}u)</span></span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">รวม</span>
-                          <span className="text-base font-bold text-neutral-800 whitespace-nowrap">{inv.total.toLocaleString()} บาท</span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
-                          {inv._saved ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">บันทึกแล้ว</span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100">ยังไม่บันทึก</span>
-                          )}
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">การชำระ</span>
-                          {inv._saved ? (
-                            <button onClick={() => togglePaid(r, inv)} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border transition-colors ${
-                              inv.paid
-                                ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
-                                : 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-100'
-                            }`}>
-                              {inv.paid ? '✓ ชำระแล้ว' : '○ ยังไม่ชำระ'}
-                            </button>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-neutral-50 text-neutral-400 border border-neutral-100">—</span>
-                          )}
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => handleView(inv)} className={`h-8 px-3.5 rounded-lg text-xs font-medium transition-colors border ${
-                              activeTab === 'invoice'
-                                ? 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
-                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100'
-                            }`}>ดู</button>
-                            <button onClick={() => {
-                              const docNumber = generateDocNumber(inv, invoices, rooms)
-                              downloadPdf({ ...inv, docNumber })
-                            }} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-100">PDF</button>
-                          </div>
-                        </td>
+            <>
+              <div className="px-5 pb-5">
+                <div className="border border-neutral-100 rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="hidden md:table-header-group">
+                      <tr className="bg-neutral-50/80">
+                        <th className="text-left px-4 py-3.5 w-10">
+                          <input type="checkbox" checked={selectedIds.size === displayRooms.length && displayRooms.length > 0} onChange={toggleSelectAll} className="w-4 h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400" />
+                        </th>
+                        {['ห้อง', 'ผู้พัก', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'ยอดรวม', 'สถานะ', 'จัดการ'].map(h => (
+                          <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
+                        ))}
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-50">
+                      {displayRooms.map(r => {
+                        const inv = calcInv(r, invMonth)
+                        return (
+                          <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                              <span className="text-xs font-medium text-neutral-500 md:hidden">เลือก</span>
+                              <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} className="w-4 h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400" />
+                            </td>
+                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                              <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{inv.room}</span>
+                            </td>
+                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                              <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
+                              <span className="text-neutral-700">{inv.tenant}</span>
+                            </td>
+                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                              <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าเช่า</span>
+                              <span className="text-neutral-700 whitespace-nowrap">{inv.rent.toLocaleString()}</span>
+                            </td>
+                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                              <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าไฟ</span>
+                              <span className="text-neutral-700 whitespace-nowrap">{inv.elecCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.elecUnits}u)</span></span>
+                            </td>
+                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                              <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าน้ำ</span>
+                              <span className="text-neutral-700 whitespace-nowrap">{inv.waterCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.waterUnits}u)</span></span>
+                            </td>
+                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                              <span className="text-xs font-medium text-neutral-500 md:hidden">ยอดรวม</span>
+                              <span className="text-base font-bold text-neutral-800 whitespace-nowrap">{inv.total.toLocaleString()} บาท</span>
+                            </td>
+                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                              <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
+                              {inv._saved ? (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">บันทึกแล้ว</span>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100">ยังไม่บันทึก</span>
+                              )}
+                            </td>
+                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                              <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
+                              <div className="flex gap-1.5">
+                                <button onClick={() => handleView(inv)} className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${
+                                  activeTab === 'invoice'
+                                    ? 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
+                                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100'
+                                }`}>ดู</button>
+                                <button onClick={() => {
+                                  const docNumber = generateDocNumber(inv, invoices, rooms)
+                                  downloadPdf({ ...inv, docNumber })
+                                }} className="h-8 px-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-100">PDF</button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Summary Footer */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4 pt-4 border-t border-neutral-100">
+                  <div className="flex items-center gap-6 text-sm">
+                    <span className="text-neutral-500">รวมทั้งสิ้น <span className="font-semibold text-neutral-800">{selectedIds.size}</span> {activeTab === 'invoice' ? 'ใบแจ้งหนี้' : 'ใบเสร็จ'}</span>
+                    <span className="text-lg font-bold text-lime-600">{selectedTotal.toLocaleString()} บาท</span>
+                  </div>
+                  <Button size="sm" onClick={handleBulkSave} disabled={selectedIds.size === 0 || savingIds.size > 0} className="bg-lime-500 hover:bg-lime-600 text-white gap-1.5">
+                    บันทึกทั้งหมด
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

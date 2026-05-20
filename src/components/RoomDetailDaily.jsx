@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { api } from '../lib/api'
 import { formatThaiDate } from '../lib/constants'
+import DatePickerField from './ui/datepicker'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
 import Badge from './ui/badge'
@@ -25,6 +26,9 @@ export default function RoomDetailDaily() {
   const [showSelectResident, setShowSelectResident] = useState(false)
   const [searchResident, setSearchResident] = useState('')
   const [showDeleteOptions, setShowDeleteOptions] = useState(false)
+  const [selectedResidentForDates, setSelectedResidentForDates] = useState(null)
+  const [checkInDate, setCheckInDate] = useState(null)
+  const [checkOutDate, setCheckOutDate] = useState(null)
 
   const room = useMemo(() => rooms.find(r => r.id === id), [rooms, id])
   const resident = useMemo(() => {
@@ -61,10 +65,47 @@ export default function RoomDetailDaily() {
     )
   }, [unassignedResidents, searchResident])
 
-  const handleAssignResident = async (residentId) => {
-    await assignResidentToRoom(residentId, room.id)
+  const handleSelectResident = (residentId) => {
+    const r = residents.find(x => x.id === residentId)
+    if (!r) return
+    setSelectedResidentForDates(r)
+    setCheckInDate(r.moveInDate ? new Date(r.moveInDate) : new Date())
+    setCheckOutDate(r.moveOutDate ? new Date(r.moveOutDate) : null)
     setShowSelectResident(false)
     setSearchResident('')
+  }
+
+  const confirmAssignWithDates = async () => {
+    if (!selectedResidentForDates || !checkInDate || !checkOutDate) {
+      toast('กรุณาเลือกวันเช็คอินและเช็คเอาท์', true)
+      return
+    }
+    try {
+      const r = selectedResidentForDates
+      await api('/api/residents', 'PUT', {
+        id: r.id,
+        name: r.name,
+        idCard: r.idCard,
+        phone: r.phone,
+        email: r.email || '',
+        roomId: room.id,
+        moveInDate: checkInDate.toISOString(),
+        moveOutDate: checkOutDate.toISOString(),
+        deposit: r.deposit,
+        licensePlate: r.licensePlate || '',
+        emergencyContact: r.emergencyContact || '',
+        emergencyPhone: r.emergencyPhone || '',
+        lineUserId: r.lineUserId || '',
+        rentalType: r.rentalType || room.rentalType || 'daily',
+      })
+      await fetchRooms()
+      setSelectedResidentForDates(null)
+      setCheckInDate(null)
+      setCheckOutDate(null)
+      toast('มอบหมายผู้เช่าเข้าห้องสำเร็จ')
+    } catch (e) {
+      toast(`ไม่สำเร็จ: ${e.message}`, true)
+    }
   }
 
   if (!room) {
@@ -464,7 +505,7 @@ export default function RoomDetailDaily() {
                 <div className="text-center py-8 text-sm text-neutral-400">ไม่พบผู้พักที่สามารถเลือกได้</div>
               ) : (
                 filteredUnassigned.map(r => (
-                  <button key={r.id} onClick={() => handleAssignResident(r.id)}
+                  <button key={r.id} onClick={() => handleSelectResident(r.id)}
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-lime-50 transition-colors text-left">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm font-bold shrink-0">
                       {r.name?.charAt(0) || '?'}
@@ -477,6 +518,44 @@ export default function RoomDetailDaily() {
                   </button>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedResidentForDates && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { setSelectedResidentForDates(null); setCheckInDate(null); setCheckOutDate(null) }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-neutral-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-neutral-800">กำหนดวันเข้าพัก</h3>
+                  <p className="text-xs text-neutral-400 mt-0.5">{selectedResidentForDates.name} — ห้อง {displayNumber}</p>
+                </div>
+                <button onClick={() => { setSelectedResidentForDates(null); setCheckInDate(null); setCheckOutDate(null) }} className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">วันเช็คอิน *</label>
+                <DatePickerField selected={checkInDate} onChange={setCheckInDate} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">วันเช็คเอาท์ *</label>
+                <DatePickerField selected={checkOutDate} onChange={setCheckOutDate} />
+              </div>
+            </div>
+            <div className="p-4 border-t border-neutral-100 flex gap-3">
+              <button onClick={() => { setSelectedResidentForDates(null); setCheckInDate(null); setCheckOutDate(null) }}
+                className="flex-1 h-10 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={confirmAssignWithDates}
+                className="flex-1 h-10 rounded-xl text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 transition-colors shadow-sm">
+                ยืนยัน
+              </button>
             </div>
           </div>
         </div>
