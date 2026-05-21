@@ -10,8 +10,14 @@ import Input from './ui/input'
 
 function parseDate(dateStr) {
   if (!dateStr) return null
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d)
+  if (dateStr instanceof Date) {
+    return isNaN(dateStr.getTime()) ? null : dateStr
+  }
+  if (typeof dateStr === 'string') {
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? null : d
+  }
+  return null
 }
 
 function fmtDate(date) {
@@ -30,6 +36,7 @@ export default function ResidentModal() {
 
   const [rentalTypeStep, setRentalTypeStep] = useState(isNew ? 'select' : 'form')
   const [rentalType, setRentalType] = useState((editResident?.rentalType === 'daily' || editResident?.rentalType === 'รายวัน') ? 'daily' : 'monthly')
+  const [tenantType, setTenantType] = useState(editResident?.tenantType === 'company' ? 'company' : 'individual')
 
   const [name, setName] = useState(editResident?.name || '')
   const [idCard, setIdCard] = useState(editResident?.idCard || '')
@@ -41,6 +48,9 @@ export default function ResidentModal() {
   const [emergencyContact, setEmergencyContact] = useState(editResident?.emergencyContact || '')
   const [emergencyPhone, setEmergencyPhone] = useState(editResident?.emergencyPhone || '')
   const [lineUserId, setLineUserId] = useState(editResident?.lineUserId || '')
+  const [companyName, setCompanyName] = useState(editResident?.companyName || '')
+  const [companyAddress, setCompanyAddress] = useState(editResident?.companyAddress || '')
+  const [companyTaxId, setCompanyTaxId] = useState(editResident?.companyTaxId || '')
 
   const [moveInDate, setMoveInDate] = useState(parseDate(editResident?.moveInDate))
   const [moveOutDate, setMoveOutDate] = useState(parseDate(editResident?.moveOutDate))
@@ -148,19 +158,23 @@ export default function ResidentModal() {
       emergencyPhone,
       lineUserId,
       rentalType,
+      tenantType,
+      companyName: companyName.trim(),
+      companyAddress: companyAddress.trim(),
+      companyTaxId,
     }
     await saveResident(data)
     setSaving(false)
   }
 
   const handleSelectRentalType = (type) => {
-    setRentalType(type)
+    setRentalType(type === 'รายวัน' || type === 'daily' ? 'daily' : 'monthly')
     setRentalTypeStep('form')
   }
 
   const handleBackToSelect = () => {
     setRentalTypeStep('select')
-    setRentalType('รายเดือน')
+    setRentalType('monthly')
   }
 
   const lineName = lineUsers.find(u => u.userId === lineUserId)?.displayName
@@ -229,6 +243,62 @@ export default function ResidentModal() {
       </div>
 
       <div className="space-y-5">
+        {rentalType === 'daily' && !ro && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทผู้พัก</label>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setTenantType('individual')}
+                className={`flex-1 h-10 px-4 rounded-xl text-sm font-medium border transition-all ${tenantType === 'individual' ? 'bg-sky-50 border-sky-400 text-sky-700' : 'bg-white border-neutral-200 text-neutral-500 hover:border-neutral-300'}`}>
+                บุคคลทั่วไป
+              </button>
+              <button type="button" onClick={() => setTenantType('company')}
+                className={`flex-1 h-10 px-4 rounded-xl text-sm font-medium border transition-all ${tenantType === 'company' ? 'bg-amber-50 border-amber-400 text-amber-700' : 'bg-white border-neutral-200 text-neutral-500 hover:border-neutral-300'}`}>
+                บริษัท / องค์กร
+              </button>
+            </div>
+          </div>
+        )}
+
+        {rentalType === 'daily' && tenantType === 'company' && !ro && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ชื่อบริษัท</label>
+              <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)}
+                placeholder="ชื่อบริษัท / องค์กร"
+                className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ที่อยู่บริษัท</label>
+              <input type="text" value={companyAddress} onChange={e => setCompanyAddress(e.target.value)}
+                placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด"
+                className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">เลขประจำตัวผู้เสียภาษี</label>
+              <input type="text" value={companyTaxId} onChange={e => setCompanyTaxId(e.target.value)}
+                placeholder="1-2345-67890-12-3"
+                className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100" />
+            </div>
+          </>
+        )}
+
+        {rentalType === 'daily' && tenantType === 'company' && ro && (
+          <>
+            <div>
+              <label className="block text-xs text-neutral-400 mb-0.5">ชื่อบริษัท</label>
+              <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{companyName || <span className="text-neutral-300 italic">—</span>}</div>
+            </div>
+            <div>
+              <label className="block text-xs text-neutral-400 mb-0.5">ที่อยู่บริษัท</label>
+              <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{companyAddress || <span className="text-neutral-300 italic">—</span>}</div>
+            </div>
+            <div>
+              <label className="block text-xs text-neutral-400 mb-0.5">เลขประจำตัวผู้เสียภาษี</label>
+              <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{companyTaxId || <span className="text-neutral-300 italic">—</span>}</div>
+            </div>
+          </>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {ro ? (
             <>

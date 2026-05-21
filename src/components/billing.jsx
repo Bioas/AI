@@ -6,6 +6,7 @@ import DatePickerField from './ui/datepicker'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
 import EmptyState from './ui/empty-state'
+import Badge from './ui/badge'
 import InvoicePreview from './InvoicePreview'
 import ReceiptPreview from './ReceiptPreview'
 import ReloadButton from './ui/reload-button'
@@ -15,17 +16,25 @@ function generateDocNumber(inv, invoices, rooms) {
   if (!inv.month) return '—'
   const room = rooms.find(r => r.id === inv._id || r.roomNumber === inv.room || r.number === inv.room)
   const roomRef = room?.roomCode || inv.room || '—'
+  const isDaily = room?.rentalType === 'daily' || room?.rentalType === 'รายวัน'
+  
   const year = inv.month.split('-')[0]
   const sameYearInvoices = invoices
     .filter(x => x.month && x.month.startsWith(year))
     .sort((a, b) => a.month.localeCompare(b.month))
   const runningIndex = sameYearInvoices.findIndex(x => x.id === inv._id) + 1
   const running = String(Math.max(1, runningIndex)).padStart(3, '0')
+  
+  if (isDaily) {
+    const ym = inv.month.slice(0, 7).replace('-', '')
+    return `INV-${roomRef}-${ym}-${running}`
+  }
+  
   return `INV-${roomRef}-${inv.month.replace('-', '')}-${running}`
 }
 
 export default function Billing() {
-  const { rooms, invoices, invMonth, setInvMonth, calcInv, saveInvoice, downloadPdf, sendPdfToLine, setViewInv, setModal, fetchAll, toast } = useApp()
+  const { rooms, invoices, invMonth, setInvMonth, calcInv, saveInvoice, downloadPdf, sendPdfToLine, setViewInv, setModal, fetchAll, toast, residents } = useApp()
   const [activeTab, setActiveTab] = useState('invoice')
   const [rentalTab, setRentalTab] = useState('monthly')
   const [selectedIds, setSelectedIds] = useState(new Set())
@@ -82,7 +91,10 @@ export default function Billing() {
   }
 
   const displayRooms = useMemo(() => {
-    const savedInvoices = invoices.filter(x => x.month === invMonth)
+    const period = rentalTab === 'daily' && dailyDate
+      ? dailyDate.toISOString().split('T')[0]
+      : invMonth
+    const savedInvoices = invoices.filter(x => x.month === period)
     const savedRoomIds = new Set(savedInvoices.map(x => x.roomId))
 
     const allRooms = rooms.filter(r => {
@@ -95,7 +107,7 @@ export default function Billing() {
     })
     allRooms.sort(naturalSortRoomNumber)
     return allRooms
-  }, [rooms, invoices, invMonth, rentalTab])
+  }, [rooms, invoices, invMonth, dailyDate, rentalTab])
 
   const toggleSelectAll = () => {
     if (selectedIds.size === displayRooms.length) {
@@ -120,6 +132,10 @@ export default function Billing() {
       return
     }
 
+    const period = rentalTab === 'daily' && dailyDate
+      ? dailyDate.toISOString().split('T')[0]
+      : invMonth
+
     setSavingIds(new Set(selectedIds))
     let successCount = 0
     let failCount = 0
@@ -128,7 +144,7 @@ export default function Billing() {
       const room = displayRooms.find(r => r.id === roomId)
       if (!room) continue
 
-      const inv = calcInv(room, invMonth)
+      const inv = calcInv(room, period)
       if (inv._saved) {
         successCount++
         continue
@@ -157,6 +173,10 @@ export default function Billing() {
       return
     }
 
+    const period = rentalTab === 'daily' && dailyDate
+      ? dailyDate.toISOString().split('T')[0]
+      : invMonth
+
     setBulkProcessing(true)
     let successCount = 0
     let failCount = 0
@@ -165,7 +185,7 @@ export default function Billing() {
       const room = displayRooms.find(r => r.id === roomId)
       if (!room) continue
 
-      const inv = calcInv(room, invMonth)
+      const inv = calcInv(room, period)
 
       if (!inv._saved) {
         try {
@@ -211,14 +231,17 @@ export default function Billing() {
   }
 
   const selectedTotal = useMemo(() => {
+    const period = rentalTab === 'daily' && dailyDate
+      ? dailyDate.toISOString().split('T')[0]
+      : invMonth
     return displayRooms.reduce((sum, r) => {
       if (selectedIds.has(r.id)) {
-        const inv = calcInv(r, invMonth)
+        const inv = calcInv(r, period)
         return sum + (inv.total || 0)
       }
       return sum
     }, 0)
-  }, [displayRooms, invMonth, selectedIds, calcInv])
+  }, [displayRooms, invMonth, dailyDate, selectedIds, rentalTab, calcInv])
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -331,15 +354,22 @@ export default function Billing() {
                         <th className="text-left px-4 py-3.5 w-10">
                           <input type="checkbox" checked={selectedIds.size === displayRooms.length && displayRooms.length > 0} onChange={toggleSelectAll} className="w-4 h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400" />
                         </th>
-                        {['ห้อง', 'ผู้พัก', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'ยอดรวม', 'สถานะ', 'จัดการ'].map(h => (
+                        {(rentalTab === 'daily'
+                          ? ['ห้อง', 'ผู้พัก', 'ประเภทผู้พัก', 'ค่าเช่า', 'วันเช็คอิน', 'วันเช็คเอาท์', 'จำนวนคืน', 'ยอดรวม', 'สถานะ', 'จัดการ']
+                          : ['ห้อง', 'ผู้พัก', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'ยอดรวม', 'สถานะ', 'จัดการ']
+                        ).map(h => (
                           <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-50">
-                      {displayRooms.map(r => {
-                        const inv = calcInv(r, invMonth)
-                        return (
+                      {(() => {
+                        const period = rentalTab === 'daily' && dailyDate
+                          ? dailyDate.toISOString().split('T')[0]
+                          : invMonth
+                        return displayRooms.map(r => {
+                          const inv = calcInv(r, period)
+                          return (
                           <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
                             <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                               <span className="text-xs font-medium text-neutral-500 md:hidden">เลือก</span>
@@ -353,18 +383,55 @@ export default function Billing() {
                               <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
                               <span className="text-neutral-700">{inv.tenant}</span>
                             </td>
+                            {rentalTab === 'daily' && (
+                              <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                                <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภทผู้พัก</span>
+                                <Badge variant={inv.tenantType === 'company' ? 'warning' : 'info'}>
+                                  {inv.tenantType === 'company' ? 'บริษัท/องค์กร' : 'บุคคลทั่วไป'}
+                                </Badge>
+                              </td>
+                            )}
                             <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                               <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าเช่า</span>
                               <span className="text-neutral-700 whitespace-nowrap">{inv.rent.toLocaleString()}</span>
                             </td>
-                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                              <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าไฟ</span>
-                              <span className="text-neutral-700 whitespace-nowrap">{inv.elecCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.elecUnits}u)</span></span>
-                            </td>
-                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                              <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าน้ำ</span>
-                              <span className="text-neutral-700 whitespace-nowrap">{inv.waterCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.waterUnits}u)</span></span>
-                            </td>
+                            {rentalTab === 'daily' ? (
+                              <>
+                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                                  <span className="text-xs font-medium text-neutral-500 md:hidden">วันเช็คอิน</span>
+                                  <span className="text-neutral-700 whitespace-nowrap">
+                                    {(() => {
+                                      const res = residents.find(x => x.id === r.residentId)
+                                      return res?.moveInDate ? new Date(res.moveInDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+                                    })()}
+                                  </span>
+                                </td>
+                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                                  <span className="text-xs font-medium text-neutral-500 md:hidden">วันเช็คเอาท์</span>
+                                  <span className="text-neutral-700 whitespace-nowrap">
+                                    {(() => {
+                                      const res = residents.find(x => x.id === r.residentId)
+                                      return res?.moveOutDate ? new Date(res.moveOutDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+                                    })()}
+                                  </span>
+                                </td>
+                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                                  <span className="text-xs font-medium text-neutral-500 md:hidden">จำนวนคืน</span>
+                                  <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 text-xs font-semibold">{inv.days || 1} คืน</span>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                                  <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าไฟ</span>
+                                  <span className="text-neutral-700 whitespace-nowrap">{inv.elecCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.elecUnits}u)</span></span>
+                                </td>
+                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                                  <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าน้ำ</span>
+                                  <span className="text-neutral-700 whitespace-nowrap">{inv.waterCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.waterUnits}u)</span></span>
+                                </td>
+                              </>
+                            )}
                             <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                               <span className="text-xs font-medium text-neutral-500 md:hidden">ยอดรวม</span>
                               <span className="text-base font-bold text-neutral-800 whitespace-nowrap">{inv.total.toLocaleString()} บาท</span>
@@ -393,7 +460,8 @@ export default function Billing() {
                             </td>
                           </tr>
                         )
-                      })}
+                      })
+                      })()}
                     </tbody>
                   </table>
                 </div>

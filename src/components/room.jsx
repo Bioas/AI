@@ -159,6 +159,17 @@ export default function Room() {
                         {residentName.charAt(0)}
                       </div>
                       <span className="text-xs font-medium text-neutral-700 truncate">{residentName}</span>
+                      {(() => {
+                        const isDaily = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
+                        if (!isDaily) return null
+                        const res = residents.find(x => x.id === r.residentId)
+                        if (!res?.tenantType) return null
+                        return (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${res.tenantType === 'company' ? 'bg-amber-50 text-amber-600' : 'bg-sky-50 text-sky-600'}`}>
+                            {res.tenantType === 'company' ? 'บริษัท' : 'ทั่วไป'}
+                          </span>
+                        )
+                      })()}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 mb-4 p-2.5 rounded-xl bg-neutral-50 border border-neutral-100">
@@ -190,7 +201,7 @@ export default function Room() {
               <table className="w-full text-sm">
                 <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
-                    {['หมายเลขห้องพัก', 'ชื่อผู้เช่า', 'ประเภทห้อง', 'ค่าเช่า', 'สถานะห้อง', 'หมายเหตุ'].map(h => (
+                    {['หมายเลขห้องพัก', 'ชื่อผู้เช่า', 'ประเภทห้อง', 'ประเภทผู้พัก', 'ค่าเช่า', 'สถานะห้อง', 'หมายเหตุ'].map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -231,6 +242,20 @@ export default function Room() {
                               {r.rentalType === 'daily' ? 'รายวัน' : r.rentalType === 'monthly' ? 'รายเดือน' : r.rentalType || 'รายเดือน'}
                             </Badge>
                           </div>
+                        </td>
+                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภทผู้พัก</span>
+                          {(() => {
+                            const isDaily = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
+                            if (!isDaily) return <span className="text-neutral-300 italic">—</span>
+                            const res = residents.find(x => x.id === r.residentId)
+                            if (!res?.tenantType) return <span className="text-neutral-300 italic">—</span>
+                            return (
+                              <Badge variant={res.tenantType === 'company' ? 'warning' : 'info'}>
+                                {res.tenantType === 'company' ? 'บริษัท/องค์กร' : 'บุคคลทั่วไป'}
+                              </Badge>
+                            )
+                          })()}
                         </td>
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าเช่า</span>

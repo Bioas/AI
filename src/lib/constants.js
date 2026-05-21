@@ -10,8 +10,17 @@ export const THAI_SHORT_MONTHS = [
 
 export function formatThaiDate(dateStr) {
   if (!dateStr) return '—'
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return `${d} ${THAI_MONTHS[m]} ${y + 543}`
+  let d
+  if (dateStr instanceof Date) {
+    d = dateStr
+  } else {
+    d = new Date(dateStr)
+  }
+  if (isNaN(d.getTime())) return '—'
+  const day = d.getDate()
+  const month = d.getMonth() + 1
+  const year = d.getFullYear()
+  return `${day} ${THAI_MONTHS[month]} ${year + 543}`
 }
 
 export function getContractStatus(moveOutDate) {

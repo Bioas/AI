@@ -29,6 +29,7 @@ export function DormInfoModal({ onClose }) {
   const { settings, fetchAll, toast } = useApp()
   const [dormName, setDormName] = useState(settings.dormName || '')
   const [phone, setPhone] = useState(settings.phone || '')
+  const [taxId, setTaxId] = useState(settings.taxId || '')
   const [address, setAddress] = useState(settings.address || '')
   const [saving, setSaving] = useState(false)
 
@@ -36,16 +37,17 @@ export function DormInfoModal({ onClose }) {
     setSaving(true)
     try {
       const { api } = await import('../lib/api')
-      await api('/api/settings', 'POST', { ...settings, dormName, phone, address })
+      await api('/api/settings', 'POST', { ...settings, dormName, phone, taxId, address })
       await fetchAll(); toast('บันทึกข้อมูลหอพักเรียบร้อย'); onClose()
     } catch (e) { toast(`บันทึกไม่สำเร็จ: ${e.message}`, true) }
     setSaving(false)
   }
 
   return (
-    <SettingFrame title="แก้ไขข้อมูลหอพัก" subtitle="แก้ไขชื่อหอพัก เบอร์โทร และที่อยู่" icon="🏢" onClose={onClose} onSave={handleSave} saving={saving}>
+    <SettingFrame title="แก้ไขข้อมูลหอพัก" subtitle="แก้ไขชื่อหอพัก เบอร์โทร เลขประจำตัวผู้เสียภาษี และที่อยู่" icon="🏢" onClose={onClose} onSave={handleSave} saving={saving}>
       <Input label="ชื่อหอพัก" value={dormName} onChange={e => setDormName(e.target.value)} placeholder="ชื่อหอพัก" />
       <Input label="เบอร์โทรศัพท์" value={phone} onChange={e => setPhone(e.target.value)} placeholder="081-234-5678" />
+      <Input label="เลขประจำตัวผู้เสียภาษี" value={taxId} onChange={e => setTaxId(e.target.value)} placeholder="1-2345-67890-12-3" />
       <Input label="ที่อยู่" value={address} onChange={e => setAddress(e.target.value)} placeholder="123 ถนนสุขุมวิท กรุงเทพฯ" />
     </SettingFrame>
   )

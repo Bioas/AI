@@ -28,6 +28,7 @@ export default function Setting() {
           <dl className="divide-y divide-neutral-50">
             <InfoRow label="ชื่อหอพัก" value={settings.dormName || '—'} />
             <InfoRow label="เบอร์โทรศัพท์" value={settings.phone || '—'} />
+            <InfoRow label="เลขประจำตัวผู้เสียภาษี" value={settings.taxId || '—'} />
             <InfoRow label="ที่อยู่" value={settings.address || '—'} />
           </dl>
         </CardContent></Card>

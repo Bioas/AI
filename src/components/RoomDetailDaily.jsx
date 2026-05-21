@@ -97,6 +97,10 @@ export default function RoomDetailDaily() {
         emergencyPhone: r.emergencyPhone || '',
         lineUserId: r.lineUserId || '',
         rentalType: r.rentalType || room.rentalType || 'daily',
+        tenantType: r.tenantType || 'individual',
+        companyName: r.companyName || '',
+        companyAddress: r.companyAddress || '',
+        companyTaxId: r.companyTaxId || '',
       })
       await fetchRooms()
       setSelectedResidentForDates(null)
@@ -173,6 +177,10 @@ export default function RoomDetailDaily() {
         emergencyPhone: resident.emergencyPhone || '',
         lineUserId: resident.lineUserId || '',
         rentalType: 'daily',
+        tenantType: resident.tenantType || 'individual',
+        companyName: resident.companyName || '',
+        companyAddress: resident.companyAddress || '',
+        companyTaxId: resident.companyTaxId || '',
       })
       await api('/api/rooms', 'PUT', {
         id: room.id,
@@ -342,6 +350,22 @@ export default function RoomDetailDaily() {
               <dt className="text-sm text-neutral-500">ทะเบียนรถ</dt>
               <dd className="text-sm font-medium text-neutral-800">{resident.licensePlate || <span className="text-neutral-300 italic">—</span>}</dd>
             </div>
+            {resident.tenantType === 'company' && (
+              <>
+                <div className="py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                  <dt className="text-sm text-neutral-500">ชื่อบริษัท</dt>
+                  <dd className="text-sm font-medium text-neutral-800">{resident.companyName || <span className="text-neutral-300 italic">—</span>}</dd>
+                </div>
+                <div className="py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                  <dt className="text-sm text-neutral-500">ที่อยู่บริษัท</dt>
+                  <dd className="text-sm font-medium text-neutral-800">{resident.companyAddress || <span className="text-neutral-300 italic">—</span>}</dd>
+                </div>
+                <div className="py-3 flex justify-between">
+                  <dt className="text-sm text-neutral-500">เลขประจำตัวผู้เสียภาษี</dt>
+                  <dd className="text-sm font-medium text-neutral-800">{resident.companyTaxId || <span className="text-neutral-300 italic">—</span>}</dd>
+                </div>
+              </>
+            )}
           </dl>
         </CardContent></Card>
       </div>
@@ -511,7 +535,14 @@ export default function RoomDetailDaily() {
                       {r.name?.charAt(0) || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-neutral-800 truncate">{r.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-medium text-neutral-800 truncate">{r.name}</div>
+                        {r.tenantType === 'company' ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 bg-amber-50 text-amber-600">บริษัท</span>
+                        ) : (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 bg-sky-50 text-sky-600">ทั่วไป</span>
+                        )}
+                      </div>
                       <div className="text-xs text-neutral-400">{r.phone}{r.roomId ? ` • ห้อง ${rooms.find(x => x.id === r.roomId)?.roomNumber || ''}` : ' • ยังไม่มีห้อง'}</div>
                     </div>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-neutral-300 shrink-0"><polyline points="9 18 15 12 9 6"/></svg>

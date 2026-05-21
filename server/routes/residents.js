@@ -96,6 +96,10 @@ router.post('/', async (req, res) => {
       lineUserId: req.body.lineUserId || '',
       rentalType: req.body.rentalType || 'monthly',
       licensePlate: req.body.licensePlate || '',
+      tenantType: req.body.tenantType || 'individual',
+      companyName: req.body.companyName?.trim() || '',
+      companyAddress: req.body.companyAddress?.trim() || '',
+      companyTaxId: req.body.companyTaxId || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -157,6 +161,10 @@ router.put('/', async (req, res) => {
       lineUserId: data.lineUserId || '',
       rentalType: data.rentalType || 'monthly',
       licensePlate: data.licensePlate || '',
+      tenantType: data.tenantType !== undefined ? data.tenantType : 'individual',
+      companyName: (data.companyName || '').trim(),
+      companyAddress: (data.companyAddress || '').trim(),
+      companyTaxId: data.companyTaxId || '',
       updatedAt: new Date().toISOString(),
     }
 

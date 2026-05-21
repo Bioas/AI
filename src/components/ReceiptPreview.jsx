@@ -5,7 +5,22 @@ export default function ReceiptPreview({ inv }) {
   const { settings, rooms } = useApp()
   const cf = settings.commonFee || 0
   const inf = settings.internetFee || 0
-  const items = [
+  const roomData = rooms.find(r => r.roomNumber === inv.room || r.number === inv.room)
+  const isDaily = roomData?.rentalType === 'daily' || roomData?.rentalType === 'รายวัน'
+  const items = isDaily ? [
+    { 
+      desc: inv.room, 
+      detail: (
+        <>
+          <div>เช็คอิน: {inv.moveInDate ? new Date(inv.moveInDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</div>
+          <div>เช็คเอาท์: {inv.moveOutDate ? new Date(inv.moveOutDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</div>
+        </>
+      ), 
+      unit: `${inv.days || 1} คืน`, 
+      pricePerUnit: inv.rent / (inv.days || 1),
+      amount: inv.rent 
+    },
+  ] : [
     { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
     { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
     { desc: 'ค่าน้ำประปา', detail: inv.waterUnits <= 4 && inv.waterUnits > 0 ? 'เหมาจ่าย' : `${inv.waterUnits} หน่วย × ${inv.rateWater} บาท`, amount: inv.waterCost },
@@ -19,7 +34,6 @@ export default function ReceiptPreview({ inv }) {
   const d = now.getDate()
   const receiptDate = `${d} ${m} ${y}`
   const receiptNo = inv.docNumber ? inv.docNumber.replace('INV-', 'REC-') : `REC-${inv.room}-${inv.month?.replace('-', '') || ''}`
-  const roomData = rooms.find(r => r.roomNumber === inv.room || r.number === inv.room)
 
   const bahtText = numberToBahtText(total)
 
@@ -31,44 +45,101 @@ export default function ReceiptPreview({ inv }) {
       <div className="flex justify-between items-start pb-6 mb-6 border-b border-emerald-200/60">
         <div className="flex items-center gap-3">
           {settings.logo && <img src={settings.logo} alt="" className="h-16 w-16 object-contain shrink-0" />}
-          <div>
-            <div className="text-base font-bold text-emerald-800">{settings.dormName || 'หอพัก'}</div>
-            <div className="text-[10px] text-neutral-400 mt-0.5">{settings.address}</div>
-            <div className="text-[10px] text-neutral-400">โทร {settings.phone}</div>
+            <div>
+              <div className="text-base font-bold text-emerald-800">{settings.dormName || 'หอพัก'}</div>
+              <div className="text-[10px] text-neutral-800 mt-0.5">{settings.address}</div>
+              <div className="text-[10px] text-neutral-800">โทร {settings.phone}</div>
+              {settings.taxId && <div className="text-[10px] text-neutral-800">เลขประจำตัวผู้เสียภาษี {settings.taxId}</div>}
+            </div>
+        </div>
+          <div className="text-right">
+            <div className="text-base font-bold text-emerald-700">ใบเสร็จรับเงิน</div>
+            <div className="text-[10px] text-emerald-600/80 mt-0.5 font-medium">{receiptNo}</div>
+            <div className="text-[10px] text-neutral-800 mt-0.5">{receiptDate}</div>
           </div>
-        </div>
-        <div className="text-right pt-1">
-          <div className="text-base font-bold text-emerald-700">ใบเสร็จรับเงิน</div>
-          <div className="text-[10px] text-emerald-600/80 mt-0.5 font-medium">{receiptNo}</div>
-          <div className="text-[10px] text-neutral-400 mt-0.5">{receiptDate}</div>
-        </div>
       </div>
 
       {/* Received From */}
       <div className="mb-6 px-4 py-3 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30 rounded-lg border border-emerald-100/60">
-        <div className="grid grid-cols-2 gap-y-1.5">
-          <div><span className="text-emerald-500">ได้รับเงินจาก</span> <span className="font-medium text-neutral-800 ml-2">{inv.tenant}</span></div>
-          <div className="text-right"><span className="text-emerald-500">ห้อง</span> <span className="font-medium text-neutral-800 ml-2">{inv.room}</span></div>
-          <div><span className="text-emerald-500">เดือน</span> <span className="font-medium text-neutral-800 ml-2">{formatMonth(inv.month)}</span></div>
-          <div className="text-right"><span className="text-emerald-500">วันที่</span> <span className="font-medium text-neutral-800 ml-2">{receiptDate}</span></div>
-        </div>
+        {inv.tenantType === 'company' ? (
+          <div className="space-y-1.5 text-[12px]">
+            <div><span className="text-emerald-500">เลขประจำตัวผู้เสียภาษี</span> <span className="font-medium text-neutral-800 ml-2">{inv.companyTaxId || '—'}</span></div>
+            <div><span className="text-emerald-500">ผู้พัก</span> <span className="font-medium text-neutral-800 ml-2">{inv.companyName || inv.tenant}</span></div>
+            <div className="flex items-start">
+              <span className="text-emerald-500 shrink-0">ที่อยู่</span>
+              <span className="font-medium text-neutral-800 ml-[13px] flex-1">{inv.companyAddress || '—'}</span>
+            </div>
+            <div className="flex gap-8 pt-2 border-t border-emerald-100/50 mt-2 text-[12px]">
+              <div><span className="text-emerald-500">ห้อง</span> <span className="font-medium text-neutral-800 ml-2">{inv.room}</span></div>
+              {isDaily ? (
+                <>
+                  <div><span className="text-emerald-500">เช็คอิน</span> <span className="font-medium text-neutral-800 ml-2">{inv.moveInDate ? new Date(inv.moveInDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span></div>
+                  <div><span className="text-emerald-500">เช็คเอาท์</span> <span className="font-medium text-neutral-800 ml-2">{inv.moveOutDate ? new Date(inv.moveOutDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span></div>
+                </>
+              ) : (
+                <>
+                  <div><span className="text-emerald-500">เดือน</span> <span className="font-medium text-neutral-800 ml-2">{formatMonth(inv.month)}</span></div>
+                  <div><span className="text-emerald-500">วันที่</span> <span className="font-medium text-neutral-800 ml-2">{receiptDate}</span></div>
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-y-1.5">
+            <div className="flex items-center"><span className="text-emerald-500 shrink-0">ได้รับเงินจาก</span> <span className="font-medium text-neutral-800 ml-2 whitespace-nowrap">{inv.tenant}</span></div>
+            <div className="text-right"><span className="text-emerald-500">ห้อง</span> <span className="font-medium text-neutral-800 ml-2">{inv.room}</span></div>
+            {isDaily ? (
+              <>
+                <div><span className="text-emerald-500">เช็คอิน</span> <span className="font-medium text-neutral-800 ml-2">{inv.moveInDate ? new Date(inv.moveInDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span></div>
+                <div className="text-right"><span className="text-emerald-500">เช็คเอาท์</span> <span className="font-medium text-neutral-800 ml-2">{inv.moveOutDate ? new Date(inv.moveOutDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span></div>
+              </>
+            ) : (
+              <>
+                <div><span className="text-emerald-500">เดือน</span> <span className="font-medium text-neutral-800 ml-2">{formatMonth(inv.month)}</span></div>
+                <div className="text-right"><span className="text-emerald-500">วันที่</span> <span className="font-medium text-neutral-800 ml-2">{receiptDate}</span></div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Table */}
       <table className="w-full mb-6">
         <thead>
           <tr className="border-b-2 border-emerald-200/60">
-            <th className="text-left pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">รายการ</th>
-            <th className="text-left pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">รายละเอียด</th>
-            <th className="text-right pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">จำนวนเงิน</th>
+            {isDaily ? (
+              <>
+                <th className="text-center pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">รายการ</th>
+                <th className="text-left pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">รายละเอียด</th>
+                <th className="text-center pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">ราคา/หน่วย</th>
+                <th className="text-right pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">จำนวนเงิน</th>
+              </>
+            ) : (
+              <>
+                <th className="text-left pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">รายการ</th>
+                <th className="text-left pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">รายละเอียด</th>
+                <th className="text-right pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">จำนวนเงิน</th>
+              </>
+            )}
           </tr>
         </thead>
         <tbody>
           {items.map((item, i) => (
             <tr key={i} className="border-b border-emerald-50">
-              <td className="py-2 pr-2 text-neutral-800">{item.desc}</td>
-              <td className="py-2 pr-2 text-[12px] text-neutral-400">{item.detail}</td>
-              <td className="py-2 text-right font-medium text-neutral-800">{item.amount.toLocaleString()}</td>
+              {isDaily ? (
+                <>
+                  <td className="py-2 pr-2 text-center text-neutral-800">{item.desc}</td>
+                  <td className="py-2 pr-2 text-left text-[12px] text-neutral-800">{item.detail}</td>
+                  <td className="py-2 text-center text-[12px] text-neutral-800">{item.pricePerUnit?.toLocaleString()}/{item.unit}</td>
+                  <td className="py-2 text-right font-medium text-neutral-800">{item.amount.toLocaleString()}</td>
+                </>
+              ) : (
+                <>
+                  <td className="py-2 pr-2 text-neutral-800">{item.desc}</td>
+                  <td className="py-2 pr-2 text-[12px] text-neutral-400">{item.detail}</td>
+                  <td className="py-2 text-right font-medium text-neutral-800">{item.amount.toLocaleString()}</td>
+                </>
+              )}
             </tr>
           ))}
         </tbody>
@@ -90,19 +161,19 @@ export default function ReceiptPreview({ inv }) {
 
       {/* Signature */}
       <div className="flex justify-between pt-8 mt-4">
-        <div className="text-center">
+        <div className="text-center flex flex-col justify-end min-h-[80px]">
           <div className="border-b border-dotted border-neutral-300 w-40 mb-0.5">&nbsp;</div>
-          <div className="text-[10px] text-neutral-500">ผู้รับเงิน</div>
-          <div className="text-[10px] text-neutral-400 mt-0.5">วันที่ {receiptDate}</div>
+          <div className="text-[12px] text-neutral-500">ผู้รับเงิน</div>
+          <div className="text-[12px] text-neutral-400 mt-0.5">วันที่ {receiptDate}</div>
         </div>
-        <div className="text-center">
+        <div className="text-center flex flex-col justify-end min-h-[80px]">
           {settings.signature ? (
             <img src={settings.signature} alt="ลายเซ็น" className="w-28 h-10 object-contain mx-auto mb-0.5" />
           ) : (
             <div className="border-b border-dotted border-neutral-300 w-40 mb-0.5">&nbsp;</div>
           )}
-          <div className="text-[10px] text-neutral-500">ผู้อนุมัติ</div>
-          <div className="text-[10px] text-neutral-400 mt-0.5">วันที่ {receiptDate}</div>
+          <div className="text-[12px] text-neutral-500">ผู้อนุมัติ</div>
+          <div className="text-[12px] text-neutral-400 mt-0.5">วันที่ {receiptDate}</div>
         </div>
       </div>
 

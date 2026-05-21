@@ -60,7 +60,7 @@ export default function App() {
 
       <Suspense fallback={null}>
         {modal === 'invoice' && viewInv && (
-              <ModalOverlay open={true} onClose={() => setModal(null)}>
+              <ModalOverlay open={true} onClose={() => setModal(null)} maxWidth="max-w-[550px]">
             <div className="p-6">
               <h3 className="text-base font-semibold text-neutral-800 mb-4">🧾 ใบแจ้งหนี้</h3>
               <InvoicePreview inv={viewInv} />
@@ -73,9 +73,9 @@ export default function App() {
           </ModalOverlay>
         )}
         {modal === 'receipt' && viewInv && (
-              <ModalOverlay open={true} onClose={() => setModal(null)}>
+              <ModalOverlay open={true} onClose={() => setModal(null)} maxWidth="max-w-[550px]">
             <div className="p-6">
-              <h3 className="text-base font-semibold text-neutral-800 mb-4">🧾 ใบเสร็จรับเงิน</h3>
+              <h3 className="text-base font-semibold text-neutral-800 mb-4"> ใบเสร็จรับเงิน</h3>
               <ReceiptPreview inv={viewInv} />
               <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
                 <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>

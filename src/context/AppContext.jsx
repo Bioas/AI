@@ -8,7 +8,7 @@ export function AppProvider({ children }) {
   const [rooms, setRooms] = useState([])
   const [meters, setMeters] = useState([])
   const [settings, setSettings] = useState({
-    dormName: '', address: '', phone: '', rateElec: 7, rateWater: 20,
+    dormName: '', address: '', phone: '', taxId: '', rateElec: 7, rateWater: 20,
     channelToken: '', channelSecret: '', logo: '', commonFee: 0, internetFee: 0,
   })
   const [toasts, setToasts] = useState([])
@@ -94,6 +94,7 @@ export function AppProvider({ children }) {
   const calcInv = useCallback((room, m) => {
     const saved = invoices.find(x => x.roomId === room.id && x.month === m)
     if (saved) {
+      const resData = residents.find(r => r.id === saved.residentId)
       return {
         room: saved.roomNumber, tenant: saved.tenantName || 'ไม่ระบุ',
         phone: saved.tenantPhone || '',
@@ -106,6 +107,12 @@ export function AppProvider({ children }) {
         total: saved.total,
         rateElec: saved.rateElec, rateWater: saved.rateWater,
         paid: saved.paid || false,
+        moveInDate: resData?.moveInDate || saved.moveInDate || '',
+        moveOutDate: resData?.moveOutDate || saved.moveOutDate || '',
+        tenantType: saved.tenantType || resData?.tenantType || 'individual',
+        companyName: saved.companyName || resData?.companyName || '',
+        companyAddress: saved.companyAddress || resData?.companyAddress || '',
+        companyTaxId: saved.companyTaxId || resData?.companyTaxId || '',
         _saved: true, _id: saved.id,
       }
     }
@@ -121,17 +128,34 @@ export function AppProvider({ children }) {
     const cf = settings.commonFee || 0
     const inf = settings.internetFee || 0
     const elecCost = eu * settings.rateElec
+
+    const isDaily = room.rentalType === 'daily' || room.rentalType === 'รายวัน'
+    let rent = rentPrice
+    let days = 1
+    if (isDaily && resident?.moveInDate && resident?.moveOutDate) {
+      const checkIn = new Date(resident.moveInDate)
+      const checkOut = new Date(resident.moveOutDate)
+      days = Math.max(1, Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24)))
+      rent = days * rentPrice
+    }
+
     return {
       room: roomNumber, tenant: resident?.name || room.tenantName || 'ไม่ระบุ',
       phone: resident?.phone || room.tenantPhone || '',
       userId: resident?.lineUserId || room.tenantUserId || '',
-      month: m, rent: rentPrice,
+      month: m, rent, days,
       elecUnits: eu, elecCost,
       waterUnits: wu, waterCost,
       prevElec: prev.elec || 0, curElec: cur.elec || 0,
       prevWater: prev.water || 0, curWater: cur.water || 0,
-      total: rentPrice + elecCost + waterCost + cf + inf,
+      total: rent + elecCost + waterCost + cf + inf,
       rateElec: settings.rateElec, rateWater: settings.rateWater,
+      moveInDate: resident?.moveInDate || room.moveInDate || '',
+      moveOutDate: resident?.moveOutDate || room.moveOutDate || '',
+      tenantType: resident?.tenantType || 'individual',
+      companyName: resident?.companyName || '',
+      companyAddress: resident?.companyAddress || '',
+      companyTaxId: resident?.companyTaxId || '',
       _saved: false,
     }
   }, [meters, residents, settings, invoices])
@@ -160,6 +184,12 @@ export function AppProvider({ children }) {
         rateWater: inv.rateWater,
         commonFee: settings.commonFee || 0,
         internetFee: settings.internetFee || 0,
+        moveInDate: inv.moveInDate || resident?.moveInDate || '',
+        moveOutDate: inv.moveOutDate || resident?.moveOutDate || '',
+        tenantType: inv.tenantType || resident?.tenantType || 'individual',
+        companyName: inv.companyName || resident?.companyName || '',
+        companyAddress: inv.companyAddress || resident?.companyAddress || '',
+        companyTaxId: inv.companyTaxId || resident?.companyTaxId || '',
       }
       await api('/api/invoices', 'POST', data)
       await fetchAll()
@@ -325,6 +355,10 @@ export function AppProvider({ children }) {
         emergencyPhone: resident.emergencyPhone || '',
         lineUserId: resident.lineUserId || '',
         rentalType: resolvedRentalType,
+        tenantType: resident.tenantType || 'individual',
+        companyName: resident.companyName || '',
+        companyAddress: resident.companyAddress || '',
+        companyTaxId: resident.companyTaxId || '',
       })
       await fetchResidents()
       await fetchRooms()

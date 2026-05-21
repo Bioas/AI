@@ -158,7 +158,7 @@ export default function Resident() {
               <table className="w-full text-sm">
                 <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
-                    {['ชื่อผู้พักอาศัย', 'หมายเลขห้อง', 'เบอร์โทร', 'LINE', activeTab === 'daily' ? 'เช็คอิน' : 'วันที่เข้าพัก', activeTab === 'daily' ? 'เช็คเอาท์' : 'วันหมดสัญญา', activeTab === 'daily' ? 'สถานะ' : 'สถานะสัญญา', 'จัดการ'].map(h => (
+                    {['ชื่อผู้พักอาศัย', 'หมายเลขห้อง', 'เบอร์โทร', 'LINE', activeTab === 'daily' ? 'ประเภทผู้พัก' : null, activeTab === 'daily' ? 'เช็คอิน' : 'วันที่เข้าพัก', activeTab === 'daily' ? 'เช็คเอาท์' : 'วันหมดสัญญา', activeTab === 'daily' ? 'สถานะ' : 'สถานะสัญญา', 'จัดการ'].filter(Boolean).map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -200,6 +200,14 @@ export default function Resident() {
                             <span className="text-neutral-300 italic">—</span>
                           )}
                         </td>
+                        {isDaily && (
+                          <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                            <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภทผู้พัก</span>
+                            <Badge variant={r.tenantType === 'company' ? 'warning' : 'info'}>
+                              {r.tenantType === 'company' ? 'บริษัท/องค์กร' : 'บุคคลทั่วไป'}
+                            </Badge>
+                          </td>
+                        )}
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">{isDaily ? 'เช็คอิน' : 'วันที่เข้าพัก'}</span>
                           <span className="text-neutral-600 whitespace-nowrap text-xs">{formatThaiDate(r.moveInDate)}</span>

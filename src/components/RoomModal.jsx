@@ -10,18 +10,13 @@ const ROOM_TYPE_OPTIONS = [
   { value: 'มีทีวี', label: 'มีทีวี' },
 ]
 
-const RENTAL_TYPE_OPTIONS = [
-  { value: 'รายเดือน', label: 'รายเดือน' },
-  { value: 'รายวัน', label: 'รายวัน' },
-]
-
 export default function RoomModal() {
   const { editRoom, rooms, saveRoom, setModal } = useApp()
 
   const [roomNumber, setRoomNumber] = useState(editRoom?.roomNumber || editRoom?.number || '')
   const [roomCode, setRoomCode] = useState(editRoom?.roomCode || '')
   const [rentPrice, setRentPrice] = useState((editRoom?.rentPrice || editRoom?.rent || '').toString())
-  const [rentalType, setRentalType] = useState(editRoom?.rentalType || 'monthly')
+  const [rentalType, setRentalType] = useState(editRoom?.rentalType || 'daily')
   const [roomType, setRoomType] = useState(editRoom?.roomType || 'ไม่มีทีวี')
   const [prevElecMeter, setPrevElecMeter] = useState(editRoom?.prevElecMeter?.toString() || '')
   const [prevWaterMeter, setPrevWaterMeter] = useState(editRoom?.prevWaterMeter?.toString() || '')
@@ -58,8 +53,8 @@ export default function RoomModal() {
       rentPrice: Number(rentPrice) || 0,
       rentalType,
       roomType,
-      prevElecMeter: rentalType === 'daily' ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
-      prevWaterMeter: rentalType === 'daily' ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
+      prevElecMeter: (rentalType === 'daily' || rentalType === 'รายวัน') ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
+      prevWaterMeter: (rentalType === 'daily' || rentalType === 'รายวัน') ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
       note: note.trim(),
       residentId: editRoom?.residentId || null,
     })
@@ -79,6 +74,20 @@ export default function RoomModal() {
         </div>
 
         <div className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทการเช่า *</label>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setRentalType('daily')}
+                className={`flex-1 h-10 px-4 rounded-xl text-sm font-medium border transition-all ${rentalType === 'daily' ? 'bg-sky-50 border-sky-400 text-sky-700' : 'bg-white border-neutral-200 text-neutral-500 hover:border-neutral-300'}`}>
+                รายวัน
+              </button>
+              <button type="button" onClick={() => setRentalType('monthly')}
+                className={`flex-1 h-10 px-4 rounded-xl text-sm font-medium border transition-all ${rentalType === 'monthly' ? 'bg-lime-50 border-lime-400 text-lime-700' : 'bg-white border-neutral-200 text-neutral-500 hover:border-neutral-300'}`}>
+                รายเดือน
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="หมายเลขห้องพัก *" value={roomNumber} onChange={e => setRoomNumber(e.target.value)}
               placeholder="เช่น 101" error={errors.roomNumber} autoFocus />
@@ -87,6 +96,10 @@ export default function RoomModal() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทห้องพัก *</label>
+              <Select value={roomType} onChange={setRoomType} options={ROOM_TYPE_OPTIONS} placeholder="เลือกประเภท" />
+            </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1.5">ค่าเช่า/{rentalType === 'daily' ? 'วัน' : 'เดือน'} *</label>
               <div className="relative">
@@ -97,18 +110,6 @@ export default function RoomModal() {
               </div>
               {errors.rentPrice && <p className="text-xs text-rose-500 mt-1">{errors.rentPrice}</p>}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทการเช่า *</label>
-              <Select value={rentalType} onChange={setRentalType} options={RENTAL_TYPE_OPTIONS} placeholder="เลือกประเภท" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทห้องพัก *</label>
-              <Select value={roomType} onChange={setRoomType} options={ROOM_TYPE_OPTIONS} placeholder="เลือกประเภท" />
-            </div>
-            <div />
           </div>
 
           {editRoom && residentName && (
@@ -125,9 +126,10 @@ export default function RoomModal() {
                       roomNumber: roomNumber.trim(),
                       roomCode: roomCode.trim(),
                       rentPrice: Number(rentPrice) || 0,
+                      rentalType,
                       roomType,
-                      prevElecMeter: prevElecMeter ? Number(prevElecMeter) : 0,
-                      prevWaterMeter: prevWaterMeter ? Number(prevWaterMeter) : 0,
+                      prevElecMeter: rentalType === 'daily' || rentalType === 'รายวัน' ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
+                      prevWaterMeter: rentalType === 'daily' || rentalType === 'รายวัน' ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
                       note: note.trim(),
                       residentId: null,
                     })
@@ -140,7 +142,7 @@ export default function RoomModal() {
             </div>
           )}
 
-          {rentalType !== 'daily' && (
+          {(rentalType !== 'daily' && rentalType !== 'รายวัน') && (
             <div>
               <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">เลขมิเตอร์เริ่มต้น (ก่อนหน้า)</h4>
               <div className="grid grid-cols-2 gap-4">
