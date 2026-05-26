@@ -7,7 +7,7 @@ const router = Router()
 function validate(data) {
   const errors = []
   if (!data.roomNumber?.trim()) errors.push('กรุณากรอกหมายเลขห้อง')
-  if (!data.roomCode?.trim()) errors.push('กรุณากรอกรหัสห้อง')
+  // roomCode is optional (can be empty)
   if (!data.rentPrice && data.rentPrice !== 0) errors.push('กรุณากรอกค่าเช่า')
   else if (isNaN(Number(data.rentPrice))) errors.push('ค่าเช่าต้องเป็นตัวเลขเท่านั้น')
   if (data.roomType && !['มีทีวี', 'ไม่มีทีวี'].includes(data.roomType)) errors.push('ประเภทห้องไม่ถูกต้อง')
@@ -83,6 +83,8 @@ router.post('/', async (req, res) => {
       roomType: req.body.roomType || 'ไม่มีทีวี',
       prevElecMeter: Number(req.body.prevElecMeter) || 0,
       prevWaterMeter: Number(req.body.prevWaterMeter) || 0,
+      extraBed: Number(req.body.extraBed) || 0,
+      discount: Number(req.body.discount) || 0,
       note: req.body.note?.trim() || '',
       status: residentId ? 'มีผู้เช่า' : 'ว่าง',
       createdAt: new Date().toISOString(),
@@ -129,6 +131,8 @@ router.put('/', async (req, res) => {
       roomType: data.roomType || 'ไม่มีทีวี',
       prevElecMeter: Number(data.prevElecMeter) || 0,
       prevWaterMeter: Number(data.prevWaterMeter) || 0,
+      extraBed: Number(data.extraBed) || 0,
+      discount: Number(data.discount) || 0,
       note: data.note?.trim() || '',
       status: residentId ? 'มีผู้เช่า' : 'ว่าง',
       updatedAt: new Date().toISOString(),

@@ -7,10 +7,13 @@ const router = Router()
 function validateResident(data) {
   const errors = []
   if (!data.name?.trim()) errors.push('กรุณากรอกชื่อ-นามสกุล')
-  if (!data.idCard?.trim()) errors.push('กรุณากรอกเลขบัตรประชาชน')
-  else if (!/^\d{13}$/.test(data.idCard.replace(/\D/g, ''))) errors.push('เลขบัตรประชาชนต้องมี 13 หลัก')
-  if (!data.phone?.trim()) errors.push('กรุณากรอกเบอร์โทร')
-  else if (!/^\d{9,10}$/.test(data.phone.replace(/\D/g, ''))) errors.push('เบอร์โทรไม่ถูกต้อง')
+  const isDaily = data.rentalType === 'daily'
+  if (!isDaily) {
+    if (!data.idCard?.trim()) errors.push('กรุณากรอกเลขบัตรประชาชน')
+    else if (!/^\d{13}$/.test(data.idCard.replace(/\D/g, ''))) errors.push('เลขบัตรประชาชนต้องมี 13 หลัก')
+    if (!data.phone?.trim()) errors.push('กรุณากรอกเบอร์โทร')
+    else if (!/^\d{9,10}$/.test(data.phone.replace(/\D/g, ''))) errors.push('เบอร์โทรไม่ถูกต้อง')
+  }
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.push('รูปแบบอีเมลไม่ถูกต้อง')
   if (!data.moveInDate) errors.push('กรุณาเลือกวันที่เข้าพัก')
   if (!data.moveOutDate) errors.push('กรุณาเลือกวันหมดสัญญา')
@@ -76,15 +79,18 @@ router.post('/', async (req, res) => {
       const room = await db.collection('rooms').findOne({ id: roomId })
       if (!room) return res.status(400).json({ error: 'ไม่พบหมายเลขห้องในระบบ' })
       roomNumber = room.roomNumber || room.number
-      const existingResident = await db.collection('residents').findOne({ roomId })
-      if (existingResident) return res.status(400).json({ error: 'ห้องนี้มีผู้พักอาศัยอยู่แล้ว' })
+      const isDaily = req.body.rentalType === 'daily'
+      if (!isDaily) {
+        const existingResident = await db.collection('residents').findOne({ roomId })
+        if (existingResident) return res.status(400).json({ error: 'ห้องนี้มีผู้พักอาศัยอยู่แล้ว' })
+      }
     }
 
     const resident = {
       id: Date.now().toString(36) + Math.random().toString(36).substring(2, 7),
       name: req.body.name.trim(),
-      idCard: req.body.idCard.replace(/\D/g, ''),
-      phone: req.body.phone.replace(/\D/g, ''),
+      idCard: (req.body.idCard || '').replace(/\D/g, ''),
+      phone: (req.body.phone || '').replace(/\D/g, ''),
       email: req.body.email?.trim() || '',
       roomId,
       roomNumber,
@@ -142,14 +148,17 @@ router.put('/', async (req, res) => {
       const room = await db.collection('rooms').findOne({ id: newRoomId })
       if (!room) return res.status(400).json({ error: 'ไม่พบหมายเลขห้องในระบบ' })
       roomNumber = room.roomNumber || room.number
-      const duplicate = await db.collection('residents').findOne({ roomId: newRoomId, id: { $ne: id } })
-      if (duplicate) return res.status(400).json({ error: 'ห้องนี้มีผู้พักอาศัยอยู่แล้ว' })
+      const isDaily = data.rentalType === 'daily'
+      if (!isDaily) {
+        const duplicate = await db.collection('residents').findOne({ roomId: newRoomId, id: { $ne: id } })
+        if (duplicate) return res.status(400).json({ error: 'ห้องนี้มีผู้พักอาศัยอยู่แล้ว' })
+      }
     }
 
     const update = {
       name: data.name.trim(),
-      idCard: data.idCard.replace(/\D/g, ''),
-      phone: data.phone.replace(/\D/g, ''),
+      idCard: (data.idCard || '').replace(/\D/g, ''),
+      phone: (data.phone || '').replace(/\D/g, ''),
       email: data.email?.trim() || '',
       roomId: newRoomId,
       roomNumber,
@@ -173,7 +182,7 @@ router.put('/', async (req, res) => {
     if (oldResident?.roomId && oldResident.roomId !== newRoomId) {
       await db.collection('rooms').updateOne(
         { id: oldResident.roomId },
-        { $set: { residentId: null, status: 'ว่าง', updatedAt: new Date().toISOString() } }
+        { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, updatedAt: new Date().toISOString() } }
       )
     }
     if (newRoomId && oldResident?.roomId !== newRoomId) {
@@ -213,7 +222,7 @@ router.delete('/', async (req, res) => {
     if (resident?.roomId) {
       await db.collection('rooms').updateOne(
         { id: resident.roomId },
-        { $set: { residentId: null, status: 'ว่าง', updatedAt: new Date().toISOString() } }
+        { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, updatedAt: new Date().toISOString() } }
       )
     }
     await db.collection('residents').deleteOne({ id: req.body.id })

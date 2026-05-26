@@ -9,6 +9,7 @@ import EmptyState from './ui/empty-state'
 import InvoicePreview from './InvoicePreview'
 import ReceiptPreview from './ReceiptPreview'
 import ReloadButton from './ui/reload-button'
+import Select from './ui/select'
 
 function formatDateTime(isoStr) {
   if (!isoStr) return '—'
@@ -134,27 +135,41 @@ export default function Documents() {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="เอกสาร" description="ดูใบแจ้งหนี้และใบเสร็จรับเงินทั้งหมดที่บันทึกไว้" />
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      {/* Document Type Buttons - Large */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
         <button
           onClick={() => setActiveTab('invoice')}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${
             activeTab === 'invoice'
-              ? 'bg-lime-500 text-white shadow-md shadow-lime-200/50'
-              : 'bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200'
-          }`}
-        >
-          ใบแจ้งหนี้
+              ? 'border-lime-500 bg-lime-50 shadow-md shadow-lime-100'
+              : 'border-neutral-200 bg-white hover:border-neutral-300'
+          }`}>
+          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${
+            activeTab === 'invoice' ? 'bg-lime-500 text-white' : 'bg-neutral-100'
+          }`}>
+            🧾
+          </div>
+          <div className="min-w-0">
+            <div className={`text-sm sm:text-base font-bold truncate ${activeTab === 'invoice' ? 'text-lime-700' : 'text-neutral-700'}`}>ใบแจ้งหนี้</div>
+            <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">ดูใบแจ้งหนี้ที่บันทึกไว้</div>
+          </div>
         </button>
         <button
           onClick={() => setActiveTab('receipt')}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${
             activeTab === 'receipt'
-              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200/50'
-              : 'bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200'
-          }`}
-        >
-          ใบเสร็จรับเงิน
+              ? 'border-emerald-500 bg-emerald-50 shadow-md shadow-emerald-100'
+              : 'border-neutral-200 bg-white hover:border-neutral-300'
+          }`}>
+          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${
+            activeTab === 'receipt' ? 'bg-emerald-500 text-white' : 'bg-neutral-100'
+          }`}>
+            📄
+          </div>
+          <div className="min-w-0">
+            <div className={`text-sm sm:text-base font-bold truncate ${activeTab === 'receipt' ? 'text-emerald-700' : 'text-neutral-700'}`}>ใบเสร็จรับเงิน</div>
+            <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">ดูใบเสร็จรับเงินที่บันทึกไว้</div>
+          </div>
         </button>
       </div>
 
@@ -189,15 +204,17 @@ export default function Documents() {
             <DatePickerField selected={invDate} onChange={handleMonthChange} showMonthPicker placeholder="เลือกเดือน" />
           </div>
         ) : (
-          <select
+          <div className="flex-1 sm:flex-none sm:w-44">
+            <Select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="h-10 px-3 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100"
-            >
-              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
-                <option key={y} value={y}>{y + 543}</option>
-              ))}
-            </select>
+              onChange={setSelectedYear}
+              options={Array.from({ length: 5 }, (_, i) => {
+                const y = new Date().getFullYear() - 2 + i
+                return { value: y, label: String(y + 543) }
+              })}
+              placeholder="เลือกปี"
+            />
+          </div>
         )}
         <ReloadButton onReload={handleReload} className="ml-auto" />
       </div>

@@ -29,11 +29,22 @@ export default function RoomDetailDaily() {
   const [selectedResidentForDates, setSelectedResidentForDates] = useState(null)
   const [checkInDate, setCheckInDate] = useState(null)
   const [checkOutDate, setCheckOutDate] = useState(null)
+  const [assignExtraBed, setAssignExtraBed] = useState(0)
+  const [assignDiscount, setAssignDiscount] = useState(0)
 
   const room = useMemo(() => rooms.find(r => r.id === id), [rooms, id])
   const resident = useMemo(() => {
     if (!room) return null
-    if (room.residentId) return residents.find(r => r.id === room.residentId)
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const daily = residents.filter(r =>
+      r.roomId === room.id &&
+      (r.rentalType === 'daily' || r.rentalType === 'รายวัน')
+    )
+    for (const res of daily) {
+      const inD = new Date(res.moveInDate); inD.setHours(0, 0, 0, 0)
+      const outD = new Date(res.moveOutDate); outD.setHours(0, 0, 0, 0)
+      if (inD <= today && outD >= today) return res
+    }
     return null
   }, [room, residents])
 
@@ -71,6 +82,8 @@ export default function RoomDetailDaily() {
     setSelectedResidentForDates(r)
     setCheckInDate(r.moveInDate ? new Date(r.moveInDate) : new Date())
     setCheckOutDate(r.moveOutDate ? new Date(r.moveOutDate) : null)
+    setAssignExtraBed(0)
+    setAssignDiscount(0)
     setShowSelectResident(false)
     setSearchResident('')
   }
@@ -102,10 +115,26 @@ export default function RoomDetailDaily() {
         companyAddress: r.companyAddress || '',
         companyTaxId: r.companyTaxId || '',
       })
+      await api('/api/rooms', 'PUT', {
+        id: room.id,
+        roomNumber: room.roomNumber,
+        roomCode: room.roomCode || '',
+        rentPrice: room.rentPrice,
+        rentalType: 'daily',
+        roomType: room.roomType,
+        prevElecMeter: room.prevElecMeter || 0,
+        prevWaterMeter: room.prevWaterMeter || 0,
+        extraBed: assignExtraBed,
+        discount: assignDiscount,
+        note: room.note || '',
+        residentId: r.id,
+      })
       await fetchRooms()
       setSelectedResidentForDates(null)
       setCheckInDate(null)
       setCheckOutDate(null)
+      setAssignExtraBed(0)
+      setAssignDiscount(0)
       toast('มอบหมายผู้เช่าเข้าห้องสำเร็จ')
     } catch (e) {
       toast(`ไม่สำเร็จ: ${e.message}`, true)
@@ -130,7 +159,7 @@ export default function RoomDetailDaily() {
   const displayNumber = room.roomNumber || room.number
   const displayRent = room.rentPrice || room.rent
   const isDaily = room.rentalType === 'daily' || room.rentalType === 'รายวัน'
-  const status = room.status === 'มีผู้พัก' || room.residentId || room.tenantName
+  const status = resident
     ? { label: 'มีผู้พัก', variant: 'success' }
     : { label: 'ว่าง', variant: 'default' }
 
@@ -185,10 +214,14 @@ export default function RoomDetailDaily() {
       await api('/api/rooms', 'PUT', {
         id: room.id,
         roomNumber: room.roomNumber,
+        roomCode: room.roomCode || '',
         rentPrice: room.rentPrice,
+        rentalType: 'daily',
         roomType: room.roomType,
         prevElecMeter: room.prevElecMeter || 0,
         prevWaterMeter: room.prevWaterMeter || 0,
+        extraBed: 0,
+        discount: 0,
         note: room.note || '',
         residentId: null,
       })
@@ -221,7 +254,12 @@ export default function RoomDetailDaily() {
   const getDailyStatus = (r) => {
     if (!r?.moveOutDate) return { label: 'เช็คอิน', variant: 'success' }
     const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const inDate = new Date(r.moveInDate)
+    inDate.setHours(0, 0, 0, 0)
+    if (inDate > now) return { label: 'จอง', variant: 'warning' }
     const out = new Date(r.moveOutDate)
+    out.setHours(0, 0, 0, 0)
     if (out >= now) return { label: 'เช็คอิน', variant: 'success' }
     return { label: 'เช็คเอาท์แล้ว', variant: 'default' }
   }
@@ -253,6 +291,18 @@ export default function RoomDetailDaily() {
             <dt className="text-sm text-neutral-500">ค่าเช่า/วัน</dt>
             <dd className="text-sm font-medium text-neutral-800">{displayRent?.toLocaleString()} บาท</dd>
           </div>
+          {room.extraBed > 0 && (
+            <div className="py-3 flex justify-between">
+              <dt className="text-sm text-neutral-500">เตียงเสริม</dt>
+              <dd className="text-sm font-medium text-neutral-800">{room.extraBed} เตียง</dd>
+            </div>
+          )}
+          {room.discount > 0 && (
+            <div className="py-3 flex justify-between">
+              <dt className="text-sm text-neutral-500">ส่วนลด</dt>
+              <dd className="text-sm font-medium text-rose-600">{room.discount.toLocaleString()} บาท</dd>
+            </div>
+          )}
           <div className="py-3 flex justify-between">
             <dt className="text-sm text-neutral-500">สถานะ</dt>
             <dd><Badge variant={status.variant}>{status.label}</Badge></dd>
@@ -381,6 +431,8 @@ export default function RoomDetailDaily() {
             <div className="text-sm font-medium text-lime-800 mb-2">สรุปค่าห้อง</div>
             <dl className="space-y-1 text-sm text-lime-700">
               <div className="flex justify-between"><span>ค่าเช่า/วัน</span><span className="font-medium">{displayRent?.toLocaleString()} บาท</span></div>
+              {room.extraBed > 0 && <div className="flex justify-between"><span>เตียงเสริม</span><span className="font-medium">{room.extraBed} เตียง</span></div>}
+              {room.discount > 0 && <div className="flex justify-between"><span>ส่วนลด</span><span className="font-medium text-rose-600">-{room.discount.toLocaleString()} บาท</span></div>}
               <div className="flex justify-between"><span>เช็คอิน</span><span className="font-medium">{formatDate(resident.moveInDate)}</span></div>
               <div className="flex justify-between"><span>เช็คเอาท์</span><span className="font-medium">{formatDate(resident.moveOutDate)}</span></div>
             </dl>
@@ -555,7 +607,7 @@ export default function RoomDetailDaily() {
       )}
 
       {selectedResidentForDates && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { setSelectedResidentForDates(null); setCheckInDate(null); setCheckOutDate(null) }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { setSelectedResidentForDates(null); setCheckInDate(null); setCheckOutDate(null); setAssignExtraBed(0); setAssignDiscount(0) }}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-neutral-100">
               <div className="flex items-center justify-between">
@@ -563,7 +615,7 @@ export default function RoomDetailDaily() {
                   <h3 className="text-base font-semibold text-neutral-800">กำหนดวันเข้าพัก</h3>
                   <p className="text-xs text-neutral-400 mt-0.5">{selectedResidentForDates.name} — ห้อง {displayNumber}</p>
                 </div>
-                <button onClick={() => { setSelectedResidentForDates(null); setCheckInDate(null); setCheckOutDate(null) }} className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400">
+                <button onClick={() => { setSelectedResidentForDates(null); setCheckInDate(null); setCheckOutDate(null); setAssignExtraBed(0); setAssignDiscount(0) }} className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
@@ -577,9 +629,26 @@ export default function RoomDetailDaily() {
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">วันเช็คเอาท์ *</label>
                 <DatePickerField selected={checkOutDate} onChange={setCheckOutDate} />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">เตียงเสริม</label>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setAssignExtraBed(Math.max(0, assignExtraBed - 1))}
+                      className="w-9 h-9 rounded-lg border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-50 transition-colors text-lg font-medium">−</button>
+                    <span className="w-8 text-center text-sm font-semibold text-neutral-800">{assignExtraBed}</span>
+                    <button type="button" onClick={() => setAssignExtraBed(Math.min(5, assignExtraBed + 1))}
+                      className="w-9 h-9 rounded-lg border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-50 transition-colors text-lg font-medium">+</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">ส่วนลด (บาท)</label>
+                  <input type="number" min="0" value={assignDiscount} onChange={e => setAssignDiscount(Math.max(0, Number(e.target.value) || 0))}
+                    className="w-full h-9 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+                </div>
+              </div>
             </div>
             <div className="p-4 border-t border-neutral-100 flex gap-3">
-              <button onClick={() => { setSelectedResidentForDates(null); setCheckInDate(null); setCheckOutDate(null) }}
+              <button onClick={() => { setSelectedResidentForDates(null); setCheckInDate(null); setCheckOutDate(null); setAssignExtraBed(0); setAssignDiscount(0) }}
                 className="flex-1 h-10 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">
                 ยกเลิก
               </button>

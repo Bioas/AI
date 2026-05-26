@@ -129,7 +129,12 @@ export default function Resident() {
   const getDailyStatus = (resident) => {
     if (!resident.moveOutDate) return { label: 'เช็คอิน', variant: 'success' }
     const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const inDate = new Date(resident.moveInDate)
+    inDate.setHours(0, 0, 0, 0)
+    if (inDate > now) return { label: 'จอง', variant: 'warning' }
     const out = new Date(resident.moveOutDate)
+    out.setHours(0, 0, 0, 0)
     if (out >= now) return { label: 'เช็คอิน', variant: 'success' }
     return { label: 'เช็คเอาท์แล้ว', variant: 'default' }
   }
@@ -158,7 +163,7 @@ export default function Resident() {
               <table className="w-full text-sm">
                 <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
-                    {['ชื่อผู้พักอาศัย', 'หมายเลขห้อง', 'เบอร์โทร', 'LINE', activeTab === 'daily' ? 'ประเภทผู้พัก' : null, activeTab === 'daily' ? 'เช็คอิน' : 'วันที่เข้าพัก', activeTab === 'daily' ? 'เช็คเอาท์' : 'วันหมดสัญญา', activeTab === 'daily' ? 'สถานะ' : 'สถานะสัญญา', 'จัดการ'].filter(Boolean).map(h => (
+                    {['ชื่อผู้พักอาศัย', 'หมายเลขห้อง', 'เบอร์โทร', activeTab !== 'daily' ? 'LINE' : null, activeTab === 'daily' ? 'ประเภทผู้พัก' : null, activeTab === 'daily' ? 'เช็คอิน' : 'วันที่เข้าพัก', activeTab === 'daily' ? 'เช็คเอาท์' : 'วันหมดสัญญา', activeTab === 'daily' ? 'สถานะ' : 'สถานะสัญญา', 'จัดการ'].filter(Boolean).map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -189,6 +194,7 @@ export default function Resident() {
                           <span className="text-xs font-medium text-neutral-500 md:hidden">เบอร์โทร</span>
                           <span className="text-neutral-700 whitespace-nowrap">{r.phone}</span>
                         </td>
+                        {!isDaily && (
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">LINE</span>
                           {r.lineUserId ? (
@@ -200,6 +206,7 @@ export default function Resident() {
                             <span className="text-neutral-300 italic">—</span>
                           )}
                         </td>
+                        )}
                         {isDaily && (
                           <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                             <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภทผู้พัก</span>
@@ -416,9 +423,9 @@ export default function Resident() {
         action={<Button onClick={() => { setEditResident(null); setViewOnly(false); setModal('resident') }}>＋ เพิ่มผู้พัก</Button>} />
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-white rounded-2xl p-1.5 shadow-sm border border-neutral-100 w-fit">
+      <div className="flex gap-1 mb-6 bg-white rounded-2xl p-1.5 shadow-sm border border-neutral-100 w-full">
         <button onClick={() => setActiveTab('monthly')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex-1 whitespace-nowrap ${
             activeTab === 'monthly'
               ? 'bg-lime-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
@@ -427,7 +434,7 @@ export default function Resident() {
           <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'monthly' ? 'bg-white/20' : 'bg-neutral-100'}`}>{monthlyCount}</span>
         </button>
         <button onClick={() => setActiveTab('daily')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex-1 whitespace-nowrap ${
             activeTab === 'daily'
               ? 'bg-amber-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
@@ -436,7 +443,7 @@ export default function Resident() {
           <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'daily' ? 'bg-white/20' : 'bg-neutral-100'}`}>{dailyCount}</span>
         </button>
         <button onClick={() => setActiveTab('line')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex-1 whitespace-nowrap ${
             activeTab === 'line'
               ? 'bg-teal-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'

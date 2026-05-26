@@ -20,6 +20,8 @@ export default function InvoicePreview({ inv }) {
       pricePerUnit: inv.rent / (inv.days || 1),
       amount: inv.rent 
     },
+    ...(inv.extraBed > 0 ? [{ desc: 'เตียงเสริม', detail: `${inv.extraBed} เตียง`, unit: `เตียง`, pricePerUnit: inv.extraBedCost / inv.extraBed, amount: inv.extraBedCost }] : []),
+    ...(inv.discount > 0 ? [{ desc: 'ส่วนลด', detail: '', unit: '', pricePerUnit: 1, amount: -inv.discount }] : []),
   ] : [
     { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
     { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
@@ -110,7 +112,7 @@ export default function InvoicePreview({ inv }) {
           <tr className="border-b-2 border-amber-200/60">
             {isDaily ? (
               <>
-                <th className="text-center pb-2 font-semibold text-[12px] text-amber-700 uppercase tracking-wider">รายการ</th>
+                <th className="text-left pb-2 font-semibold text-[12px] text-amber-700 uppercase tracking-wider">รายการ</th>
                 <th className="text-left pb-2 font-semibold text-[12px] text-amber-700 uppercase tracking-wider">รายละเอียด</th>
                 <th className="text-center pb-2 font-semibold text-[12px] text-amber-700 uppercase tracking-wider">ราคา/หน่วย</th>
                 <th className="text-right pb-2 font-semibold text-[12px] text-amber-700 uppercase tracking-wider">จำนวนเงิน</th>
@@ -129,9 +131,9 @@ export default function InvoicePreview({ inv }) {
             <tr key={i} className="border-b border-amber-50">
               {isDaily ? (
                 <>
-                  <td className="py-2 pr-2 text-center text-neutral-800">{item.desc}</td>
+                  <td className="py-2 pr-2 text-left text-neutral-800">{item.desc}</td>
                   <td className="py-2 pr-2 text-left text-[12px] text-neutral-800">{item.detail}</td>
-                  <td className="py-2 text-center text-[12px] text-neutral-800">{item.pricePerUnit?.toLocaleString()}/{item.unit}</td>
+                  <td className="py-2 text-center text-[12px] text-neutral-800">{item.pricePerUnit?.toLocaleString()}{item.unit ? '/' + item.unit : ''}</td>
                   <td className="py-2 text-right font-medium text-neutral-800">{item.amount.toLocaleString()}</td>
                 </>
               ) : (

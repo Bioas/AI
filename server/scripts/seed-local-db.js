@@ -25,6 +25,7 @@ const seedData = {
       rateWater: 20,
       commonFee: 0,
       internetFee: 0,
+      extraBedRate: 200,
       channelToken: '',
       channelSecret: '',
       logo: '',

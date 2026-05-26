@@ -20,8 +20,10 @@ export default function RoomModal() {
   const [roomType, setRoomType] = useState(editRoom?.roomType || 'ไม่มีทีวี')
   const [prevElecMeter, setPrevElecMeter] = useState(editRoom?.prevElecMeter?.toString() || '')
   const [prevWaterMeter, setPrevWaterMeter] = useState(editRoom?.prevWaterMeter?.toString() || '')
+  const [extraBed, setExtraBed] = useState(editRoom?.extraBed ? String(editRoom.extraBed) : '0')
+  const [discount, setDiscount] = useState((editRoom?.discount || '').toString())
   const [note, setNote] = useState(editRoom?.note || '')
-
+ 
   const [errors, setErrors] = useState({})
 
   const formatRent = (val) => {
@@ -55,6 +57,8 @@ export default function RoomModal() {
       roomType,
       prevElecMeter: (rentalType === 'daily' || rentalType === 'รายวัน') ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
       prevWaterMeter: (rentalType === 'daily' || rentalType === 'รายวัน') ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
+      extraBed: Number(extraBed) || 0,
+      discount: Number(discount) || 0,
       note: note.trim(),
       residentId: editRoom?.residentId || null,
     })
@@ -112,6 +116,35 @@ export default function RoomModal() {
             </div>
           </div>
 
+          {(rentalType === 'daily' || rentalType === 'รายวัน') && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">เตียงเสริม</label>
+                <div className="flex gap-2">
+                  {[0, 1, 2, 3, 4, 5].map(n => (
+                    <button key={n} type="button" onClick={() => setExtraBed(String(n))}
+                      className={`w-10 h-10 rounded-xl text-sm font-semibold border transition-all ${
+                        Number(extraBed) === n
+                          ? 'bg-lime-500 text-white border-lime-500 shadow-sm'
+                          : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300'
+                      }`}>{n}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">ส่วนลด</label>
+                <div className="relative">
+                  <input type="text" value={discount ? formatRent(discount) : discount} onChange={e => {
+                    const nums = e.target.value.replace(/[^\d]/g, '')
+                    setDiscount(nums)
+                  }} placeholder="0" inputMode="numeric"
+                    className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100" />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-neutral-400">บาท</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {editRoom && residentName && (
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1.5">ผู้พักปัจจุบัน</label>
@@ -130,6 +163,8 @@ export default function RoomModal() {
                       roomType,
                       prevElecMeter: rentalType === 'daily' || rentalType === 'รายวัน' ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
                       prevWaterMeter: rentalType === 'daily' || rentalType === 'รายวัน' ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
+                      extraBed: Number(extraBed) || 0,
+                      discount: Number(discount) || 0,
                       note: note.trim(),
                       residentId: null,
                     })

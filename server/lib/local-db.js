@@ -58,6 +58,7 @@ function matchesQuery(item, query) {
       })
       if (!orMatch) return false
     } else if (typeof condition === 'object' && condition !== null) {
+      if (condition.$ne !== undefined && item[key] === condition.$ne) return false
       if (condition.$lt !== undefined && !(item[key] < condition.$lt)) return false
       if (condition.$gt !== undefined && !(item[key] > condition.$gt)) return false
       if (condition.$lte !== undefined && !(item[key] <= condition.$lte)) return false

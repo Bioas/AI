@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext'
 
 const NAV_ITEMS = [
   { path: '/', icon: '📊', label: 'แดชบอร์ด', desc: 'ภาพรวมระบบ' },
+  { path: '/calendar', icon: '📅', label: 'ปฏิทิน', desc: 'ปฏิทินการจองห้องพัก' },
   { path: '/rooms', icon: '🚪', label: 'จัดการห้องพัก', desc: 'ห้องพักและผู้เช่า' },
   { path: '/residents', icon: '👥', label: 'ผู้พักอาศัย', desc: 'จัดการผู้เช่า' },
   { path: '/meters', icon: '⚡', label: 'บันทึกมิเตอร์', desc: 'ไฟฟ้าและน้ำประปา' },

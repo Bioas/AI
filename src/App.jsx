@@ -15,6 +15,7 @@ const Billing = lazy(() => import('./components/billing'))
 const Documents = lazy(() => import('./components/documents'))
 const Resident = lazy(() => import('./components/resident'))
 const Setting = lazy(() => import('./components/setting'))
+const Calendar = lazy(() => import('./components/calendar'))
 const RoomModal = lazy(() => import('./components/RoomModal'))
 const ResidentModal = lazy(() => import('./components/ResidentModal'))
 const InvoicePreview = lazy(() => import('./components/InvoicePreview'))
@@ -45,6 +46,7 @@ export default function App() {
                 <Route path="/documents" element={<Documents />} />
                 <Route path="/residents" element={<Resident />} />
                 <Route path="/settings" element={<Setting />} />
+                <Route path="/calendar" element={<Calendar />} />
               </Routes>
             </AnimatePresence>
           </Suspense>

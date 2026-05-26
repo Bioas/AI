@@ -381,13 +381,13 @@ export default function Billing() {
                             </td>
                             <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                               <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
-                              <span className="text-neutral-700">{inv.tenant}</span>
+                              <span className="text-neutral-700 whitespace-nowrap">{inv.tenant}</span>
                             </td>
                             {rentalTab === 'daily' && (
                               <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                                 <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภทผู้พัก</span>
-                                <Badge variant={inv.tenantType === 'company' ? 'warning' : 'info'}>
-                                  {inv.tenantType === 'company' ? 'บริษัท/องค์กร' : 'บุคคลทั่วไป'}
+                                <Badge variant={inv.tenantType === 'company' ? 'warning' : 'info'} className="whitespace-nowrap">
+                                  {inv.tenantType === 'company' ? 'บริษัท' : 'บุคคลทั่วไป'}
                                 </Badge>
                               </td>
                             )}
@@ -439,9 +439,9 @@ export default function Billing() {
                             <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                               <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
                               {inv._saved ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">บันทึกแล้ว</span>
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 whitespace-nowrap">บันทึกแล้ว</span>
                               ) : (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100">ยังไม่บันทึก</span>
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100 whitespace-nowrap">ยังไม่บันทึก</span>
                               )}
                             </td>
                             <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
@@ -452,10 +452,7 @@ export default function Billing() {
                                     ? 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
                                     : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100'
                                 }`}>ดู</button>
-                                <button onClick={() => {
-                                  const docNumber = generateDocNumber(inv, invoices, rooms)
-                                  downloadPdf({ ...inv, docNumber })
-                                }} className="h-8 px-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-100">PDF</button>
+
                               </div>
                             </td>
                           </tr>

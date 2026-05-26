@@ -20,6 +20,8 @@ export default function ReceiptPreview({ inv }) {
       pricePerUnit: inv.rent / (inv.days || 1),
       amount: inv.rent 
     },
+    ...(inv.extraBed > 0 ? [{ desc: 'เตียงเสริม', detail: `${inv.extraBed} เตียง`, unit: `เตียง`, pricePerUnit: inv.extraBedCost / inv.extraBed, amount: inv.extraBedCost }] : []),
+    ...(inv.discount > 0 ? [{ desc: 'ส่วนลด', detail: '', unit: '', pricePerUnit: 1, amount: -inv.discount }] : []),
   ] : [
     { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
     { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
@@ -109,7 +111,7 @@ export default function ReceiptPreview({ inv }) {
           <tr className="border-b-2 border-emerald-200/60">
             {isDaily ? (
               <>
-                <th className="text-center pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">รายการ</th>
+                <th className="text-left pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">รายการ</th>
                 <th className="text-left pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">รายละเอียด</th>
                 <th className="text-center pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">ราคา/หน่วย</th>
                 <th className="text-right pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider">จำนวนเงิน</th>
@@ -128,9 +130,9 @@ export default function ReceiptPreview({ inv }) {
             <tr key={i} className="border-b border-emerald-50">
               {isDaily ? (
                 <>
-                  <td className="py-2 pr-2 text-center text-neutral-800">{item.desc}</td>
+                  <td className="py-2 pr-2 text-left text-neutral-800">{item.desc}</td>
                   <td className="py-2 pr-2 text-left text-[12px] text-neutral-800">{item.detail}</td>
-                  <td className="py-2 text-center text-[12px] text-neutral-800">{item.pricePerUnit?.toLocaleString()}/{item.unit}</td>
+                  <td className="py-2 text-center text-[12px] text-neutral-800">{item.pricePerUnit?.toLocaleString()}{item.unit ? '/' + item.unit : ''}</td>
                   <td className="py-2 text-right font-medium text-neutral-800">{item.amount.toLocaleString()}</td>
                 </>
               ) : (
@@ -168,7 +170,12 @@ export default function ReceiptPreview({ inv }) {
         </div>
         <div className="text-center flex flex-col justify-end min-h-[80px]">
           {settings.signature ? (
-            <img src={settings.signature} alt="ลายเซ็น" className="w-28 h-10 object-contain mx-auto mb-0.5" />
+            <div className="relative inline-block">
+              <img src={settings.signature} alt="ลายเซ็น" className="w-28 h-10 object-contain" />
+              {settings.stamp && <img src={settings.stamp} alt="ตรายาง" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 object-contain opacity-70" />}
+            </div>
+          ) : settings.stamp ? (
+            <img src={settings.stamp} alt="ตรายาง" className="w-28 h-28 object-contain mx-auto" />
           ) : (
             <div className="border-b border-dotted border-neutral-300 w-40 mb-0.5">&nbsp;</div>
           )}

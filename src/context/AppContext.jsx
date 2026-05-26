@@ -9,7 +9,7 @@ export function AppProvider({ children }) {
   const [meters, setMeters] = useState([])
   const [settings, setSettings] = useState({
     dormName: '', address: '', phone: '', taxId: '', rateElec: 7, rateWater: 20,
-    channelToken: '', channelSecret: '', logo: '', commonFee: 0, internetFee: 0,
+    channelToken: '', channelSecret: '', logo: '', commonFee: 0, internetFee: 0, extraBedRate: 200, stamp: '',
   })
   const [toasts, setToasts] = useState([])
   const [modal, setModal] = useState(null)
@@ -139,16 +139,20 @@ export function AppProvider({ children }) {
       rent = days * rentPrice
     }
 
+    const extraBedCount = Number(room.extraBed) || 0
+    const extraBedRate = Number(settings.extraBedRate) || 200
+    const extraBedCost = isDaily ? extraBedCount * extraBedRate : 0
+    const discount = Number(room.discount) || 0
     return {
       room: roomNumber, tenant: resident?.name || room.tenantName || 'ไม่ระบุ',
       phone: resident?.phone || room.tenantPhone || '',
       userId: resident?.lineUserId || room.tenantUserId || '',
-      month: m, rent, days,
+      month: m, rent, days, extraBed: extraBedCount, extraBedCost, discount,
       elecUnits: eu, elecCost,
       waterUnits: wu, waterCost,
       prevElec: prev.elec || 0, curElec: cur.elec || 0,
       prevWater: prev.water || 0, curWater: cur.water || 0,
-      total: rent + elecCost + waterCost + cf + inf,
+      total: rent + extraBedCost - discount + elecCost + waterCost + cf + inf,
       rateElec: settings.rateElec, rateWater: settings.rateWater,
       moveInDate: resident?.moveInDate || room.moveInDate || '',
       moveOutDate: resident?.moveOutDate || room.moveOutDate || '',
@@ -171,6 +175,8 @@ export function AppProvider({ children }) {
         tenantUserId: inv.userId,
         month: inv.month,
         rent: inv.rent,
+        extraBed: inv.extraBed || 0,
+        discount: inv.discount || 0,
         elecUnits: inv.elecUnits,
         elecCost: inv.elecCost,
         waterUnits: inv.waterUnits,
@@ -516,6 +522,8 @@ export function AppProvider({ children }) {
 
       const items = [
         { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
+        ...(inv.extraBed > 0 ? [{ desc: 'เตียงเสริม', detail: `${inv.extraBed} เตียง`, amount: inv.extraBedCost }] : []),
+        ...(inv.discount > 0 ? [{ desc: 'ส่วนลด', detail: '', amount: -inv.discount }] : []),
         { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
         { desc: 'ค่าน้ำประปา', detail: inv.waterUnits <= 4 && inv.waterUnits > 0 ? 'เหมาจ่าย' : `${inv.waterUnits} หน่วย × ${inv.rateWater} บาท`, amount: inv.waterCost },
       ]
@@ -627,6 +635,23 @@ export function AppProvider({ children }) {
     api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('ลบลายเซ็นสำเร็จ') }).catch(e => toast(`ลบไม่สำเร็จ: ${e.message}`, true))
   }, [settings, toast])
 
+  const uploadStamp = useCallback((e) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (f.size > 2 * 1024 * 1024) { toast('ไฟล์ใหญ่เกิน 2MB', true); return }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const s = { ...settings, stamp: ev.target?.result }
+      api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('อัปโหลดตรายางสำเร็จ') }).catch(e => toast(`อัปโหลดไม่สำเร็จ: ${e.message}`, true))
+    }
+    reader.readAsDataURL(f)
+  }, [settings, toast])
+
+  const removeStamp = useCallback(() => {
+    const s = { ...settings, stamp: '' }
+    api('/api/settings', 'POST', s).then(() => { setSettings(s); toast('ลบตรายางสำเร็จ') }).catch(e => toast(`ลบไม่สำเร็จ: ${e.message}`, true))
+  }, [settings, toast])
+
   const exportData = useCallback(() => {
     const data = { rooms, meters, residents, settings, invoices, exportDate: new Date().toISOString() }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -667,6 +692,7 @@ export function AppProvider({ children }) {
     fetchLineUsers, toggleLineUser, mapLineUser, unmapLineUser, syncLineFollowers,
     downloadPdf, downloadContractPdf, sendLineMsg, sendPdfToLine,
     saveSettingsDelayed, uploadLogo, removeLogo, uploadQr, removeQr, uploadSignature, removeSignature,
+    uploadStamp, removeStamp,
     exportData, importData,
   }
 

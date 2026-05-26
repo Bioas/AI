@@ -93,13 +93,14 @@ export function RatesModal({ onClose }) {
   const [rateWater, setRateWater] = useState(settings.rateWater?.toString() || '20')
   const [commonFee, setCommonFee] = useState(settings.commonFee?.toString() || '0')
   const [internetFee, setInternetFee] = useState(settings.internetFee?.toString() || '0')
+  const [extraBedRate, setExtraBedRate] = useState(settings.extraBedRate?.toString() || '200')
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
     setSaving(true)
     try {
       const { api } = await import('../lib/api')
-      await api('/api/settings', 'POST', { ...settings, rateElec: parseFloat(rateElec) || 7, rateWater: parseFloat(rateWater) || 20, commonFee: parseFloat(commonFee) || 0, internetFee: parseFloat(internetFee) || 0 })
+      await api('/api/settings', 'POST', { ...settings, rateElec: parseFloat(rateElec) || 7, rateWater: parseFloat(rateWater) || 20, commonFee: parseFloat(commonFee) || 0, internetFee: parseFloat(internetFee) || 0, extraBedRate: parseFloat(extraBedRate) || 200 })
       await fetchAll(); toast('บันทึกอัตราค่าใช้จ่ายเรียบร้อย'); onClose()
     } catch (e) { toast(`บันทึกไม่สำเร็จ: ${e.message}`, true) }
     setSaving(false)
@@ -112,6 +113,7 @@ export function RatesModal({ onClose }) {
         <Input label="ค่าน้ำ (บาท/หน่วย)" type="number" value={rateWater} onChange={e => setRateWater(e.target.value)} />
         <Input label="ค่าส่วนกลาง (บาท/เดือน)" type="number" value={commonFee} onChange={e => setCommonFee(e.target.value)} />
         <Input label="ค่าอินเทอร์เน็ต (บาท/เดือน)" type="number" value={internetFee} onChange={e => setInternetFee(e.target.value)} />
+        <Input label="ค่าเตียงเสริม (บาท/เตียง)" type="number" value={extraBedRate} onChange={e => setExtraBedRate(e.target.value)} />
       </div>
     </SettingFrame>
   )
@@ -175,6 +177,40 @@ export function SignatureModal({ onClose }) {
             <Button variant="danger" size="sm" onClick={() => { removeSignature(); onClose() }}>ลบลายเซ็น</Button>
           </div>
           <input type="file" id="modalSignatureInput" accept="image/*" style={{ display: 'none' }} onChange={e => { uploadSignature(e); onClose() }} />
+          <p className="text-xs text-neutral-400">รองรับ PNG, JPG ขนาดไม่เกิน 2MB</p>
+        </div>
+        <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
+          <Button variant="ghost" onClick={onClose}>ปิด</Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+export function StampModal({ onClose }) {
+  const { settings, uploadStamp, removeStamp } = useApp()
+
+  return (
+    <Modal open={true} onClose={onClose}>
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">🔴</div>
+          <div>
+            <h3 className="text-base font-semibold text-neutral-800">จัดการตรายาง</h3>
+            <p className="text-xs text-neutral-400">อัปโหลดตรายางสำหรับใบเสร็จรับเงิน</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-4 p-6 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
+          {settings.stamp ? (
+            <img src={settings.stamp} alt="ตรายาง" className="w-32 h-32 object-contain rounded-lg border border-neutral-200 shadow-sm" />
+          ) : (
+            <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-4xl border border-dashed border-lime-200">🔴</div>
+          )}
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => document.getElementById('modalStampInput')?.click()}>อัปโหลดตรายาง</Button>
+            <Button variant="danger" size="sm" onClick={() => { removeStamp(); onClose() }}>ลบตรายาง</Button>
+          </div>
+          <input type="file" id="modalStampInput" accept="image/*" style={{ display: 'none' }} onChange={e => { uploadStamp(e); onClose() }} />
           <p className="text-xs text-neutral-400">รองรับ PNG, JPG ขนาดไม่เกิน 2MB</p>
         </div>
         <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">

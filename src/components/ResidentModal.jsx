@@ -128,10 +128,12 @@ export default function ResidentModal() {
   const validate = () => {
     const errs = {}
     if (!name.trim()) errs.name = 'กรุณากรอกชื่อ-นามสกุล'
-    if (!idCard) errs.idCard = 'กรุณากรอกเลขบัตรประชาชน'
-    else if (idCard.length !== 13) errs.idCard = 'เลขบัตรประชาชนต้องมี 13 หลัก'
-    if (!phone) errs.phone = 'กรุณากรอกเบอร์โทร'
-    else if (phone.length < 9) errs.phone = 'เบอร์โทรไม่ถูกต้อง'
+    if (rentalType !== 'daily') {
+      if (!idCard) errs.idCard = 'กรุณากรอกเลขบัตรประชาชน'
+      else if (idCard.length !== 13) errs.idCard = 'เลขบัตรประชาชนต้องมี 13 หลัก'
+      if (!phone) errs.phone = 'กรุณากรอกเบอร์โทร'
+      else if (phone.length < 9) errs.phone = 'เบอร์โทรไม่ถูกต้อง'
+    }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'รูปแบบอีเมลไม่ถูกต้อง'
     if (!moveInDate) errs.moveInDate = rentalType === 'daily' ? 'กรุณาเลือกวันเช็คอิน' : 'กรุณาเลือกวันที่เข้าพัก'
     if (!moveOutDate) errs.moveOutDate = rentalType === 'daily' ? 'กรุณาเลือกวันเช็คเอาท์' : 'กรุณาเลือกวันหมดสัญญา'
@@ -315,7 +317,7 @@ export default function ResidentModal() {
             <>
               <Input label="ชื่อ-นามสกุล *" value={name} onChange={e => setName(e.target.value)}
                 placeholder="ชื่อ-นามสกุล" error={errors.name} autoFocus />
-              <Input label="เลขบัตรประชาชน *" value={idCard} onChange={e => handleIdCard(e.target.value)}
+              <Input label={`เลขบัตรประชาชน${rentalType !== 'daily' ? ' *' : ''}`} value={idCard} onChange={e => handleIdCard(e.target.value)}
                 placeholder="13 หลัก" inputMode="numeric" maxLength={13} error={errors.idCard} />
             </>
           )}
@@ -335,7 +337,7 @@ export default function ResidentModal() {
             </>
           ) : (
             <>
-              <Input label="เบอร์โทรศัพท์ *" value={phone} onChange={e => handlePhone(e.target.value)}
+              <Input label={`เบอร์โทรศัพท์${rentalType !== 'daily' ? ' *' : ''}`} value={phone} onChange={e => handlePhone(e.target.value)}
                 placeholder="0812345678" inputMode="numeric" maxLength={10} error={errors.phone} />
               <Input label="อีเมล" type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="example@email.com" error={errors.email} />

@@ -42,11 +42,11 @@ export default function Room() {
         (r.note || '').toLowerCase().includes(q)
       )
     }
-    if (statusFilter === 'ว่าง') result = result.filter(r => r.status === 'ว่าง' || (!r.residentId && !r.tenantName))
-    if (statusFilter === 'มีผู้เช่า') result = result.filter(r => r.status === 'มีผู้เช่า' || r.residentId || r.tenantName)
+    if (statusFilter === 'ว่าง') result = result.filter(r => getStatus(r).label === 'ว่าง')
+    if (statusFilter === 'มีผู้เช่า') result = result.filter(r => getStatus(r).label === 'มีผู้เช่า')
     result.sort(naturalSortRoomNumber)
     return result
-  }, [rooms, search, statusFilter])
+  }, [rooms, search, statusFilter, residents])
 
   const handleDelete = (room, e) => {
     e.stopPropagation()
@@ -66,7 +66,43 @@ export default function Room() {
     setModal('room')
   }
 
+  const getRoomResidents = (room) => {
+    return residents.filter(r =>
+      r.roomId === room.id &&
+      (r.rentalType === 'daily' || r.rentalType === 'รายวัน')
+    ).sort((a, b) => new Date(a.moveInDate) - new Date(b.moveInDate))
+  }
+
+  const getCurrentResident = (room) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const roomRes = getRoomResidents(room)
+    for (const res of roomRes) {
+      const inD = new Date(res.moveInDate); inD.setHours(0, 0, 0, 0)
+      const outD = new Date(res.moveOutDate); outD.setHours(0, 0, 0, 0)
+      if (inD <= today && outD >= today) return res
+    }
+    return null
+  }
+
+  const getUpcomingResidents = (room) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return getRoomResidents(room).filter(r => {
+      const inD = new Date(r.moveInDate); inD.setHours(0, 0, 0, 0)
+      return inD > today
+    })
+  }
+
   const getResidentName = (room) => {
+    const isDaily = room.rentalType === 'daily' || room.rentalType === 'รายวัน'
+    if (isDaily) {
+      const current = getCurrentResident(room)
+      if (current) return current.name
+      const upcoming = getUpcomingResidents(room)
+      if (upcoming.length) return upcoming[0].name
+      return ''
+    }
     if (room.residentId) {
       const res = residents.find(r => r.id === room.residentId)
       if (res) return res.name
@@ -75,7 +111,23 @@ export default function Room() {
   }
 
   const getStatus = (room) => {
-    if (room.status === 'มีผู้เช่า' || room.residentId || room.tenantName) return { label: 'มีผู้เช่า', variant: 'success' }
+    const isDaily = room.rentalType === 'daily' || room.rentalType === 'รายวัน'
+    if (isDaily) {
+      if (getCurrentResident(room)) return { label: 'มีผู้เช่า', variant: 'success' }
+      if (getUpcomingResidents(room).length) return { label: 'กำลังจะมีผู้เข้าพัก', variant: 'warning' }
+      return { label: 'ว่าง', variant: 'default' }
+    }
+    if (room.residentId || room.tenantName) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const res = residents.find(r => r.id === room.residentId)
+      if (res && res.moveInDate) {
+        const inDate = new Date(res.moveInDate)
+        inDate.setHours(0, 0, 0, 0)
+        if (inDate > today) return { label: 'กำลังจะมีผู้เข้าพัก', variant: 'warning' }
+      }
+      return { label: 'มีผู้เช่า', variant: 'success' }
+    }
     return { label: 'ว่าง', variant: 'default' }
   }
 
@@ -124,22 +176,24 @@ export default function Room() {
             const displayNumber = r.roomNumber || r.number
             const displayRent = r.rentPrice || r.rent
             const isOccupied = status.label === 'มีผู้เช่า'
+            const isUpcoming = status.label === 'กำลังจะมีผู้เข้าพัก'
+            const borderHover = isUpcoming ? 'hover:border-amber-200' : 'hover:border-lime-200'
             return (
               <motion.div key={r.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}
                 onClick={() => handleNavigate(r)}
-                className="relative bg-white rounded-2xl border border-neutral-100 shadow-sm hover:shadow-lg hover:border-lime-200 hover:-translate-y-1 cursor-pointer transition-all duration-300 overflow-hidden group">
-                <div className={`absolute top-0 left-0 right-0 h-1 ${isOccupied ? 'bg-gradient-to-r from-lime-400 to-lime-500' : 'bg-gradient-to-r from-neutral-200 to-neutral-300'}`}></div>
+                className={`relative bg-white rounded-2xl border border-neutral-100 shadow-sm hover:shadow-lg ${borderHover} hover:-translate-y-1 cursor-pointer transition-all duration-300 overflow-hidden group`}>
+                <div className={`absolute top-0 left-0 right-0 h-1 ${isOccupied ? 'bg-gradient-to-r from-lime-400 to-lime-500' : isUpcoming ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 'bg-gradient-to-r from-neutral-200 to-neutral-300'}`}></div>
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-base font-bold shadow-sm transition-transform group-hover:scale-105 ${isOccupied ? 'bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900' : 'bg-gradient-to-br from-neutral-100 to-neutral-200 text-neutral-500'}`}>
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-base font-bold shadow-sm transition-transform group-hover:scale-105 ${isOccupied ? 'bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900' : isUpcoming ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white' : 'bg-gradient-to-br from-neutral-100 to-neutral-200 text-neutral-500'}`}>
                         {displayNumber}
                       </div>
                       <div>
                         <div className="text-sm font-bold text-neutral-800">ห้อง {displayNumber}</div>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <span className={`inline-block w-2 h-2 rounded-full ${isOccupied ? 'bg-lime-500' : 'bg-neutral-300'}`}></span>
-                          <span className={`text-xs font-medium ${isOccupied ? 'text-lime-600' : 'text-neutral-400'}`}>{status.label}</span>
+                          <span className={`inline-block w-2 h-2 rounded-full ${isOccupied ? 'bg-lime-500' : isUpcoming ? 'bg-amber-500' : 'bg-neutral-300'}`}></span>
+                          <span className={`text-xs font-medium ${isOccupied ? 'text-lime-600' : isUpcoming ? 'text-amber-600' : 'text-neutral-400'}`}>{status.label}</span>
                         </div>
                       </div>
                     </div>
@@ -153,32 +207,67 @@ export default function Room() {
                     </div>
                   </div>
 
-                  {residentName ? (
-                    <div className="flex items-center gap-2.5 mb-4 p-2.5 rounded-xl bg-lime-50/50 border border-lime-100/50">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
-                        {residentName.charAt(0)}
+                  {(() => {
+                    if (status.label === 'กำลังจะมีผู้เข้าพัก') {
+                      const isDailyR = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
+                      const res = isDailyR ? getUpcomingResidents(r)[0] || residents.find(x => x.id === r.residentId) : residents.find(x => x.id === r.residentId)
+                      const checkInDate = res?.moveInDate
+                        ? new Date(res.moveInDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : ''
+                      return (
+                        <div className="flex items-center gap-2.5 mb-4 p-2.5 rounded-xl bg-amber-50/50 border border-amber-100/50">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
+                            {residentName?.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-medium text-neutral-700 truncate">{residentName}</div>
+                            <div className="text-[10px] text-amber-600">กำลังจะมีผู้เข้าพัก {checkInDate}</div>
+                          </div>
+                        </div>
+                      )
+                    }
+                    if (residentName) {
+                      const isDailyR = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
+                      const currentRes = isDailyR ? getCurrentResident(r) : residents.find(x => x.id === r.residentId)
+                      const nextUpcoming = isDailyR ? getUpcomingResidents(r)[0] : null
+                      return (
+                        <>
+                        <div className="flex items-center gap-2.5 mb-2 p-2.5 rounded-xl bg-lime-50/50 border border-lime-100/50">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
+                            {residentName.charAt(0)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-neutral-700 truncate">{residentName}</div>
+                          </div>
+                          {(() => {
+                            if (!currentRes?.tenantType) return null
+                            return (
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${currentRes.tenantType === 'company' ? 'bg-amber-50 text-amber-600' : 'bg-sky-50 text-sky-600'}`}>
+                                {currentRes.tenantType === 'company' ? 'บริษัท' : 'ทั่วไป'}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                        {nextUpcoming ? (
+                          <div className="flex items-center gap-2 mb-4 pl-2.5">
+                            <span className="w-1 h-1 rounded-full bg-amber-500 shrink-0"></span>
+                            <span className="text-[10px] text-amber-700">
+                              ผู้จองที่กำลังจะมาถึง <span className="font-medium">{nextUpcoming.name}</span> {new Date(nextUpcoming.moveInDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} - {new Date(nextUpcoming.moveOutDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                        ) : null}
+                        </>
+                      )
+                    }
+                    return (
+                      <div className="flex items-center gap-2 mb-4 p-2.5 rounded-xl bg-neutral-50 border border-neutral-100">
+                        <div className="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-400 text-xs">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <span className="text-xs text-neutral-400">ยังไม่มีผู้พัก</span>
                       </div>
-                      <span className="text-xs font-medium text-neutral-700 truncate">{residentName}</span>
-                      {(() => {
-                        const isDaily = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
-                        if (!isDaily) return null
-                        const res = residents.find(x => x.id === r.residentId)
-                        if (!res?.tenantType) return null
-                        return (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${res.tenantType === 'company' ? 'bg-amber-50 text-amber-600' : 'bg-sky-50 text-sky-600'}`}>
-                            {res.tenantType === 'company' ? 'บริษัท' : 'ทั่วไป'}
-                          </span>
-                        )
-                      })()}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 mb-4 p-2.5 rounded-xl bg-neutral-50 border border-neutral-100">
-                      <div className="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-400 text-xs">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      </div>
-                      <span className="text-xs text-neutral-400">ยังไม่มีผู้พัก</span>
-                    </div>
-                  )}
+                    )
+                  })()}
 
                   <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
                     <div className="flex items-center gap-1.5">
@@ -221,13 +310,50 @@ export default function Room() {
                         </td>
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้เช่า</span>
-                          {residentName ? (
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                {residentName.charAt(0)}
-                              </div>
-                              <span className="text-neutral-700">{residentName}</span>
-                            </div>
+                          {status.label === 'กำลังจะมีผู้เข้าพัก' ? (
+                            (() => {
+                              const isDailyR = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
+                              const res = isDailyR ? getUpcomingResidents(r)[0] || residents.find(x => x.id === r.residentId) : residents.find(x => x.id === r.residentId)
+                              const checkInDate = res?.moveInDate
+                                ? new Date(res.moveInDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+                                : ''
+                              return (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                    {residentName?.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <div className="text-neutral-700">{residentName}</div>
+                                    <div className="text-[10px] text-amber-600">กำลังจะมีผู้เข้าพัก {checkInDate}</div>
+                                  </div>
+                                </div>
+                              )
+                            })()
+                          ) : residentName ? (
+                            (() => {
+                              const isDailyR = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
+                              const nextUpcoming = isDailyR ? getUpcomingResidents(r)[0] : null
+                              return (
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                      {residentName.charAt(0)}
+                                    </div>
+                                    <span className="text-neutral-700">{residentName}</span>
+                                  </div>
+                                  {nextUpcoming && (() => {
+                                    const inD = new Date(nextUpcoming.moveInDate)
+                                    const outD = new Date(nextUpcoming.moveOutDate)
+                                    const fOpts = { day: 'numeric', month: 'short', year: 'numeric' }
+                                    return (
+                                      <div className="text-[10px] text-amber-600 mt-1 ml-9">
+                                        ผู้จองที่กำลังจะมาถึงเป็น {nextUpcoming.name} - {inD.toLocaleDateString('th-TH', fOpts)} ถึง {outD.toLocaleDateString('th-TH', fOpts)}
+                                      </div>
+                                    )
+                                  })()}
+                                </div>
+                              )
+                            })()
                           ) : (
                             <span className="text-neutral-300 italic">—</span>
                           )}
@@ -246,13 +372,13 @@ export default function Room() {
                         <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                           <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภทผู้พัก</span>
                           {(() => {
-                            const isDaily = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
-                            if (!isDaily) return <span className="text-neutral-300 italic">—</span>
-                            const res = residents.find(x => x.id === r.residentId)
-                            if (!res?.tenantType) return <span className="text-neutral-300 italic">—</span>
+                            const isDailyR = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
+                            if (!isDailyR) return <span className="text-neutral-300 italic">—</span>
+                            const currentRes = getCurrentResident(r)
+                            if (!currentRes?.tenantType) return <span className="text-neutral-300 italic">—</span>
                             return (
-                              <Badge variant={res.tenantType === 'company' ? 'warning' : 'info'}>
-                                {res.tenantType === 'company' ? 'บริษัท/องค์กร' : 'บุคคลทั่วไป'}
+                              <Badge variant={currentRes.tenantType === 'company' ? 'warning' : 'info'}>
+                                {currentRes.tenantType === 'company' ? 'บริษัท/องค์กร' : 'บุคคลทั่วไป'}
                               </Badge>
                             )
                           })()}

@@ -5,7 +5,7 @@ import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
 import InfoRow from './ui/info-row'
 import Button from './ui/button'
-import { DormInfoModal, LogoModal, RatesModal, LineModal, QrModal, SignatureModal } from './SettingModal'
+import { DormInfoModal, LogoModal, RatesModal, LineModal, QrModal, SignatureModal, StampModal } from './SettingModal'
 
 export default function Setting() {
   const { settings, exportData, importData, fetchAll } = useApp()
@@ -33,7 +33,7 @@ export default function Setting() {
           </dl>
         </CardContent></Card>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <Card><CardContent className="pt-6">
             <div className="flex items-start justify-between mb-4">
               <h3 className="text-sm font-semibold text-neutral-800">🖼️ โลโก้หอพัก</h3>
@@ -78,6 +78,21 @@ export default function Setting() {
               <div className="text-xs text-neutral-500">{settings.signature ? 'มีลายเซ็น' : 'ยังไม่มีลายเซ็น'}</div>
             </div>
           </CardContent></Card>
+
+          <Card><CardContent className="pt-6">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-sm font-semibold text-neutral-800">🔴 ตรายาง</h3>
+              <Button size="sm" variant="secondary" onClick={() => setActiveSection('stamp')}>จัดการ</Button>
+            </div>
+            <div className="flex items-center gap-4">
+              {settings.stamp ? (
+                <img src={settings.stamp} alt="ตรายาง" className="w-16 h-16 object-contain rounded-xl border border-neutral-200 shadow-sm" />
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl border border-dashed border-lime-200">🔴</div>
+              )}
+              <div className="text-xs text-neutral-500">{settings.stamp ? 'มีตรายาง' : 'ยังไม่มีตรายาง'}</div>
+            </div>
+          </CardContent></Card>
         </div>
 
         <Card><CardContent className="pt-6">
@@ -90,6 +105,7 @@ export default function Setting() {
             <InfoRow label="ค่าน้ำ" value={`${settings.rateWater || 20} บาท/หน่วย`} />
             <InfoRow label="ค่าส่วนกลาง" value={`${settings.commonFee || 0} บาท/เดือน`} />
             <InfoRow label="ค่าอินเทอร์เน็ต" value={`${settings.internetFee || 0} บาท/เดือน`} />
+            <InfoRow label="ค่าเตียงเสริม" value={`${settings.extraBedRate || 200} บาท/เตียง`} />
           </dl>
         </CardContent></Card>
 
@@ -128,6 +144,7 @@ export default function Setting() {
       {activeSection === 'line' && <LineModal onClose={() => setActiveSection(null)} />}
       {activeSection === 'qr' && <QrModal onClose={() => setActiveSection(null)} />}
       {activeSection === 'signature' && <SignatureModal onClose={() => setActiveSection(null)} />}
+      {activeSection === 'stamp' && <StampModal onClose={() => setActiveSection(null)} />}
     </motion.div>
   )
 }
