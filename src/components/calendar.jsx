@@ -28,6 +28,7 @@ export default function Calendar() {
   const [formExtraBed, setFormExtraBed] = useState(0)
   const [formDiscount, setFormDiscount] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [isEditingDetail, setIsEditingDetail] = useState(false)
   const [viewMode, setViewMode] = useState('month')
 
   const getMonday = (d) => {
@@ -225,6 +226,7 @@ export default function Calendar() {
   const openDetail = useCallback((roomId, residentId) => {
     setDetailRoomId(roomId)
     setDetailResidentId(residentId)
+    setIsEditingDetail(false)
     setShowDetail(true)
   }, [])
 
@@ -253,6 +255,35 @@ export default function Calendar() {
       await Promise.all([fetchRooms(), fetchResidents()])
       setShowAdd(false)
       toast('เพิ่มการจองสำเร็จ')
+    } catch (e) { toast(`ไม่สำเร็จ: ${e.message}`, true) }
+    setSaving(false)
+  }
+
+  const handleEditSave = async () => {
+    if (!formName.trim()) { toast('กรุณากรอกชื่อผู้เข้าพัก', true); return }
+    if (!formCheckIn) { toast('กรุณาเลือกวันเช็คอิน', true); return }
+    if (!formCheckOut) { toast('กรุณาเลือกวันเช็คเอาท์', true); return }
+    if (formCheckOut <= formCheckIn) { toast('วันเช็คเอาท์ต้องมากกว่าวันเช็คอิน', true); return }
+    setSaving(true)
+    try {
+      await api('/api/residents', 'PUT', {
+        id: detailResidentId, name: formName.trim(),
+        moveInDate: formCheckIn, moveOutDate: formCheckOut,
+        roomId: detailRoomId, rentalType: 'daily',
+      })
+      const room = rooms.find(r => r.id === detailRoomId)
+      if (room) {
+        await api('/api/rooms', 'PUT', {
+          id: detailRoomId, roomNumber: room.roomNumber, roomCode: room.roomCode || '',
+          rentPrice: room.rentPrice, rentalType: 'daily', roomType: room.roomType,
+          prevElecMeter: room.prevElecMeter || 0, prevWaterMeter: room.prevWaterMeter || 0,
+          extraBed: formExtraBed, discount: formDiscount, note: room.note || '',
+          residentId: detailResidentId,
+        })
+      }
+      await Promise.all([fetchRooms(), fetchResidents()])
+      setIsEditingDetail(false)
+      toast('แก้ไขการจองสำเร็จ')
     } catch (e) { toast(`ไม่สำเร็จ: ${e.message}`, true) }
     setSaving(false)
   }
@@ -637,18 +668,58 @@ export default function Calendar() {
       </Modal>
 
       {/* Booking Detail Modal */}
-      <Modal open={showDetail} onClose={() => { setShowDetail(false); setDetailRoomId(null); setDetailResidentId(null) }}>
+      <Modal open={showDetail} onClose={() => { setShowDetail(false); setDetailRoomId(null); setDetailResidentId(null); setIsEditingDetail(false) }}>
         <div className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-5 pb-4 border-b border-neutral-100">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm sm:text-base shadow-sm shrink-0">📋</div>
             <div>
-              <h3 className="text-sm sm:text-base font-semibold text-neutral-800">รายละเอียดการจอง</h3>
+              <h3 className="text-sm sm:text-base font-semibold text-neutral-800">{isEditingDetail ? 'แก้ไขการจอง' : 'รายละเอียดการจอง'}</h3>
             </div>
           </div>
           {(() => {
             const room = rooms.find(r => r.id === detailRoomId)
             const resident = residents.find(r => r.id === detailResidentId)
             if (!room || !resident) return <p className="text-sm text-neutral-400 text-center py-4">ไม่พบข้อมูล</p>
+            if (isEditingDetail) {
+              return (
+                <div className="space-y-3 sm:space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">ชื่อผู้เข้าพัก</label>
+                    <input type="text" value={formName} onChange={e => setFormName(e.target.value)}
+                      className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">เช็คอิน</label>
+                      <input type="date" value={formCheckIn} onChange={e => setFormCheckIn(e.target.value)}
+                        className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">เช็คเอาท์</label>
+                      <input type="date" value={formCheckOut} onChange={e => setFormCheckOut(e.target.value)}
+                        className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">เตียงเสริม</label>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => setFormExtraBed(Math.max(0, formExtraBed - 1))}
+                          className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-50 transition-colors text-base sm:text-lg font-medium">−</button>
+                        <span className="w-7 sm:w-8 text-center text-sm font-semibold text-neutral-800">{formExtraBed}</span>
+                        <button type="button" onClick={() => setFormExtraBed(Math.min(5, formExtraBed + 1))}
+                          className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-50 transition-colors text-base sm:text-lg font-medium">+</button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">ส่วนลด (บาท)</label>
+                      <input type="number" min="0" value={formDiscount} onChange={e => setFormDiscount(Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+                    </div>
+                  </div>
+                </div>
+              )
+            }
             const formatDate = (d) => {
               if (!d) return '—'
               return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -689,10 +760,35 @@ export default function Calendar() {
             )
           })()}
           <div className="flex gap-3 justify-end mt-5 pt-4 border-t border-neutral-100">
-            <button onClick={() => { setShowDetail(false); setDetailRoomId(null); setDetailResidentId(null) }}
-              className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
-            <button onClick={() => { navigate(`/rooms/${detailRoomId}`) }}
-              className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 transition-all shadow-sm">ไปหน้าห้องพัก</button>
+            {isEditingDetail ? (
+              <>
+                <button onClick={() => { setIsEditingDetail(false) }} disabled={saving}
+                  className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ยกเลิก</button>
+                <button onClick={handleEditSave} disabled={saving}
+                  className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 transition-all shadow-sm disabled:opacity-50">
+                  {saving ? 'กำลังบันทึก...' : 'บันทึก'}</button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => { setShowDetail(false); setDetailRoomId(null); setDetailResidentId(null); setIsEditingDetail(false) }}
+                  className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
+                <button onClick={() => {
+                  const rm = rooms.find(r => r.id === detailRoomId)
+                  const rs = residents.find(r => r.id === detailResidentId)
+                  if (rm && rs) {
+                    setFormName(rs.name || '')
+                    setFormCheckIn(rs.moveInDate ? rs.moveInDate.split('T')[0] : '')
+                    setFormCheckOut(rs.moveOutDate ? rs.moveOutDate.split('T')[0] : '')
+                    setFormExtraBed(rm.extraBed || 0)
+                    setFormDiscount(rm.discount || 0)
+                  }
+                  setIsEditingDetail(true)
+                }}
+                  className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl text-sm font-semibold text-neutral-700 bg-neutral-100 hover:bg-neutral-200 transition-all shadow-sm">แก้ไข</button>
+                <button onClick={() => { navigate(`/rooms/${detailRoomId}`) }}
+                  className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 transition-all shadow-sm">ไปหน้าห้องพัก</button>
+              </>
+            )}
           </div>
         </div>
       </Modal>
