@@ -12,10 +12,10 @@ import Select from './ui/select'
 import ReloadButton from './ui/reload-button'
 import Modal from './ui/modal'
 
-const STATUS_OPTIONS = [
+const RENTAL_OPTIONS = [
   { value: 'all', label: 'ทั้งหมด' },
-  { value: 'มีผู้เช่า', label: 'มีผู้เช่า' },
-  { value: 'ว่าง', label: 'ว่าง' },
+  { value: 'รายวัน', label: 'รายวัน' },
+  { value: 'รายเดือน', label: 'รายเดือน' },
 ]
 
 export default function Room() {
@@ -29,7 +29,6 @@ export default function Room() {
   const handleReload = async () => {
     const params = new URLSearchParams()
     if (search.trim()) params.set('search', search.trim())
-    if (statusFilter !== 'all') params.set('status', statusFilter)
     await fetchRooms(params.toString() ? `?${params.toString()}` : '')
   }
 
@@ -44,8 +43,8 @@ export default function Room() {
         (r.note || '').toLowerCase().includes(q)
       )
     }
-    if (statusFilter === 'ว่าง') result = result.filter(r => getStatus(r).label === 'ว่าง')
-    if (statusFilter === 'มีผู้เช่า') result = result.filter(r => getStatus(r).label === 'มีผู้เช่า')
+    if (statusFilter === 'รายวัน') result = result.filter(r => r.rentalType === 'daily' || r.rentalType === 'รายวัน')
+    if (statusFilter === 'รายเดือน') result = result.filter(r => !r.rentalType || r.rentalType === 'monthly' || r.rentalType === 'รายเดือน')
     result.sort(naturalSortRoomNumber)
     return result
   }, [rooms, search, statusFilter, residents])
@@ -150,25 +149,29 @@ export default function Room() {
       <PageHeader title="จัดการห้องพัก" description="เพิ่ม แก้ไข และจัดการห้องพักทั้งหมด"
         action={<Button onClick={() => { setEditRoom(null); setModal('room') }}>＋ เพิ่มห้อง</Button>} />
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 sm:mb-6">
-        <div className="relative flex-1 min-w-0">
-          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="ค้นหาห้องหรือผู้เช่า..."
-            className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 w-full sm:flex-1">
+          <div className="relative flex-1 min-w-0">
+            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="ค้นหาห้องหรือผู้เช่า..."
+              className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+          </div>
+          <ReloadButton onReload={handleReload} className="shrink-0" />
         </div>
-        <div className="w-full sm:w-40">
-          <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} placeholder="ทั้งหมด" />
-        </div>
-        <ReloadButton onReload={handleReload} />
-        <div className="flex items-center gap-2 ml-auto">
-          <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-lime-100 text-lime-700' : 'text-neutral-400 hover:bg-neutral-100'}`}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          </button>
-          <button onClick={() => setViewMode('table')} className={`p-2 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-lime-100 text-lime-700' : 'text-neutral-400 hover:bg-neutral-100'}`}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          </button>
-          <div className="text-xs text-neutral-400">{filtered.length} ห้อง</div>
+        <div className="flex items-center gap-3">
+          <div className="w-full sm:w-40">
+            <Select value={statusFilter} onChange={setStatusFilter} options={RENTAL_OPTIONS} placeholder="ทั้งหมด" />
+          </div>
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-lime-100 text-lime-700' : 'text-neutral-400 hover:bg-neutral-100'}`}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </button>
+            <button onClick={() => setViewMode('table')} className={`p-2 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-lime-100 text-lime-700' : 'text-neutral-400 hover:bg-neutral-100'}`}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+            <div className="text-xs text-neutral-400">{filtered.length} ห้อง</div>
+          </div>
         </div>
       </div>
 
@@ -300,7 +303,7 @@ export default function Room() {
               <table className="w-full text-sm">
                 <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
-                    {['หมายเลขห้องพัก', 'ชื่อผู้เช่า', 'ประเภทห้อง', 'ประเภทผู้พัก', 'ค่าเช่า', 'สถานะห้อง', 'หมายเหตุ'].map(h => (
+                    {['หมายเลขห้องพัก', 'ชื่อผู้เช่า', 'ประเภทห้อง', 'ค่าเช่า', 'สถานะห้อง', 'หมายเหตุ'].map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -313,13 +316,41 @@ export default function Room() {
                     const displayRent = r.rentPrice || r.rent
                     return (
                       <tr key={r.id} onClick={() => handleNavigate(r)}
-                        className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors cursor-pointer group">
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
+                        className="block md:table-row md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors cursor-pointer group">
+                        {/* Mobile card */}
+                        <td colSpan={99} className="block md:hidden p-3 w-full">
+                          <div className="space-y-1.5 w-full">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-[11px] font-bold shadow-sm shrink-0">{displayNumber}</span>
+                              <span className="font-medium text-neutral-800 truncate">{residentName || '—'}</span>
+                              <Badge variant={status.variant} className="ml-auto shrink-0">{status.label}</Badge>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                <div className="text-[10px] text-neutral-400">รูปแบบ</div>
+                                <div className={`font-semibold text-xs ${(r.rentalType === 'daily' || r.rentalType === 'รายวัน') ? 'text-sky-600' : 'text-lime-600'}`}>{(r.rentalType === 'daily' || r.rentalType === 'รายวัน') ? 'รายวัน' : 'รายเดือน'}</div>
+                              </div>
+                              <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                <div className="text-[10px] text-neutral-400">ประเภท</div>
+                                <div className="font-semibold text-neutral-800 text-xs">
+                                  <span className={r.roomType === 'มีทีวี' ? 'text-sky-600' : ''}>{r.roomType || 'ไม่มีทีวี'}</span>
+                                </div>
+                              </div>
+                              <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                <div className="text-[10px] text-neutral-400">ค่าเช่า</div>
+                                <div className="font-semibold text-neutral-800 text-xs">{displayRent?.toLocaleString()}</div>
+                              </div>
+                            </div>
+                            {r.note && (
+                              <div className="text-[11px] text-neutral-400 truncate pt-0.5">{r.note}</div>
+                            )}
+                          </div>
+                        </td>
+                        {/* Desktop cells */}
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-sm font-bold shadow-sm">{displayNumber}</span>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้เช่า</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           {status.label === 'กำลังจะมีผู้เข้าพัก' ? (
                             (() => {
                               const isDailyR = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
@@ -368,41 +399,23 @@ export default function Room() {
                             <span className="text-neutral-300 italic">—</span>
                           )}
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภท</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <div className="flex gap-1">
-                            <Badge variant={r.roomType === 'มีทีวี' ? 'info' : 'default'}>
-                              {r.roomType || 'ไม่มีทีวี'}
-                            </Badge>
                             <Badge variant={(r.rentalType === 'daily' || r.rentalType === 'รายวัน') ? 'warning' : 'success'} className="text-xs font-semibold px-2.5 py-1">
                               {r.rentalType === 'daily' ? 'รายวัน' : r.rentalType === 'monthly' ? 'รายเดือน' : r.rentalType || 'รายเดือน'}
                             </Badge>
+                            <Badge variant={r.roomType === 'มีทีวี' ? 'info' : 'default'}>
+                              {r.roomType || 'ไม่มีทีวี'}
+                            </Badge>
                           </div>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภทผู้พัก</span>
-                          {(() => {
-                            const isDailyR = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
-                            if (!isDailyR) return <span className="text-neutral-300 italic">—</span>
-                            const currentRes = getCurrentResident(r)
-                            if (!currentRes?.tenantType) return <span className="text-neutral-300 italic">—</span>
-                            return (
-                              <Badge variant={currentRes.tenantType === 'company' ? 'warning' : 'info'}>
-                                {currentRes.tenantType === 'company' ? 'บริษัท/องค์กร' : 'บุคคลทั่วไป'}
-                              </Badge>
-                            )
-                          })()}
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าเช่า</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <span className="font-medium text-neutral-800 whitespace-nowrap">{displayRent?.toLocaleString()} บาท</span>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">หมายเหตุ</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <span className="text-xs text-neutral-400 max-w-[150px] truncate">{r.note || <span className="text-neutral-200">—</span>}</span>
                         </td>
                       </tr>

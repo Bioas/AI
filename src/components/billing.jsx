@@ -65,15 +65,20 @@ const StatusBadge = ({ paid, onClick }) => {
 
 const formatTHDate = (dateStr) =>
   dateStr ? new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+const formatTHDateShort = (dateStr) => {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  return `${d.getDate()} ${d.toLocaleDateString('th-TH', { month: 'short' })} ${(d.getFullYear() + 543).toString().slice(-2)}`
+}
 
 const BulkActions = ({ onLine, onSave, disabledLine, disabledSave, loading, className }) => (
-  <div className={'flex gap-2 ' + className}>
+  <div className={'flex gap-2 w-full sm:w-auto ' + className}>
     {onLine && (
-      <Button size="sm" onClick={onLine} disabled={disabledLine} className="gap-1.5 bg-lime-500 hover:bg-lime-600 text-white flex-1 sm:flex-none">
+      <Button size="sm" onClick={onLine} disabled={disabledLine} className="gap-1.5 bg-lime-500 hover:bg-lime-600 text-white flex-1">
         ส่ง LINE
       </Button>
     )}
-    <Button size="sm" onClick={onSave} disabled={disabledSave} className="bg-lime-500 hover:bg-lime-600 text-white gap-1.5 flex-1 sm:flex-none">
+    <Button size="sm" onClick={onSave} disabled={disabledSave} className="bg-lime-500 hover:bg-lime-600 text-white gap-1.5 flex-1">
       ชำระทั้งหมด
     </Button>
   </div>
@@ -429,79 +434,122 @@ export default function Billing() {
                       {roomInvoices.map(({ room: r, inv }) => {
                           const res = residentById[r.residentId]
                           return (
-                          <tr key={r.id} onClick={() => toggleSelect(r.id)} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 cursor-pointer hover:bg-lime-50/30 active:bg-lime-100/40 transition-colors">
-                            <td className="px-0 md:px-4 py-3 md:py-3.5 flex items-center justify-between md:table-cell select-none">
-                              <span className="text-xs font-medium text-neutral-500 md:hidden">เลือก</span>
-                              <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} onClick={e => e.stopPropagation()} className="w-5 h-5 md:w-4 md:h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400 pointer-events-none" />
+                          <tr key={r.id} onClick={() => toggleSelect(r.id)} className="block md:table-row md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 cursor-pointer hover:bg-lime-50/30 active:bg-lime-100/40 transition-colors">
+                            {/* Mobile card */}
+                            <td colSpan={99} className="block md:hidden p-3 w-full">
+                              <div className="space-y-1.5 w-full">
+                                <div className="flex items-center gap-2.5">
+                                  <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)}
+                                    onClick={e => e.stopPropagation()}
+                                    className="w-5 h-5 rounded border-neutral-300 text-lime-500 focus:ring-lime-400 shrink-0" />
+                                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm shrink-0">{inv.room}</span>
+                                  <span className="font-medium text-neutral-800 truncate">{inv.tenant}</span>
+                                </div>
+                                {rentalTab === 'daily' ? (
+                                  <div className="grid grid-cols-3 gap-1.5">
+                                    <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                      <div className="text-[10px] text-neutral-400">ค่าเช่า</div>
+                                      <div className="font-semibold text-neutral-800">{inv.rent.toLocaleString()}</div>
+                                    </div>
+                                    <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                      <div className="text-[10px] text-neutral-400">เช็คอิน</div>
+                                      <div className="font-semibold text-neutral-800 text-xs truncate">{formatTHDateShort(res?.moveInDate)}</div>
+                                    </div>
+                                    <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                      <div className="text-[10px] text-neutral-400">เช็คเอาท์</div>
+                                      <div className="font-semibold text-neutral-800 text-xs truncate">{formatTHDateShort(res?.moveOutDate)}</div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="grid grid-cols-3 gap-1.5">
+                                    <div className="bg-amber-50/60 rounded-lg px-2.5 py-2 border border-amber-100/40">
+                                      <div className="text-[10px] text-amber-500 font-medium">ค่าเช่า</div>
+                                      <div className="font-semibold text-neutral-800">{inv.rent.toLocaleString()}</div>
+                                    </div>
+                                    <div className="bg-amber-50/60 rounded-lg px-2.5 py-2 border border-amber-100/40">
+                                      <div className="text-[10px] text-amber-500 font-medium">ค่าไฟ</div>
+                                      <div className="font-semibold text-neutral-800">{inv.elecCost.toLocaleString()}<span className="text-[11px] text-neutral-400 ml-0.5">({inv.elecUnits}u)</span></div>
+                                    </div>
+                                    <div className="bg-amber-50/60 rounded-lg px-2.5 py-2 border border-amber-100/40">
+                                      <div className="text-[10px] text-amber-500 font-medium">ค่าน้ำ</div>
+                                      <div className="font-semibold text-neutral-800">{inv.waterCost.toLocaleString()}<span className="text-[11px] text-neutral-400 ml-0.5">({inv.waterUnits}u)</span></div>
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-neutral-100">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-neutral-900">{inv.total.toLocaleString()} บาท</span>
+                                    {rentalTab === 'daily' && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[11px] font-semibold">{inv.days || 1} คืน</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <StatusBadge paid={inv.paid} onClick={() => handleTogglePaid(r, inv)} />
+                                    <button onClick={e => { e.stopPropagation(); handleView(inv) }}
+                                      className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${
+                                        activeTab === 'invoice'
+                                          ? 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
+                                          : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100'
+                                      }`}>ดู</button>
+                                  </div>
+                                </div>
+                              </div>
                             </td>
-                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                              <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
+                            {/* Desktop cells */}
+                            <td className="hidden md:table-cell px-4 py-3.5 select-none">
+                              <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400 pointer-events-none" />
+                            </td>
+                            <td className="hidden md:table-cell px-4 py-3.5">
                               <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{inv.room}</span>
                             </td>
-                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                              <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
+                            <td className="hidden md:table-cell px-4 py-3.5">
                               <span className="text-neutral-700 whitespace-nowrap">{inv.tenant}</span>
                             </td>
                             {rentalTab === 'daily' && (
-                              <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                                <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภทผู้พัก</span>
+                              <td className="hidden md:table-cell px-4 py-3.5">
                                 <Badge variant={inv.tenantType === 'company' ? 'warning' : 'info'} className="whitespace-nowrap">
                                   {inv.tenantType === 'company' ? 'บริษัท' : 'บุคคลทั่วไป'}
                                 </Badge>
                               </td>
                             )}
-                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                              <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าเช่า</span>
+                            <td className="hidden md:table-cell px-4 py-3.5">
                               <span className="text-neutral-700 whitespace-nowrap">{inv.rent.toLocaleString()}</span>
                             </td>
                             {rentalTab === 'daily' ? (
                               <>
-                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                                  <span className="text-xs font-medium text-neutral-500 md:hidden">วันเช็คอิน</span>
-                                  <span className="text-neutral-700 whitespace-nowrap">
-                                    {formatTHDate(res?.moveInDate)}
-                                  </span>
+                                <td className="hidden md:table-cell px-4 py-3.5">
+                                  <span className="text-neutral-700 whitespace-nowrap">{formatTHDate(res?.moveInDate)}</span>
                                 </td>
-                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                                  <span className="text-xs font-medium text-neutral-500 md:hidden">วันเช็คเอาท์</span>
-                                  <span className="text-neutral-700 whitespace-nowrap">
-                                    {formatTHDate(res?.moveOutDate)}
-                                  </span>
+                                <td className="hidden md:table-cell px-4 py-3.5">
+                                  <span className="text-neutral-700 whitespace-nowrap">{formatTHDate(res?.moveOutDate)}</span>
                                 </td>
-                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                                  <span className="text-xs font-medium text-neutral-500 md:hidden">จำนวนคืน</span>
+                                <td className="hidden md:table-cell px-4 py-3.5">
                                   <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 text-xs font-semibold">{inv.days || 1} คืน</span>
                                 </td>
                               </>
                             ) : (
                               <>
-                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                                  <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าไฟ</span>
+                                <td className="hidden md:table-cell px-4 py-3.5">
                                   <span className="text-neutral-700 whitespace-nowrap">{inv.elecCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.elecUnits}u)</span></span>
                                 </td>
-                                <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                                  <span className="text-xs font-medium text-neutral-500 md:hidden">ค่าน้ำ</span>
+                                <td className="hidden md:table-cell px-4 py-3.5">
                                   <span className="text-neutral-700 whitespace-nowrap">{inv.waterCost.toLocaleString()}<span className="text-neutral-400 text-xs ml-1">({inv.waterUnits}u)</span></span>
                                 </td>
                               </>
                             )}
-                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                              <span className="text-xs font-medium text-neutral-500 md:hidden">ยอดรวม</span>
+                            <td className="hidden md:table-cell px-4 py-3.5">
                               <span className="text-base font-bold text-neutral-800 whitespace-nowrap">{inv.total.toLocaleString()} บาท</span>
                             </td>
-                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                              <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
+                            <td className="hidden md:table-cell px-4 py-3.5">
                               <StatusBadge paid={inv.paid} onClick={() => handleTogglePaid(r, inv)} />
                             </td>
-                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                              <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
+                            <td className="hidden md:table-cell px-4 py-3.5">
                               <div className="flex gap-1.5">
                                 <button onClick={e => { e.stopPropagation(); handleView(inv) }} className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${
                                   activeTab === 'invoice'
                                     ? 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
                                     : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100'
                                 }`}>ดู</button>
-
                               </div>
                             </td>
                         </tr>

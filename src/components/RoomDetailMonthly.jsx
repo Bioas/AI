@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import { api } from '../lib/api'
-import { formatThaiDate, getContractStatus } from '../lib/constants'
+import { api, getCurrentMonth } from '../lib/api'
+import { formatThaiDate, getContractStatus, getPrevMeter, calcWaterCost } from '../lib/constants'
 import DatePickerField from './ui/datepicker'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
@@ -17,14 +17,14 @@ const TABS = [
   { id: 'detail', label: 'รายละเอียด', icon: '' },
   { id: 'tenant', label: 'ผู้พัก', icon: '👤' },
   { id: 'contract', label: 'สัญญาเช่า', icon: '📋' },
-  { id: 'booking', label: 'การจอง', icon: '📅' },
-  { id: 'moveout', label: 'ย้ายออก', icon: '🚚' },
+  { id: 'meter', label: 'บันทึกมิเตอร์', icon: '⚡' },
+  { id: 'billing', label: 'ออกบิล', icon: '💰' },
 ]
 
 export default function RoomDetailMonthly() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { rooms, residents, invoices, meters, lineUsers, settings, setEditRoom, setEditResident, setViewOnly, setModal, deleteRoom, deleteResident, downloadContractPdf, fetchRooms, assignResidentToRoom, toast } = useApp()
+  const { rooms, residents, invoices, meters, lineUsers, settings, setEditRoom, setEditResident, setViewOnly, setModal, deleteRoom, deleteResident, downloadContractPdf, fetchRooms, assignResidentToRoom, toast, calcInv, saveInvoice, setViewInv, fetchAll, downloadPdf, sendPdfToLine } = useApp()
   const [activeTab, setActiveTab] = useState('detail')
   const [contractResident, setContractResident] = useState(null)
   const [showContractPreview, setShowContractPreview] = useState(false)
@@ -33,9 +33,20 @@ export default function RoomDetailMonthly() {
   const [showDeleteOptions, setShowDeleteOptions] = useState(false)
   const [confirmDeleteRoom, setConfirmDeleteRoom] = useState(false)
   const [confirmDeleteResident, setConfirmDeleteResident] = useState(false)
+  const [confirmCancelPayment, setConfirmCancelPayment] = useState(false)
+  const [cancelInvId, setCancelInvId] = useState(null)
+  const [meterModalOpen, setMeterModalOpen] = useState(false)
   const [selectedResidentForDates, setSelectedResidentForDates] = useState(null)
   const [moveInDate, setMoveInDate] = useState(null)
   const [moveOutDate, setMoveOutDate] = useState(null)
+  const [previewScale, setPreviewScale] = useState(1)
+  const [previewHeight, setPreviewHeight] = useState(0)
+  const previewOuterRef = useRef(null)
+  const previewInnerRef = useRef(null)
+  const [curElec, setCurElec] = useState('')
+  const [curWater, setCurWater] = useState('')
+  const [meterMonth, setMeterMonth] = useState(getCurrentMonth())
+  const [billMonth, setBillMonth] = useState(getCurrentMonth())
 
   const room = useMemo(() => rooms.find(r => r.id === id), [rooms, id])
   const resident = useMemo(() => {
@@ -219,6 +230,66 @@ export default function RoomDetailMonthly() {
     }
   }
 
+  useEffect(() => {
+    const outer = previewOuterRef.current
+    const inner = previewInnerRef.current
+    if (!outer || !inner) return
+    const update = () => {
+      const cw = outer.clientWidth
+      const s = Math.min(1, cw / 550)
+      setPreviewScale(s)
+      setPreviewHeight(inner.scrollHeight * s)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(outer)
+    return () => ro.disconnect()
+  }, [showContractPreview, resident])
+
+  useEffect(() => {
+    if (!room || !meters) return
+    const existing = meters.find(x => x.roomId === room.id && x.month === meterMonth)
+    if (existing) {
+      setCurElec(String(existing.elec))
+      setCurWater(String(existing.water))
+    } else {
+      setCurElec('')
+      setCurWater('')
+    }
+  }, [room, meters, meterMonth])
+
+  const meterPrev = useMemo(() => {
+    if (!room) return null
+    return getPrevMeter(room.id, meterMonth, meters, room.prevElecMeter ?? '', room.prevWaterMeter ?? '')
+  }, [room, meterMonth, meters])
+
+  const prevElec = meterPrev?.elec ?? room?.prevElecMeter ?? ''
+  const prevWater = meterPrev?.water ?? room?.prevWaterMeter ?? ''
+  const elecUsage = curElec && prevElec !== '' ? Math.max(0, Number(curElec) - Number(prevElec)) : 0
+  const waterUsage = curWater && prevWater !== '' ? Math.max(0, Number(curWater) - Number(prevWater)) : 0
+  const elecCostVal = elecUsage * (settings?.rateElec || 7)
+  const waterCostVal = calcWaterCost(waterUsage, settings?.rateWater || 20)
+
+  const handleSaveMeter = async () => {
+    if (!room || !curElec || !curWater) {
+      toast('กรุณากรอกค่ามิเตอร์ให้ครบ', true)
+      return
+    }
+    try {
+      const existing = meters.find(x => x.roomId === room.id && x.month === meterMonth)
+      const body = { roomId: room.id, month: meterMonth, elec: Number(curElec), water: Number(curWater) }
+      if (existing) {
+        await api('/api/meters', 'PUT', { ...body, id: existing.id })
+      } else {
+        await api('/api/meters', 'POST', body)
+      }
+      await fetchAll()
+      toast('บันทึกค่ามิเตอร์สำเร็จ')
+    } catch (e) {
+      toast(`บันทึกไม่สำเร็จ: ${e.message}`, true)
+    }
+  }
+
   const formatDate = (d) => {
     if (!d) return '—'
     return formatThaiDate(d)
@@ -355,13 +426,13 @@ export default function RoomDetailMonthly() {
     return (
       <div className="space-y-6">
         <Card><CardContent className="pt-6">
-          <div className="flex items-start justify-between mb-4">
-            <h3 className="text-sm font-semibold text-neutral-800">ข้อมูลผู้พักปัจจุบัน</h3>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={handleEditResident}>แก้ไข</Button>
-              <Button variant="danger" size="sm" onClick={handleDeleteResident}>ลบ</Button>
-            </div>
-          </div>
+            <div className="flex items-start justify-between mb-4">
+             <h3 className="text-sm font-semibold text-neutral-800">ข้อมูลผู้พักปัจจุบัน</h3>
+             <div className="flex gap-1.5 sm:gap-2">
+               <Button size="sm" onClick={handleEditResident}><span className="sm:hidden"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span className="hidden sm:inline">แก้ไข</span></Button>
+               <Button variant="danger" size="sm" onClick={handleDeleteResident}><span className="sm:hidden"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span className="hidden sm:inline">ลบ</span></Button>
+             </div>
+           </div>
 
           <div className="flex items-center gap-4 mb-6 p-4 rounded-xl bg-lime-50 border border-lime-100">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-xl font-bold shadow-sm">
@@ -432,9 +503,9 @@ export default function RoomDetailMonthly() {
               <div className="flex justify-between"><span>เงินมัดจำ</span><span className="font-medium">{resident.deposit?.toLocaleString()} บาท</span></div>
             </dl>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" size="sm" onClick={() => setShowContractPreview(true)}>️ ดูตัวอย่างสัญญาเช่า</Button>
-            <Button variant="outline" size="sm" onClick={handleContract}>📄 ดาวน์โหลดสัญญาเช่า</Button>
+          <div className="flex justify-end gap-2">
+            <Button size="sm" onClick={() => setShowContractPreview(true)}>️ ดูตัวอย่างสัญญาเช่า</Button>
+            <Button size="sm" onClick={handleContract}>📄 ดาวน์โหลดสัญญาเช่า</Button>
           </div>
         </div>
       ) : (
@@ -448,35 +519,246 @@ export default function RoomDetailMonthly() {
     </CardContent></Card>
   )
 
-  const renderBooking = () => (
+  const renderMeter = () => {
+    const hasData = curElec && curWater && prevElec !== '' && prevWater !== ''
+    return (
     <Card><CardContent className="pt-6">
-      <h3 className="text-sm font-semibold text-neutral-800 mb-4">การจองห้อง</h3>
-      <div className="text-center py-8">
-        <div className="text-4xl mb-3">📅</div>
-        <h4 className="text-sm font-semibold text-neutral-700 mb-1">ไม่มีข้อมูลการจอง</h4>
-        <p className="text-xs text-neutral-400">ห้องนี้ยังไม่มีประวัติการจอง</p>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-neutral-800">บันทึกค่ามิเตอร์</h3>
+        <div className="flex items-center gap-2">
+          <div className="w-40">
+            <DatePickerField
+              selected={meterMonth ? new Date(meterMonth + '-01') : new Date()}
+              onChange={d => { if (d) setMeterMonth(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) }}
+              showMonthPicker />
+          </div>
+          <Button size="sm" onClick={() => setMeterModalOpen(true)}>✏️ แก้ไข</Button>
+        </div>
       </div>
-    </CardContent></Card>
-  )
 
-  const renderMoveOut = () => (
-    <Card><CardContent className="pt-6">
-      <h3 className="text-sm font-semibold text-neutral-800 mb-4">ประวัติการย้ายออก</h3>
-      <div className="text-center py-8">
-        <div className="text-4xl mb-3">🚚</div>
-        <h4 className="text-sm font-semibold text-neutral-700 mb-1">ไม่มีประวัติการย้ายออก</h4>
-        <p className="text-xs text-neutral-400">ห้องนี้ยังไม่มีประวัติการย้ายออก</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="relative overflow-hidden rounded-2xl bg-white border border-neutral-100 shadow-sm">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-amber-500" />
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white text-sm shadow-sm">⚡</div>
+              <div>
+                <div className="text-sm font-semibold text-neutral-800">มิเตอร์ไฟฟ้า</div>
+                <div className="text-[10px] text-neutral-400">อัตราหน่วยละ {settings?.rateElec || 7} บาท</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="bg-neutral-50 rounded-xl px-3 py-2.5 text-center">
+                <div className="text-[10px] text-neutral-400 mb-0.5">ก่อนหน้า</div>
+                <div className="text-sm font-bold text-neutral-600 font-mono">{prevElec || 0}</div>
+              </div>
+              <div className="bg-amber-50/50 rounded-xl px-3 py-2.5 text-center ring-1 ring-amber-200/50">
+                <div className="text-[10px] text-amber-500 mb-0.5">บันทึก</div>
+                <div className="text-sm font-bold text-amber-700 font-mono">{curElec || <span className="text-neutral-300">—</span>}</div>
+              </div>
+              <div className={`rounded-xl px-3 py-2.5 text-center ${hasData ? 'bg-lime-50 ring-1 ring-lime-200/50' : 'bg-neutral-50'}`}>
+                <div className="text-[10px] text-neutral-400 mb-0.5">ที่ใช้</div>
+                <div className="text-sm font-bold font-mono">{hasData ? <span className="text-lime-600">{elecUsage}</span> : <span className="text-neutral-300">—</span>}</div>
+              </div>
+            </div>
+            {hasData && (
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs text-neutral-400">ค่าไฟฟ้า</span>
+                <span className="text-sm font-bold text-amber-600">{elecCostVal.toLocaleString()} บาท</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl bg-white border border-neutral-100 shadow-sm">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 to-sky-500" />
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center text-white text-sm shadow-sm">💧</div>
+              <div>
+                <div className="text-sm font-semibold text-neutral-800">มิเตอร์น้ำ</div>
+                <div className="text-[10px] text-neutral-400">อัตราหน่วยละ {settings?.rateWater || 20} บาท</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="bg-neutral-50 rounded-xl px-3 py-2.5 text-center">
+                <div className="text-[10px] text-neutral-400 mb-0.5">ก่อนหน้า</div>
+                <div className="text-sm font-bold text-neutral-600 font-mono">{prevWater || 0}</div>
+              </div>
+              <div className="bg-sky-50/50 rounded-xl px-3 py-2.5 text-center ring-1 ring-sky-200/50">
+                <div className="text-[10px] text-sky-500 mb-0.5">บันทึก</div>
+                <div className="text-sm font-bold text-sky-700 font-mono">{curWater || <span className="text-neutral-300">—</span>}</div>
+              </div>
+              <div className={`rounded-xl px-3 py-2.5 text-center ${hasData ? 'bg-lime-50 ring-1 ring-lime-200/50' : 'bg-neutral-50'}`}>
+                <div className="text-[10px] text-neutral-400 mb-0.5">ที่ใช้</div>
+                <div className="text-sm font-bold font-mono">{hasData ? <span className="text-lime-600">{waterUsage}</span> : <span className="text-neutral-300">—</span>}</div>
+              </div>
+            </div>
+            {hasData && (
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs text-neutral-400">ค่าน้ำ</span>
+                <span className="text-sm font-bold text-sky-600">{waterCostVal.toLocaleString()} บาท</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {hasData && (
+        <div className="flex justify-end">
+          <div className="flex items-center gap-3 text-xs text-neutral-400">
+            <span>⚡ {elecCostVal.toLocaleString()} บาท</span>
+            <span>💧 {waterCostVal.toLocaleString()} บาท</span>
+            <span className="font-semibold text-neutral-600">รวม {(elecCostVal + waterCostVal).toLocaleString()} บาท</span>
+          </div>
+        </div>
+      )}
       </div>
     </CardContent></Card>
-  )
+    )
+  }
+
+  const renderBilling = () => {
+    const inv = room && billMonth ? calcInv(room, billMonth) : null
+    return (
+      <Card><CardContent className="pt-6">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-neutral-800">ออกบิล</h3>
+          <div className="w-40">
+            <DatePickerField
+              selected={billMonth ? new Date(billMonth + '-01') : new Date()}
+              onChange={d => { if (d) setBillMonth(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) }}
+              showMonthPicker />
+          </div>
+        </div>
+        {inv ? (
+          <div className="rounded-2xl bg-white border border-neutral-100 shadow-sm overflow-hidden">
+            <div className="px-5 pt-5 pb-3 border-b border-neutral-50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm shadow-sm">💰</div>
+                  <div>
+                    <div className="text-sm font-semibold text-neutral-800">สรุปค่าใช้จ่าย</div>
+                    <div className="text-[10px] text-neutral-400">ห้อง {displayNumber}</div>
+                  </div>
+                </div>
+                <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold ${inv._saved && inv.paid ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${inv._saved && inv.paid ? 'bg-green-500' : 'bg-amber-500'}`} />
+                  {inv._saved && inv.paid ? 'ชำระแล้ว' : 'รอชำระ'}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 space-y-2">
+              <div className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-neutral-400">🏠</span>
+                  <span className="text-sm text-neutral-600">ค่าเช่า</span>
+                </div>
+                <span className="text-sm font-semibold text-neutral-800">{inv.rent?.toLocaleString()} บาท</span>
+              </div>
+              {inv.discount > 0 && (
+                <div className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400">🏷️</span>
+                    <span className="text-sm text-neutral-600">ส่วนลด</span>
+                  </div>
+                  <span className="text-sm font-semibold text-rose-500">-{inv.discount.toLocaleString()} บาท</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-neutral-400">⚡</span>
+                  <span className="text-sm text-neutral-600">ค่าไฟ</span>
+                </div>
+                <span className="text-sm text-neutral-800">{inv.elecCost?.toLocaleString()} บาท <span className="text-[11px] text-neutral-400">({inv.elecUnits || 0} หน่วย)</span></span>
+              </div>
+              <div className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-neutral-400">💧</span>
+                  <span className="text-sm text-neutral-600">ค่าน้ำ</span>
+                </div>
+                <span className="text-sm text-neutral-800">{inv.waterCost?.toLocaleString()} บาท <span className="text-[11px] text-neutral-400">({inv.waterUnits || 0} หน่วย)</span></span>
+              </div>
+              {(inv.commonFee || 0) > 0 && (
+                <div className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400">🏢</span>
+                    <span className="text-sm text-neutral-600">ค่าส่วนกลาง</span>
+                  </div>
+                  <span className="text-sm font-semibold text-neutral-800">{inv.commonFee?.toLocaleString()} บาท</span>
+                </div>
+              )}
+              {(inv.internetFee || 0) > 0 && (
+                <div className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400">🌐</span>
+                    <span className="text-sm text-neutral-600">ค่าเน็ต</span>
+                  </div>
+                  <span className="text-sm font-semibold text-neutral-800">{inv.internetFee?.toLocaleString()} บาท</span>
+                </div>
+              )}
+            </div>
+
+            <div className="mx-5 my-2 h-px bg-gradient-to-r from-transparent via-lime-200 to-transparent" />
+
+            <div className="px-5 pb-4">
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm font-bold text-neutral-800">รวมทั้งสิ้น</span>
+                <span className="text-lg font-bold text-lime-600">{inv.total?.toLocaleString()} บาท</span>
+              </div>
+            </div>
+
+            <div className="px-5 pb-5 flex flex-wrap justify-end gap-2">
+              <Button size="sm" onClick={() => { setViewInv({ ...inv, docNumber: '' }); setModal('invoice') }}>🧾 ใบแจ้งหนี้</Button>
+              <Button size="sm" onClick={() => { setViewInv({ ...inv, docNumber: '' }); setModal('receipt') }}> ใบเสร็จ</Button>
+              {inv._saved && inv.paid ? (
+                <Button size="sm" onClick={() => { setCancelInvId(inv._id); setConfirmCancelPayment(true) }}>🔄 รอชำระ</Button>
+              ) : (
+                <Button size="sm" onClick={async () => {
+                  try {
+                    await saveInvoice(room, inv, true)
+                    toast('บันทึกและชำระสำเร็จ')
+                  } catch (e) {
+                    toast(`ไม่สำเร็จ: ${e.message}`, true)
+                  }
+                }}>✅ ชำระแล้ว</Button>
+              )}
+              {inv.userId && (
+                <Button size="sm" onClick={async () => {
+                  try {
+                    if (!inv._saved) await saveInvoice(room, inv, false)
+                    await sendPdfToLine(inv)
+                  } catch (e) {
+                    toast(`ส่ง LINE ไม่สำเร็จ: ${e.message}`, true)
+                  }
+                }}>📱 ส่ง LINE</Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-white border border-neutral-100 shadow-sm">
+            <div className="flex flex-col items-center justify-center py-12 px-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-3xl mb-4 shadow-sm">💰</div>
+              <h4 className="text-base font-semibold text-neutral-700 mb-1">ยังไม่มีข้อมูลการออกบิล</h4>
+              <p className="text-sm text-neutral-400 text-center max-w-xs">บันทึกค่ามิเตอร์และตรวจสอบข้อมูลผู้พักให้ครบถ้วนก่อนออกบิล</p>
+            </div>
+          </div>
+        )}
+      </div>
+      </CardContent></Card>
+    )
+  }
 
   const renderContent = () => {
     switch (activeTab) {
       case 'detail': return renderDetail()
       case 'tenant': return renderTenant()
       case 'contract': return renderContract()
-      case 'booking': return renderBooking()
-      case 'moveout': return renderMoveOut()
+      case 'meter': return renderMeter()
+      case 'billing': return renderBilling()
       default: return renderDetail()
     }
   }
@@ -487,10 +769,10 @@ export default function RoomDetailMonthly() {
         title={`ห้อง ${displayNumber}`}
         description={resident ? resident.name : 'ห้องว่าง'}
         action={
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate('/rooms')}>← กลับ</Button>
-            <Button variant="outline" size="sm" onClick={handleEdit}>แก้ไข</Button>
-            <Button variant="danger" size="sm" onClick={handleDelete}>ลบ</Button>
+          <div className="flex gap-1.5 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/rooms')}><span className="sm:hidden"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></span><span className="hidden sm:inline">← กลับ</span></Button>
+            <Button variant="outline" size="sm" onClick={handleEdit}><span className="sm:hidden"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span className="hidden sm:inline">แก้ไข</span></Button>
+            <Button variant="danger" size="sm" onClick={handleDelete}><span className="sm:hidden"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span className="hidden sm:inline">ลบ</span></Button>
           </div>
         }
       />
@@ -506,7 +788,14 @@ export default function RoomDetailMonthly() {
               <Badge variant={status.variant}>{status.label}</Badge>
             </div>
             <div className="text-sm text-neutral-500">
-              {room.roomType || 'ไม่มีทีวี'} • {room.rentalType === 'daily' ? 'รายวัน' : room.rentalType === 'monthly' ? 'รายเดือน' : room.rentalType || 'รายเดือน'} • {displayRent?.toLocaleString()} บาท/เดือน
+              <div className="sm:hidden space-y-0.5">
+                <span>{room.roomType || 'ไม่มีทีวี'}</span>
+                <div className="flex items-center gap-1">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-lime-50 text-lime-600">{room.rentalType === 'daily' ? 'รายวัน' : room.rentalType === 'monthly' ? 'รายเดือน' : room.rentalType || 'รายเดือน'}</span>
+                  <span className="font-medium">{displayRent?.toLocaleString()} บาท/เดือน</span>
+                </div>
+              </div>
+              <span className="hidden sm:inline">{room.roomType || 'ไม่มีทีวี'} • {room.rentalType === 'daily' ? 'รายวัน' : room.rentalType === 'monthly' ? 'รายเดือน' : room.rentalType || 'รายเดือน'} • {displayRent?.toLocaleString()} บาท/เดือน</span>
             </div>
             {resident && (
               <div className="flex items-center gap-2 mt-1">
@@ -525,13 +814,12 @@ export default function RoomDetailMonthly() {
           <div className="flex gap-1 mb-6 bg-white rounded-2xl p-1.5 shadow-sm border border-neutral-100 overflow-x-auto">
             {TABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-lime-500 text-white shadow-sm'
-                    : 'text-neutral-500 hover:bg-neutral-50'
-                }`}>
-                <span>{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                   activeTab === tab.id
+                     ? 'bg-lime-500 text-white shadow-sm'
+                     : 'text-neutral-500 hover:bg-neutral-50'
+                 }`}>
+                <span><span className="hidden sm:inline">{tab.icon} </span>{tab.label}</span>
               </button>
             ))}
           </div>
@@ -684,6 +972,89 @@ export default function RoomDetailMonthly() {
         </Modal>
       )}
 
+      {confirmCancelPayment && (
+        <Modal open={true} onClose={() => setConfirmCancelPayment(false)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">เปลี่ยนเป็นรอชำระ</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              ต้องการเปลี่ยนสถานะบิลของห้อง <strong>{displayNumber}</strong> ({resident?.name}) และลบเอกสารนี้ทิ้งใช่หรือไม่?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmCancelPayment(false)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={async () => {
+                const id = cancelInvId
+                setConfirmCancelPayment(false)
+                setCancelInvId(null)
+                try {
+                  await api('/api/invoices', 'DELETE', { id })
+                  await fetchAll()
+                  toast('เปลี่ยนเป็นรอชำระแล้ว')
+                } catch (e) {
+                  toast(`ไม่สำเร็จ: ${e.message}`, true)
+                }
+              }}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-amber-500 hover:bg-amber-600 transition-colors shadow-sm">
+                ยืนยัน
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {meterModalOpen && (
+        <Modal open={true} onClose={() => setMeterModalOpen(false)}>
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
+              <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-xs font-bold shadow-sm">{displayNumber}</span>
+              <div>
+                <h3 className="text-base font-semibold text-neutral-800">บันทึกหน่วยมิเตอร์</h3>
+                <p className="text-xs text-neutral-400">{resident?.name || 'ไม่มีผู้พัก'}</p>
+                {room?.roomType && <p className="text-xs text-lime-600 mt-0.5">{room.roomType}</p>}
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-md bg-amber-50 border border-amber-100 flex items-center justify-center text-xs">⚡</div>
+                  <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">มิเตอร์ไฟฟ้า</h4>
+                  <span className="ml-auto text-[10px] text-neutral-400">ก่อนหน้า {prevElec || 0}</span>
+                </div>
+                <input
+                  type="number" value={curElec} onChange={e => setCurElec(e.target.value.replace(/\D/g, ''))}
+                  inputMode="numeric"
+                  className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100"
+                  placeholder="เลขปัจจุบัน" />
+                {elecUsage > 0 && (
+                  <p className="text-xs text-teal-600 font-medium mt-2">ใช้ไป {elecUsage} หน่วย = {elecCostVal.toLocaleString()} บาท</p>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-md bg-cyan-50 border border-cyan-100 flex items-center justify-center text-xs">💧</div>
+                  <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">มิเตอร์น้ำ</h4>
+                  <span className="ml-auto text-[10px] text-neutral-400">ก่อนหน้า {prevWater || 0}</span>
+                </div>
+                <input
+                  type="number" value={curWater} onChange={e => setCurWater(e.target.value.replace(/\D/g, ''))}
+                  inputMode="numeric"
+                  className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100"
+                  placeholder="เลขปัจจุบัน" />
+                {waterUsage > 0 && (
+                  <p className="text-xs text-teal-600 font-medium mt-2">ใช้ไป {waterUsage} หน่วย = {waterCostVal.toLocaleString()} บาท{waterUsage > 0 && waterUsage <= 4 ? ' (เหมาจ่าย)' : ''}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
+              <Button variant="ghost" onClick={() => setMeterModalOpen(false)}>ยกเลิก</Button>
+              <Button onClick={() => { handleSaveMeter(); setMeterModalOpen(false) }} disabled={!curElec || !curWater}>บันทึก</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {showDeleteOptions && resident && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowDeleteOptions(false)}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -728,7 +1099,7 @@ export default function RoomDetailMonthly() {
 
       {showContractPreview && resident && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowContractPreview(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-[550px] mx-4 overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-neutral-100 flex items-center justify-between shrink-0">
               <div>
                 <h3 className="text-base font-semibold text-neutral-800">📋 ตัวอย่างสัญญาเช่า</h3>
@@ -739,11 +1110,15 @@ export default function RoomDetailMonthly() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
-              <ContractPreview resident={resident} />
+              <div ref={previewOuterRef} className="overflow-hidden" style={{ height: previewHeight || 'auto' }}>
+                <div ref={previewInnerRef} style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left', width: 550 }}>
+                  <ContractPreview resident={resident} />
+                </div>
+              </div>
             </div>
             <div className="p-4 border-t border-neutral-100 flex gap-3 justify-end shrink-0">
               <Button variant="ghost" onClick={() => setShowContractPreview(false)}>ปิด</Button>
-              <Button size="sm" onClick={() => { setShowContractPreview(false); handleContract(); }}> ดาวน์โหลด PDF</Button>
+              <Button size="sm" onClick={() => { setShowContractPreview(false); handleContract(); }}>📄 ดาวน์โหลด PDF</Button>
             </div>
           </div>
         </div>

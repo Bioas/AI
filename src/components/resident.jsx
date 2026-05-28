@@ -25,10 +25,15 @@ const LINE_MAPPED_OPTIONS = [
   { value: 'no', label: 'ยังไม่เชื่อมโยง' },
 ]
 
-function formatLineDate(iso) {
+const formatLineDate = (iso) => {
   if (!iso) return '—'
   const d = new Date(iso)
   return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+const formatDateShort = (dateStr) => {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  return `${d.getDate()} ${d.toLocaleDateString('th-TH', { month: 'short' })} ${(d.getFullYear() + 543).toString().slice(-2)}`
 }
 
 export default function Resident() {
@@ -159,15 +164,17 @@ export default function Resident() {
 
   const renderResidentTab = () => (
     <>
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 sm:mb-6">
-        <div className="relative flex-1 min-w-0">
-          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="ค้นหาชื่อ ห้อง เบอร์โทร..."
-            className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
-        </div>
-        <ReloadButton onReload={handleReload} />
-        <div className="text-xs text-neutral-400 text-center sm:text-left">{filtered.length} รายการ</div>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 min-w-0">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="ค้นหาชื่อ ห้อง เบอร์โทร..."
+                className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+            </div>
+            <ReloadButton onReload={handleReload} className="shrink-0" />
+          </div>
+          <div className="text-xs text-neutral-400 text-center sm:text-left sm:ml-auto">{filtered.length} รายการ</div>
       </div>
 
       <Card>
@@ -191,9 +198,49 @@ export default function Resident() {
                     const isDaily = getResidentRoomType(r) === 'daily' || getResidentRoomType(r) === 'รายวัน'
                     const status = isDaily ? getDailyStatus(r) : getContractStatus(r.moveOutDate)
                     return (
-                      <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ชื่อ</span>
+                      <tr key={r.id} className="block md:table-row md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                        {/* Mobile card */}
+                        <td colSpan={99} className="block md:hidden p-3 w-full">
+                          <div className="space-y-1.5 w-full">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-[11px] font-bold shadow-sm shrink-0">{r.roomNumber || '—'}</span>
+                              <span className="font-medium text-neutral-800 truncate">{r.name}</span>
+                              <Badge variant={status.variant} className="ml-auto shrink-0">{status.label}</Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                <div className="text-[10px] text-neutral-400">เบอร์โทร</div>
+                                <div className="font-semibold text-neutral-800 text-xs truncate">{r.phone}</div>
+                              </div>
+                              {!isDaily ? (
+                                <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                  <div className="text-[10px] text-neutral-400">LINE</div>
+                                  <div className="font-semibold text-neutral-800 text-xs truncate">{getLineName(r.lineUserId) || '—'}</div>
+                                </div>
+                              ) : (
+                                <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                  <div className="text-[10px] text-neutral-400">ประเภท</div>
+                                  <div className="font-semibold text-neutral-800 text-xs">{r.tenantType === 'company' ? 'บริษัท' : 'บุคคล'}</div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-neutral-100">
+                              <div className="flex items-center gap-1.5 text-xs text-neutral-600">
+                                <span>{formatDateShort(r.moveInDate)}</span>
+                                <span className="text-neutral-300">→</span>
+                                <span>{formatDateShort(r.moveOutDate)}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button onClick={(e) => { e.stopPropagation(); setEditResident({ ...r, rentalType: isDaily ? 'daily' : 'monthly' }); setViewOnly(true); setModal('resident') }}
+                                  className="h-8 px-3 rounded-lg text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors border border-sky-100">ดู</button>
+                                <button onClick={(e) => { e.stopPropagation(); handleDelete(r) }}
+                                  className="h-8 px-3 rounded-lg text-xs font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors border border-rose-100">ลบ</button>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        {/* Desktop cells */}
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-xs font-bold shadow-sm shrink-0">
                               {r.name?.charAt(0) || '?'}
@@ -204,17 +251,14 @@ export default function Resident() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">{r.roomNumber || '—'}</span>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">เบอร์โทร</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <span className="text-neutral-700 whitespace-nowrap">{r.phone}</span>
                         </td>
                         {!isDaily && (
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">LINE</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           {r.lineUserId ? (
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs text-neutral-600 truncate max-w-[100px]">{getLineName(r.lineUserId) || r.lineUserId.slice(0, 12)}</span>
@@ -226,27 +270,22 @@ export default function Resident() {
                         </td>
                         )}
                         {isDaily && (
-                          <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                            <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภทผู้พัก</span>
+                          <td className="hidden md:table-cell px-4 py-3.5">
                             <Badge variant={r.tenantType === 'company' ? 'warning' : 'info'}>
                               {r.tenantType === 'company' ? 'บริษัท/องค์กร' : 'บุคคลทั่วไป'}
                             </Badge>
                           </td>
                         )}
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">{isDaily ? 'เช็คอิน' : 'วันที่เข้าพัก'}</span>
-                          <span className="text-neutral-600 whitespace-nowrap text-xs">{formatThaiDate(r.moveInDate)}</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
+                          <span className="text-neutral-600 whitespace-nowrap text-xs">{formatDateShort(r.moveInDate)}</span>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">{isDaily ? 'เช็คเอาท์' : 'วันหมดสัญญา'}</span>
-                          <span className="text-neutral-600 whitespace-nowrap text-xs">{formatThaiDate(r.moveOutDate)}</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
+                          <span className="text-neutral-600 whitespace-nowrap text-xs">{formatDateShort(r.moveOutDate)}</span>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <div className="flex gap-1.5">
                             <button onClick={() => { setEditResident({ ...r, rentalType: isDaily ? 'daily' : 'monthly' }); setViewOnly(true); setModal('resident') }}
                               className="h-8 px-3.5 rounded-lg text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors border border-sky-100">ดู</button>
@@ -268,38 +307,36 @@ export default function Resident() {
 
   const renderLineUsersTab = () => (
     <>
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 sm:mb-6">
-        <div className="relative flex-1 min-w-0">
-          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" value={lineSearch} onChange={e => setLineSearch(e.target.value)}
-            placeholder="ค้นหาชื่อ LINE หรือ User ID..."
-            className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+      <div className="flex flex-col gap-2 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 min-w-0">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" value={lineSearch} onChange={e => setLineSearch(e.target.value)}
+                placeholder="ค้นหาชื่อ LINE หรือ User ID..."
+                className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+            </div>
+            <ReloadButton onReload={async () => {
+              setLineReloading(true)
+              try { await fetchLineUsers() } finally { setLineReloading(false) }
+            }} className="shrink-0" />
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch gap-2">
+            <button
+              onClick={() => setConfirmSyncLine(true)}
+              title="ซิงค์ผู้ติดตาม LINE"
+              className="inline-flex items-center justify-center h-10 px-3.5 rounded-xl text-sm font-medium bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 active:bg-neutral-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-lime-300 focus:ring-offset-2 shadow-sm gap-2 shrink-0"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 2v6h-6" />
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                <path d="M3 22v-6h6" />
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+              </svg>
+              <span>ซิงค์ผู้พัก</span>
+            </button>
+            <div className="text-xs text-neutral-400 text-center sm:text-left sm:ml-auto self-center">{filteredLineUsers.length} รายการ</div>
+          </div>
         </div>
-        <div className="w-full sm:w-40">
-          <Select value={lineFilter} onChange={setLineFilter} options={LINE_FILTER_OPTIONS} placeholder="ทั้งหมด" />
-        </div>
-        <div className="w-full sm:w-44">
-          <Select value={lineMappedFilter} onChange={setLineMappedFilter} options={LINE_MAPPED_OPTIONS} placeholder="เชื่อมโยงทั้งหมด" />
-        </div>
-        <ReloadButton onReload={async () => {
-          setLineReloading(true)
-          try { await fetchLineUsers() } finally { setLineReloading(false) }
-        }} />
-        <button
-          onClick={() => setConfirmSyncLine(true)}
-          title="ซิงค์ผู้ติดตาม LINE"
-          className="inline-flex items-center justify-center h-10 px-3.5 rounded-xl text-sm font-medium bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 active:bg-neutral-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-lime-300 focus:ring-offset-2 shadow-sm gap-2"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 2v6h-6" />
-            <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-            <path d="M3 22v-6h6" />
-            <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-          </svg>
-          <span>ซิงค์ผู้พัก</span>
-        </button>
-        <div className="text-xs text-neutral-400 text-center sm:text-left">{filteredLineUsers.length} รายการ</div>
-      </div>
 
       <Card>
         <CardContent className="pt-6">
@@ -319,9 +356,46 @@ export default function Resident() {
                   {filteredLineUsers.map(u => {
                     const residentName = getResidentName(u.residentId)
                     return (
-                      <tr key={u.userId} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">รูปโปรไฟล์</span>
+                      <tr key={u.userId} className="block md:table-row md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                        {/* Mobile card */}
+                        <td colSpan={99} className="block md:hidden p-3 w-full">
+                          <div className="space-y-1.5 w-full">
+                            <div className="flex items-center gap-2.5">
+                              {u.pictureUrl ? (
+                                <img src={u.pictureUrl} alt="" className="w-8 h-8 rounded-full object-cover border border-neutral-200 shrink-0" />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                  {u.displayName?.charAt(0) || '?'}
+                                </div>
+                              )}
+                              <span className="font-medium text-neutral-800 truncate">{u.displayName}</span>
+                              <Badge variant={u.isActive ? 'success' : 'danger'} className="ml-auto shrink-0">{u.isActive ? 'เปิด' : 'ปิด'}</Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                <div className="text-[10px] text-neutral-400">User ID</div>
+                                <div className="font-mono text-xs text-neutral-700 truncate">{u.userId}</div>
+                              </div>
+                              <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                                <div className="text-[10px] text-neutral-400">ผู้พัก</div>
+                                <div className="font-semibold text-neutral-800 text-xs truncate">{getResidentName(u.residentId) || '—'}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-neutral-100">
+                              <span className="text-xs text-neutral-500 truncate">{formatLineDate(u.followedAt)}</span>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <button onClick={(e) => { e.stopPropagation(); setLineDetailUser(u) }}
+                                  className="h-8 px-3 rounded-lg text-xs font-medium bg-neutral-50 text-neutral-600 hover:bg-neutral-100 transition-colors border border-neutral-200">ดู</button>
+                                <button onClick={(e) => { e.stopPropagation(); handleLineToggle(u) }}
+                                  className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${u.isActive ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border-rose-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'}`}>
+                                  {u.isActive ? 'ปิด' : 'เปิด'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        {/* Desktop cells */}
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           {u.pictureUrl ? (
                             <img src={u.pictureUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-neutral-200 shrink-0" />
                           ) : (
@@ -330,19 +404,16 @@ export default function Resident() {
                             </div>
                           )}
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ชื่อ LINE</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <div>
                             <div className="font-medium text-neutral-800">{u.displayName}</div>
                             {!u.isFollowing && <Badge variant="default">เลิกติดตาม</Badge>}
                           </div>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">User ID</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <code className="text-xs bg-neutral-100 px-2 py-1 rounded-lg text-neutral-600 font-mono">{u.userId}</code>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           {residentName ? (
                             <div className="flex items-center gap-2">
                               <Badge variant="info">{residentName}</Badge>
@@ -351,18 +422,15 @@ export default function Resident() {
                             <span className="text-neutral-300 italic">—</span>
                           )}
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">วันที่ Add</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <span className="text-xs text-neutral-500 whitespace-nowrap">{formatLineDate(u.followedAt)}</span>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <Badge variant={u.isActive ? 'success' : 'danger'}>
                             {u.isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
                           </Badge>
                         </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <div className="flex gap-1.5">
                             <button onClick={() => setLineDetailUser(u)}
                               className="h-8 px-3 rounded-lg text-xs font-medium bg-neutral-50 text-neutral-600 hover:bg-neutral-100 transition-colors border border-neutral-200">ดู</button>
@@ -439,33 +507,33 @@ export default function Resident() {
         action={<Button onClick={() => { setEditResident(null); setViewOnly(false); setModal('resident') }}>＋ เพิ่มผู้พัก</Button>} />
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-white rounded-2xl p-1.5 shadow-sm border border-neutral-100 w-full">
+      <div className="flex gap-1 mb-6 bg-white rounded-2xl p-1 shadow-sm border border-neutral-100 w-full">
         <button onClick={() => setActiveTab('monthly')}
-          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex-1 whitespace-nowrap ${
+          className={`flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex-1 whitespace-nowrap ${
             activeTab === 'monthly'
               ? 'bg-lime-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
           }`}>
           <span className="hidden sm:inline">📅 </span>รายเดือน
-          <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'monthly' ? 'bg-white/20' : 'bg-neutral-100'}`}>{monthlyCount}</span>
+          <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'monthly' ? 'bg-white/20' : 'bg-neutral-100'}`}>{monthlyCount}</span>
         </button>
         <button onClick={() => setActiveTab('daily')}
-          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex-1 whitespace-nowrap ${
+          className={`flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex-1 whitespace-nowrap ${
             activeTab === 'daily'
               ? 'bg-amber-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
           }`}>
           <span className="hidden sm:inline">🌙 </span>รายวัน
-          <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'daily' ? 'bg-white/20' : 'bg-neutral-100'}`}>{dailyCount}</span>
+          <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'daily' ? 'bg-white/20' : 'bg-neutral-100'}`}>{dailyCount}</span>
         </button>
         <button onClick={() => setActiveTab('line')}
-          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex-1 whitespace-nowrap ${
+          className={`flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex-1 whitespace-nowrap ${
             activeTab === 'line'
               ? 'bg-teal-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
           }`}>
           <span className="hidden sm:inline">📱 </span>ผู้ใช้ LINE
-          <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'line' ? 'bg-white/20' : 'bg-neutral-100'}`}>{lineUsers.length}</span>
+          <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'line' ? 'bg-white/20' : 'bg-neutral-100'}`}>{lineUsers.length}</span>
         </button>
       </div>
 

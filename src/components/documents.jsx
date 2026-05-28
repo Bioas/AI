@@ -256,35 +256,60 @@ export default function Documents() {
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
                   {displayData.map(({ inv, number, tenant, isDaily, docNumber }) => (
-                    <tr key={inv.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
-                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                        <span className="text-xs font-medium text-neutral-500 md:hidden">วันที่</span>
+                    <tr key={inv.id} className="block md:table-row md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                      {/* Mobile card */}
+                      <td colSpan={99} className="block md:hidden p-3 w-full">
+                        <div className="space-y-1.5 w-full">
+                          <div className="flex items-center gap-2.5">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm shrink-0">{number}</span>
+                            <span className="font-medium text-neutral-800 truncate">{tenant}</span>
+                            <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0 ${isDaily ? BADGE_DAILY : BADGE_MONTHLY}`}>
+                              {isDaily ? 'รายวัน' : 'รายเดือน'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                              <div className="text-[10px] text-neutral-400">เลขที่เอกสาร</div>
+                              <div className="font-mono text-xs text-neutral-700 truncate">{docNumber}</div>
+                            </div>
+                            <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
+                              <div className="text-[10px] text-neutral-400">วันที่</div>
+                              <div className="font-semibold text-neutral-800 text-xs">{formatDateTime(inv.createdAt)}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-neutral-100">
+                            <span className="text-sm font-bold text-neutral-900">{(inv.total || 0).toLocaleString()} บาท</span>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => handleView(toPreviewInv(inv, activeTab))} className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${isInvoice ? BUTTON_VIEW : BUTTON_RECEIPT}`}>ดู</button>
+                              <button onClick={() => handleDelete(inv)} disabled={actionId === inv.id} className="h-8 px-3 rounded-lg text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-100 disabled:opacity-50">
+                                {actionId === inv.id ? '...' : 'ลบ'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      {/* Desktop cells */}
+                      <td className="hidden md:table-cell px-4 py-3.5">
                         <span className="text-neutral-700 whitespace-nowrap">{formatDateTime(inv.createdAt)}</span>
                       </td>
-                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                        <span className="text-xs font-medium text-neutral-500 md:hidden">เลขที่เอกสาร</span>
+                      <td className="hidden md:table-cell px-4 py-3.5">
                         <span className="font-mono text-xs text-neutral-600 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-100">{docNumber}</span>
                       </td>
-                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                        <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภท</span>
+                      <td className="hidden md:table-cell px-4 py-3.5">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDaily ? BADGE_DAILY : BADGE_MONTHLY}`}>
                           {isDaily ? 'รายวัน' : 'รายเดือน'}
                         </span>
                       </td>
-                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                        <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
+                      <td className="hidden md:table-cell px-4 py-3.5">
                         <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{number}</span>
                       </td>
-                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                        <span className="text-xs font-medium text-neutral-500 md:hidden">ชื่อลูกค้า</span>
+                      <td className="hidden md:table-cell px-4 py-3.5">
                         <span className="text-neutral-700">{tenant}</span>
                       </td>
-                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                        <span className="text-xs font-medium text-neutral-500 md:hidden">รวม</span>
+                      <td className="hidden md:table-cell px-4 py-3.5">
                         <span className="text-base font-bold text-neutral-800 whitespace-nowrap">{(inv.total || 0).toLocaleString()} บาท</span>
                       </td>
-                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                        <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
+                      <td className="hidden md:table-cell px-4 py-3.5">
                         <div className="flex gap-1.5">
                           <button onClick={() => handleView(toPreviewInv(inv, activeTab))} className={`h-8 px-3.5 rounded-lg text-xs font-medium transition-colors border ${isInvoice ? BUTTON_VIEW : BUTTON_RECEIPT}`}>ดู</button>
                           <button onClick={() => handleDelete(inv)} disabled={actionId === inv.id} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-100 disabled:opacity-50">
