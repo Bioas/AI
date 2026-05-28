@@ -7,6 +7,7 @@ import PageHeader from './ui/page-header'
 import Card, { CardContent } from './ui/card'
 import Modal from './ui/modal'
 import Button from './ui/button'
+import DatePickerField from './ui/datepicker'
 
 const THAI_MONTHS = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
 const DAY_HEADERS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
@@ -96,7 +97,12 @@ export default function Calendar() {
     const rangeEnd = viewMode === 'week' && weekEnd ? new Date(weekEnd) : new Date(year, month, daysInMonth)
     const rangeLen = Math.round((rangeEnd - rangeStart) / 86400000) + 1
     for (const room of dailyRooms) {
-      let bookings = dailyResidents.filter(r => r.roomId === room.id).map((r, idx) => {
+      const roomNum = roomLabel(room)
+      let bookings = dailyResidents.filter(r => {
+        if (r.roomId === room.id) return true
+        if (!r.roomId && r.roomNumber === roomNum) return true
+        return false
+      }).map((r, idx) => {
         const inD = new Date(r.moveInDate)
         const outD = new Date(r.moveOutDate)
         if (outD < rangeStart || inD > rangeEnd) return null
@@ -162,7 +168,8 @@ export default function Calendar() {
 
   const weekBookings = useMemo(() => {
     if (viewMode !== 'month') return []
-    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const now = new Date()
+    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
     return weeks.map(week => {
       const validDays = week.filter(Boolean)
       if (validDays.length < 1) return []
@@ -178,10 +185,13 @@ export default function Calendar() {
       }).map(r => {
         const inD = new Date(r.moveInDate); inD.setHours(0, 0, 0, 0)
         const outD = new Date(r.moveOutDate); outD.setHours(0, 0, 0, 0)
-        const room = dailyRooms.find(x => x.id === r.roomId)
+        const room = dailyRooms.find(x => x.id === r.roomId) || (r.roomNumber ? dailyRooms.find(x => roomLabel(x) === r.roomNumber) : undefined)
         const barStart = Math.max(0, Math.round((inD - wkStart) / 86400000))
         const barEnd = Math.min(6, Math.round((outD - wkStart) / 86400000))
-        const stat = inD > today ? 'จอง' : outD >= today ? 'เช็คอิน' : 'เช็คเอาท์'
+        const inBkk = new Date(r.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+        const outBkk = new Date(r.moveOutDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+        const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
+        const stat = inBkk > todayBkk ? 'จอง' : (outBkk > todayBkk || (outBkk === todayBkk && bkkHour < 12)) ? 'เช็คอิน' : 'เช็คเอาท์'
         return {
           ...r,
           roomNum: room ? roomLabel(room) : '',
@@ -308,10 +318,14 @@ export default function Calendar() {
   }
 
   const bookingStatus = (b) => {
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    const inD = new Date(b.moveInDate); inD.setHours(0, 0, 0, 0)
-    const outD = new Date(b.moveOutDate); outD.setHours(0, 0, 0, 0)
-    return inD > today ? 'จอง' : outD >= today ? 'เช็คอิน' : 'เช็คเอาท์'
+    const now = new Date()
+    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const inBkk = new Date(b.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    if (inBkk > todayBkk) return 'จอง'
+    const outBkk = new Date(b.moveOutDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
+    if (outBkk > todayBkk || (outBkk === todayBkk && bkkHour < 12)) return 'เช็คอิน'
+    return 'เช็คเอาท์'
   }
 
   return (
@@ -413,7 +427,10 @@ export default function Calendar() {
                                 const isCheckin = b.status === 'เช็คอิน'
                                 const bg = isBooking ? 'bg-amber-100 text-amber-800 border-amber-200' : isCheckin ? 'bg-lime-100 text-lime-800 border-lime-200' : 'bg-neutral-100 text-neutral-500 border-neutral-200'
                                 return (
-                                  <div key={b.id}
+                                  <motion.div key={b.id}
+                                    initial={{ opacity: 0, x: -4 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.2, delay: Math.min((b.track || 0) * 0.03, 0.15) }}
                                     onClick={() => openDetail(b.roomId, b.id)}
                                     className={'absolute pointer-events-auto rounded-[2px] flex items-center px-1 gap-0.5 cursor-pointer hover:opacity-80 transition-opacity z-20 overflow-hidden ' + bg}
                                     style={{
@@ -426,7 +443,7 @@ export default function Calendar() {
                                     <span className="font-semibold shrink-0 text-[8px] leading-none">{b.roomNum}</span>
                                     <span className="truncate text-[8px] leading-none">{b.name}</span>
                                     <span className="shrink-0 text-[7px] leading-none ml-auto opacity-60">{b.status}</span>
-                                  </div>
+                                  </motion.div>
                                 )
                               })}
                             </div>
@@ -481,17 +498,19 @@ export default function Calendar() {
                                     const totalTracks = b.totalTracks || 1
                                     const barTop = totalTracks > 1 ? ((track / totalTracks) * rowHeight) + 1 + 'px' : '1px'
                                     const barHeight = totalTracks > 1 ? ((1 / totalTracks) * rowHeight) - 2 + 'px' : (rowHeight - 2) + 'px'
+                                    const s = bookingStatus(b)
+                                    const barStyle = s === 'จอง' ? 'bg-amber-100 text-amber-800 border-amber-200' : s === 'เช็คอิน' ? 'bg-lime-100 text-lime-800 border-lime-200' : 'bg-neutral-100 text-neutral-500 border-neutral-200'
                                     return (
-                                      <div key={b.id}
+                                      <motion.div key={b.id}
+                                        initial={{ opacity: 0, y: 3 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.2, delay: Math.min(track * 0.04, 0.15) }}
                                         onClick={() => openDetail(b.roomId, b.id)}
-                                        className="absolute rounded-[3px] border border-lime-200 flex items-center justify-center px-1 text-[9px] font-medium cursor-pointer hover:shadow-md transition-all overflow-hidden z-20"
-                                        style={{ left: left + '%', width: width + '%', backgroundColor: b.color, top: barTop, height: barHeight }}>
-                                        <div className="flex items-center gap-0.5 min-w-0 leading-tight">
-                                          <span className="font-semibold shrink-0 text-lime-700">{b.roomNum}</span>
-                                          <span className="truncate text-neutral-800">{b.name}</span>
-                                          <span className="shrink-0 text-[7px] leading-none opacity-60 ml-auto">{(() => { const s = bookingStatus(b); return s })()}</span>
-                                        </div>
-                                      </div>
+                                        className={'absolute rounded-[3px] flex items-center justify-center px-1 gap-0.5 cursor-pointer hover:scale-[1.03] hover:shadow-sm transition-all overflow-hidden z-20 border ' + barStyle}
+                                        style={{ left: left + '%', width: width + '%', top: barTop, height: barHeight }}>
+                                        <span className="truncate text-[8px] leading-none font-medium">{b.name}</span>
+                                        <span className="shrink-0 text-[7px] leading-none font-medium opacity-60">{s}</span>
+                                      </motion.div>
                                     )
                                   })}
                                 </div>
@@ -565,13 +584,16 @@ export default function Calendar() {
                                 const s = bookingStatus(b)
                                 const barStyle = s === 'จอง' ? 'bg-amber-100 text-amber-800 border-amber-200' : s === 'เช็คอิน' ? 'bg-lime-100 text-lime-800 border-lime-200' : 'bg-neutral-100 text-neutral-500 border-neutral-200'
                                 return (
-                                  <div key={b.id}
+                                  <motion.div key={b.id}
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.25, delay: Math.min(track * 0.04, 0.2) }}
                                     onClick={() => openDetail(b.roomId, b.id)}
-                                    className={'absolute rounded-[3px] flex items-center justify-center px-2 gap-1.5 cursor-pointer hover:opacity-85 transition-opacity overflow-hidden z-20 border ' + barStyle}
+                                    className={'absolute rounded-[3px] flex items-center justify-center px-1 gap-1 cursor-pointer hover:scale-[1.02] hover:shadow-sm transition-all overflow-hidden z-20 border ' + barStyle}
                                     style={{ left: left + '%', width: width + '%', top: barTop, height: barHeight }}>
                                     <span className="truncate text-xs font-medium">{b.name}</span>
                                     <span className="shrink-0 text-[10px] font-medium opacity-60">{s}</span>
-                                  </div>
+                                  </motion.div>
                                 )
                               })}
                             </div>
@@ -630,13 +652,17 @@ export default function Calendar() {
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">วันที่เช็คอิน</label>
-                <input type="date" value={formCheckIn} onChange={e => setFormCheckIn(e.target.value)}
-                  className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+                <DatePickerField
+                  selected={formCheckIn ? new Date(formCheckIn + 'T00:00:00') : null}
+                  onChange={(date) => setFormCheckIn(date ? date.toISOString().split('T')[0] : '')}
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">วันที่เช็คเอาท์</label>
-                <input type="date" value={formCheckOut} onChange={e => setFormCheckOut(e.target.value)}
-                  className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+                <DatePickerField
+                  selected={formCheckOut ? new Date(formCheckOut + 'T00:00:00') : null}
+                  onChange={(date) => setFormCheckOut(date ? date.toISOString().split('T')[0] : '')}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -677,9 +703,18 @@ export default function Calendar() {
             </div>
           </div>
           {(() => {
-            const room = rooms.find(r => r.id === detailRoomId)
+            const room = rooms.find(r => r.id === detailRoomId) || (detailResidentId ? (() => { const res = residents.find(x => x.id === detailResidentId); return res?.roomNumber ? rooms.find(x => roomLabel(x) === res.roomNumber) : undefined })() : undefined)
             const resident = residents.find(r => r.id === detailResidentId)
-            if (!room || !resident) return <p className="text-sm text-neutral-400 text-center py-4">ไม่พบข้อมูล</p>
+            if (!resident) return <p className="text-sm text-neutral-400 text-center py-4">ไม่พบข้อมูล</p>
+            if (!room && !isEditingDetail) return (
+              <>
+                <p className="text-sm text-neutral-400 text-center py-4">ไม่พบข้อมูลห้อง</p>
+                <div className="flex gap-3 justify-end mt-5 pt-4 border-t border-neutral-100">
+                  <button onClick={() => { setShowDetail(false); setDetailRoomId(null); setDetailResidentId(null) }}
+                    className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
+                </div>
+              </>
+            )
             if (isEditingDetail) {
               return (
                 <div className="space-y-3 sm:space-y-4">
@@ -691,13 +726,17 @@ export default function Calendar() {
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-xs font-medium text-neutral-600 mb-1">เช็คอิน</label>
-                      <input type="date" value={formCheckIn} onChange={e => setFormCheckIn(e.target.value)}
-                        className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+                      <DatePickerField
+                        selected={formCheckIn ? new Date(formCheckIn + 'T00:00:00') : null}
+                        onChange={(date) => setFormCheckIn(date ? date.toISOString().split('T')[0] : '')}
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-neutral-600 mb-1">เช็คเอาท์</label>
-                      <input type="date" value={formCheckOut} onChange={e => setFormCheckOut(e.target.value)}
-                        className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+                      <DatePickerField
+                        selected={formCheckOut ? new Date(formCheckOut + 'T00:00:00') : null}
+                        onChange={(date) => setFormCheckOut(date ? date.toISOString().split('T')[0] : '')}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">

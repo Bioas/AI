@@ -92,30 +92,36 @@ export function AppProvider({ children }) {
   useEffect(() => { fetchAll() }, [fetchAll])
 
   const calcInv = useCallback((room, m) => {
-    const saved = invoices.find(x => x.roomId === room.id && x.month === m)
-    if (saved) {
-      const resData = residents.find(r => r.id === saved.residentId)
-      return {
-        room: saved.roomNumber, tenant: saved.tenantName || 'ไม่ระบุ',
-        phone: saved.tenantPhone || '',
-        userId: saved.tenantUserId || '',
-        month: saved.month, rent: saved.rent,
-        elecUnits: saved.elecUnits, elecCost: saved.elecCost,
-        waterUnits: saved.waterUnits, waterCost: saved.waterCost,
-        prevElec: saved.prevElec || 0, curElec: saved.curElec || 0,
-        prevWater: saved.prevWater || 0, curWater: saved.curWater || 0,
-        total: saved.total,
-        rateElec: saved.rateElec, rateWater: saved.rateWater,
-        paid: saved.paid || false,
-        moveInDate: resData?.moveInDate || saved.moveInDate || '',
-        moveOutDate: resData?.moveOutDate || saved.moveOutDate || '',
-        tenantType: saved.tenantType || resData?.tenantType || 'individual',
-        companyName: saved.companyName || resData?.companyName || '',
-        companyAddress: saved.companyAddress || resData?.companyAddress || '',
-        companyTaxId: saved.companyTaxId || resData?.companyTaxId || '',
-        _saved: true, _id: saved.id,
+      const saved = invoices.find(x => x.roomId === room.id && x.month === m)
+      if (saved) {
+        const resData = residents.find(r => r.id === saved.residentId)
+        return {
+          room: saved.roomNumber, tenant: saved.tenantName || 'ไม่ระบุ',
+          phone: saved.tenantPhone || '',
+          userId: saved.tenantUserId || '',
+          month: saved.month, rent: saved.rent,
+          days: saved.days || 0,
+          extraBed: saved.extraBed || 0,
+          extraBedCost: saved.extraBedCost || 0,
+          discount: saved.discount || 0,
+          elecUnits: saved.elecUnits, elecCost: saved.elecCost,
+          waterUnits: saved.waterUnits, waterCost: saved.waterCost,
+          prevElec: saved.prevElec || 0, curElec: saved.curElec || 0,
+          prevWater: saved.prevWater || 0, curWater: saved.curWater || 0,
+          total: saved.total,
+          rateElec: saved.rateElec, rateWater: saved.rateWater,
+          paid: saved.paid || false,
+          moveInDate: saved.moveInDate || resData?.moveInDate || '',
+          moveOutDate: saved.moveOutDate || resData?.moveOutDate || '',
+          tenantType: saved.tenantType || resData?.tenantType || 'individual',
+          companyName: saved.companyName || resData?.companyName || '',
+          companyAddress: saved.companyAddress || resData?.companyAddress || '',
+          companyTaxId: saved.companyTaxId || resData?.companyTaxId || '',
+          commonFee: saved.commonFee || 0,
+          internetFee: saved.internetFee || 0,
+          _saved: true, _id: saved.id,
+        }
       }
-    }
 
     const cur = meters.find(x => x.roomId === room.id && x.month === m) || { elec: 0, water: 0 }
     const prev = getPrevMeter(room.id, m, meters, room.prevElecMeter || 0, room.prevWaterMeter || 0)
@@ -164,10 +170,11 @@ export function AppProvider({ children }) {
     }
   }, [meters, residents, settings, invoices])
 
-  const saveInvoice = useCallback(async (room, inv) => {
+  const saveInvoice = useCallback(async (room, inv, isReceipt) => {
     try {
       const resident = room.residentId ? residents.find(r => r.id === room.residentId) : null
       const data = {
+        ...(isReceipt ? { paid: true } : {}),
         roomId: room.id,
         roomNumber: inv.room,
         tenantName: inv.tenant,
@@ -175,7 +182,9 @@ export function AppProvider({ children }) {
         tenantUserId: inv.userId,
         month: inv.month,
         rent: inv.rent,
+        days: inv.days || 0,
         extraBed: inv.extraBed || 0,
+        extraBedCost: inv.extraBedCost || 0,
         discount: inv.discount || 0,
         elecUnits: inv.elecUnits,
         elecCost: inv.elecCost,
@@ -442,9 +451,15 @@ export function AppProvider({ children }) {
     }
     if (!el) return
     try {
+      const scaler = el.closest('[data-preview-scaler]')
+      const origTransform = scaler ? scaler.style.transform : null
+      if (scaler) scaler.style.transform = 'none'
+
       const { jsPDF } = await import('jspdf')
       const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#ffffff' })
+
+      if (scaler) scaler.style.transform = origTransform
       const doc = new jsPDF('p', 'mm', 'a4')
       const mg = 10
       const pw = 210 - mg * 2

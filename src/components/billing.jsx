@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { naturalSortRoomNumber } from '../lib/constants'
 import DatePickerField from './ui/datepicker'
@@ -11,8 +11,9 @@ import InvoicePreview from './InvoicePreview'
 import ReceiptPreview from './ReceiptPreview'
 import ReloadButton from './ui/reload-button'
 import Button from './ui/button'
+import Modal from './ui/modal'
 
-function generateDocNumber(inv, invoices, rooms) {
+function generateDocNumber(inv, invoices, rooms, docType) {
   if (!inv.month) return '—'
   const room = rooms.find(r => r.id === inv._id || r.roomNumber === inv.room || r.number === inv.room)
   const roomRef = room?.roomCode || inv.room || '—'
@@ -24,14 +25,62 @@ function generateDocNumber(inv, invoices, rooms) {
     .sort((a, b) => a.month.localeCompare(b.month))
   const runningIndex = sameYearInvoices.findIndex(x => x.id === inv._id) + 1
   const running = String(Math.max(1, runningIndex)).padStart(3, '0')
+  const prefix = docType === 'receipt' ? 'REC' : 'INV'
   
   if (isDaily) {
     const ym = inv.month.slice(0, 7).replace('-', '')
-    return `INV-${roomRef}-${ym}-${running}`
+    return `${prefix}-${roomRef}-${ym}-${running}`
   }
   
-  return `INV-${roomRef}-${inv.month.replace('-', '')}-${running}`
+  return `${prefix}-${roomRef}-${inv.month.replace('-', '')}-${running}`
 }
+
+const DOC_TABS = [
+  { key: 'invoice', icon: '🧾', title: 'ใบแจ้งหนี้', desc: 'ออกใบแจ้งหนี้ให้ผู้พัก',
+    active: 'border-lime-500 bg-lime-50 shadow-lime-100', iconActive: 'bg-lime-500 text-white', textActive: 'text-lime-700' },
+  { key: 'receipt', icon: '📄', title: 'ใบเสร็จรับเงิน', desc: 'ออกใบเสร็จเมื่อชำระแล้ว',
+    active: 'border-emerald-500 bg-emerald-50 shadow-emerald-100', iconActive: 'bg-emerald-500 text-white', textActive: 'text-emerald-700' },
+]
+
+const RENTAL_TABS = [
+  { key: 'monthly', label: 'รายเดือน' },
+  { key: 'daily', label: 'รายวัน' },
+]
+
+const StatusBadge = ({ paid, onClick }) => {
+  const cls = paid ? 'bg-green-50 text-green-600 border-green-100' : 'bg-amber-50 text-amber-600 border-amber-100'
+  const label = paid ? 'ชำระแล้ว' : 'รอชำระ'
+  if (onClick) {
+    return (
+      <button onClick={onClick}
+        className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity ${cls}`}>
+        {label}
+      </button>
+    )
+  }
+  return (
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap ${cls}`}>{label}</span>
+  )
+}
+
+const formatTHDate = (dateStr) =>
+  dateStr ? new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+
+const BulkActions = ({ onLine, onSave, disabledLine, disabledSave, loading, className }) => (
+  <div className={'flex gap-2 ' + className}>
+    {onLine && (
+      <Button size="sm" onClick={onLine} disabled={disabledLine} className="gap-1.5 bg-lime-500 hover:bg-lime-600 text-white flex-1 sm:flex-none">
+        ส่ง LINE
+      </Button>
+    )}
+    <Button size="sm" onClick={onSave} disabled={disabledSave} className="bg-lime-500 hover:bg-lime-600 text-white gap-1.5 flex-1 sm:flex-none">
+      ชำระทั้งหมด
+    </Button>
+  </div>
+)
+
+const DAILY_HEADERS = ['ห้อง', 'ผู้พัก', 'ประเภทผู้พัก', 'ค่าเช่า', 'วันเช็คอิน', 'วันเช็คเอาท์', 'จำนวนคืน', 'ยอดรวม', 'สถานะ', 'จัดการ']
+const MONTHLY_HEADERS = ['ห้อง', 'ผู้พัก', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'ยอดรวม', 'สถานะ', 'จัดการ']
 
 export default function Billing() {
   const { rooms, invoices, invMonth, setInvMonth, calcInv, saveInvoice, downloadPdf, sendPdfToLine, setViewInv, setModal, fetchAll, toast, residents } = useApp()
@@ -40,8 +89,12 @@ export default function Billing() {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [bulkProcessing, setBulkProcessing] = useState(false)
   const [savingIds, setSavingIds] = useState(new Set())
+  const [confirmAction, setConfirmAction] = useState(null)
+  const [cancelPaymentTarget, setCancelPaymentTarget] = useState(null)
   const [dailyDate, setDailyDate] = useState(new Date())
   const [sendingInv, setSendingInv] = useState(null)
+
+  const period = rentalTab === 'daily' && dailyDate ? dailyDate.toISOString().split('T')[0] : invMonth
 
   const handleReload = async () => {
     await fetchAll()
@@ -60,41 +113,14 @@ export default function Billing() {
   }
 
   const handleView = (inv) => {
-    const docNumber = generateDocNumber(inv, invoices, rooms)
+    const docNumber = generateDocNumber(inv, invoices, rooms, activeTab)
     setViewInv({ ...inv, docNumber })
     setModal(activeTab === 'invoice' ? 'invoice' : 'receipt')
   }
 
-  const handleLine = useCallback((invWithDoc) => {
-    setSendingInv(invWithDoc)
-    setTimeout(() => {
-      sendPdfToLine(invWithDoc)
-      setTimeout(() => setSendingInv(null), 100)
-    }, 100)
-  }, [sendPdfToLine])
-
-  const togglePaid = async (room, inv) => {
-    const savedInv = invoices.find(x => x.roomId === room.id && x.month === invMonth)
-    if (!savedInv) return
-    const newPaid = !savedInv.paid
-    try {
-      const res = await fetch('/api/invoices', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: savedInv.id, paid: newPaid }),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      await fetchAll()
-    } catch (e) {
-      console.error('Toggle paid error:', e)
-    }
-  }
-
   const displayRooms = useMemo(() => {
-    const period = rentalTab === 'daily' && dailyDate
-      ? dailyDate.toISOString().split('T')[0]
-      : invMonth
-    const savedInvoices = invoices.filter(x => x.month === period)
+    const p = period
+    const savedInvoices = invoices.filter(x => x.month === p)
     const savedRoomIds = new Set(savedInvoices.map(x => x.roomId))
 
     const allRooms = rooms.filter(r => {
@@ -108,6 +134,16 @@ export default function Billing() {
     allRooms.sort(naturalSortRoomNumber)
     return allRooms
   }, [rooms, invoices, invMonth, dailyDate, rentalTab])
+
+  const roomInvoices = useMemo(() => {
+    return displayRooms.map(r => ({ room: r, inv: calcInv(r, period) }))
+  }, [displayRooms, period, calcInv])
+
+  const residentById = useMemo(() => {
+    const map = {}
+    for (const r of residents) map[r.id] = r
+    return map
+  }, [residents])
 
   const toggleSelectAll = () => {
     if (selectedIds.size === displayRooms.length) {
@@ -132,10 +168,6 @@ export default function Billing() {
       return
     }
 
-    const period = rentalTab === 'daily' && dailyDate
-      ? dailyDate.toISOString().split('T')[0]
-      : invMonth
-
     setSavingIds(new Set(selectedIds))
     let successCount = 0
     let failCount = 0
@@ -145,25 +177,33 @@ export default function Billing() {
       if (!room) continue
 
       const inv = calcInv(room, period)
-      if (inv._saved) {
+      if (inv.paid) {
         successCount++
         continue
       }
 
       try {
-        await saveInvoice(room, inv)
+        if (inv._saved) {
+          await fetch('/api/invoices', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: inv._id, paid: true }),
+          })
+        } else {
+          await saveInvoice(room, inv, true)
+        }
         successCount++
       } catch (e) {
-        toast(`บันทึกห้อง ${inv.room} ไม่สำเร็จ: ${e.message}`, true)
+        toast(`ชำระห้อง ${inv.room} ไม่สำเร็จ: ${e.message}`, true)
         failCount++
       }
     }
 
     setSavingIds(new Set())
     if (failCount === 0) {
-      toast(`บันทึกสำเร็จ ${successCount} ห้อง`)
+      toast(`ชำระสำเร็จ ${successCount} ห้อง`)
     } else {
-      toast(`บันทึกสำเร็จ ${successCount} ห้อง, ล้มเหลว ${failCount} ห้อง`, true)
+      toast(`ชำระสำเร็จ ${successCount} ห้อง, ล้มเหลว ${failCount} ห้อง`, true)
     }
   }
 
@@ -172,10 +212,6 @@ export default function Billing() {
       toast('กรุณาเลือกห้องอย่างน้อย 1 ห้อง', true)
       return
     }
-
-    const period = rentalTab === 'daily' && dailyDate
-      ? dailyDate.toISOString().split('T')[0]
-      : invMonth
 
     setBulkProcessing(true)
     let successCount = 0
@@ -187,9 +223,9 @@ export default function Billing() {
 
       const inv = calcInv(room, period)
 
-      if (!inv._saved) {
+      if (!inv._saved || activeTab === 'receipt') {
         try {
-          await saveInvoice(room, inv)
+          await saveInvoice(room, inv, activeTab === 'receipt')
         } catch (e) {
           toast(`บันทึกห้อง ${inv.room} ไม่สำเร็จ: ${e.message}`, true)
           failCount++
@@ -203,7 +239,7 @@ export default function Billing() {
         continue
       }
 
-      const docNumber = generateDocNumber(inv, invoices, rooms)
+      const docNumber = generateDocNumber(inv, invoices, rooms, activeTab)
       const invToSend = { ...inv, docNumber }
       setSendingInv(invToSend)
 
@@ -231,58 +267,95 @@ export default function Billing() {
   }
 
   const selectedTotal = useMemo(() => {
-    const period = rentalTab === 'daily' && dailyDate
-      ? dailyDate.toISOString().split('T')[0]
-      : invMonth
-    return displayRooms.reduce((sum, r) => {
-      if (selectedIds.has(r.id)) {
-        const inv = calcInv(r, period)
-        return sum + (inv.total || 0)
-      }
+    return roomInvoices.reduce((sum, ri) => {
+      if (selectedIds.has(ri.room.id)) return sum + (ri.inv.total || 0)
       return sum
     }, 0)
-  }, [displayRooms, invMonth, dailyDate, selectedIds, rentalTab, calcInv])
+  }, [roomInvoices, selectedIds])
+
+  const selectedPreview = useMemo(() => {
+    return roomInvoices.filter(ri => selectedIds.has(ri.room.id)).map(ri => ({
+      room: ri.inv.room, tenant: ri.inv.tenant, total: ri.inv.total, saved: ri.inv._saved
+    }))
+  }, [roomInvoices, selectedIds])
+
+  const handleTogglePaid = async (room, inv) => {
+    if (savingIds.size > 0) return
+    if (inv.paid) {
+      setCancelPaymentTarget({ room, inv })
+      return
+    }
+    setSavingIds(new Set([room.id]))
+    try {
+      if (inv._saved) {
+        await fetch('/api/invoices', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: inv._id, paid: true }),
+        })
+      } else {
+        await saveInvoice(room, inv, true)
+      }
+      await fetchAll()
+      toast(`ห้อง ${inv.room} เปลี่ยนเป็นชำระแล้ว`)
+    } catch (e) {
+      toast(`ห้อง ${inv.room} ไม่สำเร็จ: ${e.message}`, true)
+    }
+    setSavingIds(new Set())
+  }
+
+  const handleCancelPaymentConfirm = async () => {
+    if (!cancelPaymentTarget) return
+    const { room, inv } = cancelPaymentTarget
+    setCancelPaymentTarget(null)
+    setSavingIds(new Set([room.id]))
+    try {
+      await fetch('/api/invoices', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: inv._id }),
+      })
+      await fetchAll()
+      toast(`ยกเลิกชำระห้อง ${inv.room} และลบเอกสารเรียบร้อย`)
+    } catch (e) {
+      toast(`ยกเลิกชำระห้อง ${inv.room} ไม่สำเร็จ: ${e.message}`, true)
+    }
+    setSavingIds(new Set())
+  }
+
+  const handleConfirm = () => {
+    const action = confirmAction
+    setConfirmAction(null)
+    if (action === 'line') handleBulkLine()
+    else if (action === 'save') handleBulkSave()
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="ออกบิลห้องพัก" description="ออกใบแจ้งหนี้และใบเสร็จรับเงิน" />
 
-      {/* Document Type Buttons - Large */}
+      {/* Document Type Buttons */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <button
-          onClick={() => setActiveTab('invoice')}
-          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${
-            activeTab === 'invoice'
-              ? 'border-lime-500 bg-lime-50 shadow-md shadow-lime-100'
-              : 'border-neutral-200 bg-white hover:border-neutral-300'
-          }`}>
-          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${
-            activeTab === 'invoice' ? 'bg-lime-500 text-white' : 'bg-neutral-100'
-          }`}>
-            🧾
-          </div>
-          <div className="min-w-0">
-            <div className={`text-sm sm:text-base font-bold truncate ${activeTab === 'invoice' ? 'text-lime-700' : 'text-neutral-700'}`}>ใบแจ้งหนี้</div>
-            <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">ออกใบแจ้งหนี้ให้ผู้พัก</div>
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('receipt')}
-          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${
-            activeTab === 'receipt'
-              ? 'border-emerald-500 bg-emerald-50 shadow-md shadow-emerald-100'
-              : 'border-neutral-200 bg-white hover:border-neutral-300'
-          }`}>
-          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${
-            activeTab === 'receipt' ? 'bg-emerald-500 text-white' : 'bg-neutral-100'
-          }`}>
-            📄
-          </div>
-          <div className="min-w-0">
-            <div className={`text-sm sm:text-base font-bold truncate ${activeTab === 'receipt' ? 'text-emerald-700' : 'text-neutral-700'}`}>ใบเสร็จรับเงิน</div>
-            <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">ออกใบเสร็จเมื่อชำระแล้ว</div>
-          </div>
-        </button>
+        {DOC_TABS.map(t => {
+          const isActive = activeTab === t.key
+          return (
+            <button key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${
+                isActive ? t.active : 'border-neutral-200 bg-white hover:border-neutral-300'
+              }`}>
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${
+                isActive ? t.iconActive : 'bg-neutral-100'
+              }`}>
+                {t.icon}
+              </div>
+              <div className="min-w-0">
+                <div className={`text-sm sm:text-base font-bold truncate ${isActive ? t.textActive : 'text-neutral-700'}`}>{t.title}</div>
+                <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">{t.desc}</div>
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Main Card with Tabs Inside */}
@@ -290,31 +363,24 @@ export default function Billing() {
         <CardContent className="pt-0">
           {/* Rental Type Tabs */}
           <div className="flex items-center border-b border-neutral-100">
-            <button
-              onClick={() => { setRentalTab('monthly'); setSelectedIds(new Set()) }}
-              className={`px-6 py-3 text-sm font-semibold transition-all border-b-2 -mb-px ${
-                rentalTab === 'monthly'
-                  ? 'border-lime-500 text-lime-600 bg-lime-50/50'
-                  : 'border-transparent text-neutral-400 hover:text-neutral-600'
-              }`}>
-              รายเดือน
-            </button>
-            <button
-              onClick={() => { setRentalTab('daily'); setSelectedIds(new Set()) }}
-              className={`px-6 py-3 text-sm font-semibold transition-all border-b-2 -mb-px ${
-                rentalTab === 'daily'
-                  ? 'border-lime-500 text-lime-600 bg-lime-50/50'
-                  : 'border-transparent text-neutral-400 hover:text-neutral-600'
-              }`}>
-              รายวัน
-            </button>
+            {RENTAL_TABS.map(t => (
+              <button key={t.key}
+                onClick={() => { setRentalTab(t.key); setSelectedIds(new Set()) }}
+                className={`px-6 py-3 text-sm font-semibold transition-all border-b-2 -mb-px ${
+                  rentalTab === t.key
+                    ? 'border-lime-500 text-lime-600 bg-lime-50/50'
+                    : 'border-transparent text-neutral-400 hover:text-neutral-600'
+                }`}>
+                {t.label}
+              </button>
+            ))}
           </div>
 
           {/* Month Picker + Actions */}
-          <div className="flex flex-wrap items-center gap-3 p-5 pb-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-neutral-600">{rentalTab === 'daily' ? 'วัน:' : 'เดือน:'}</span>
-              <div className="w-56">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 p-5 pb-0">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm font-medium text-neutral-600 whitespace-nowrap">{rentalTab === 'daily' ? 'วัน:' : 'เดือน:'}</span>
+              <div className="flex-1 min-w-0">
                 <DatePickerField
                   selected={rentalTab === 'daily' ? dailyDate : invDate}
                   onChange={rentalTab === 'daily' ? setDailyDate : handleMonthChange}
@@ -322,18 +388,18 @@ export default function Billing() {
                   placeholder={rentalTab === 'daily' ? 'เลือกวัน' : 'เลือกเดือน'}
                 />
               </div>
+              <ReloadButton onReload={handleReload} />
             </div>
-            <ReloadButton onReload={handleReload} />
-            <div className="flex gap-2 sm:ml-auto w-full sm:w-auto">
-              <Button size="sm" onClick={handleBulkSave} disabled={selectedIds.size === 0 || savingIds.size > 0} className="gap-1.5 bg-lime-500 hover:bg-lime-600 text-white">
-                + ออกบิลใหม่
-              </Button>
-              <Button size="sm" onClick={handleBulkLine} disabled={selectedIds.size === 0 || bulkProcessing} className="gap-1.5 bg-lime-500 hover:bg-lime-600 text-white">
-                ส่ง LINE
-              </Button>
+            <div className="flex gap-2 sm:ml-auto w-full sm:w-auto md:hidden">
+              <BulkActions
+                onLine={rentalTab === 'monthly' ? () => setConfirmAction('line') : null}
+                onSave={() => setConfirmAction('save')}
+                disabledLine={selectedIds.size === 0 || bulkProcessing}
+                disabledSave={selectedIds.size === 0 || savingIds.size > 0}
+              />
             </div>
           </div>
-
+ 
           {/* Table Header */}
           <div className="flex items-center gap-2.5 px-5 pt-5 pb-3">
             <div className={`w-2 h-2 rounded-full ${activeTab === 'invoice' ? 'bg-lime-400' : 'bg-emerald-400'}`} />
@@ -354,26 +420,19 @@ export default function Billing() {
                         <th className="text-left px-4 py-3.5 w-10">
                           <input type="checkbox" checked={selectedIds.size === displayRooms.length && displayRooms.length > 0} onChange={toggleSelectAll} className="w-4 h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400" />
                         </th>
-                        {(rentalTab === 'daily'
-                          ? ['ห้อง', 'ผู้พัก', 'ประเภทผู้พัก', 'ค่าเช่า', 'วันเช็คอิน', 'วันเช็คเอาท์', 'จำนวนคืน', 'ยอดรวม', 'สถานะ', 'จัดการ']
-                          : ['ห้อง', 'ผู้พัก', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'ยอดรวม', 'สถานะ', 'จัดการ']
-                        ).map(h => (
+                        {(rentalTab === 'daily' ? DAILY_HEADERS : MONTHLY_HEADERS).map(h => (
                           <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-50">
-                      {(() => {
-                        const period = rentalTab === 'daily' && dailyDate
-                          ? dailyDate.toISOString().split('T')[0]
-                          : invMonth
-                        return displayRooms.map(r => {
-                          const inv = calcInv(r, period)
+                      {roomInvoices.map(({ room: r, inv }) => {
+                          const res = residentById[r.residentId]
                           return (
-                          <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
-                            <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                          <tr key={r.id} onClick={() => toggleSelect(r.id)} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 cursor-pointer hover:bg-lime-50/30 active:bg-lime-100/40 transition-colors">
+                            <td className="px-0 md:px-4 py-3 md:py-3.5 flex items-center justify-between md:table-cell select-none">
                               <span className="text-xs font-medium text-neutral-500 md:hidden">เลือก</span>
-                              <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} className="w-4 h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400" />
+                              <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} onClick={e => e.stopPropagation()} className="w-5 h-5 md:w-4 md:h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400 pointer-events-none" />
                             </td>
                             <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                               <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
@@ -400,19 +459,13 @@ export default function Billing() {
                                 <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                                   <span className="text-xs font-medium text-neutral-500 md:hidden">วันเช็คอิน</span>
                                   <span className="text-neutral-700 whitespace-nowrap">
-                                    {(() => {
-                                      const res = residents.find(x => x.id === r.residentId)
-                                      return res?.moveInDate ? new Date(res.moveInDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
-                                    })()}
+                                    {formatTHDate(res?.moveInDate)}
                                   </span>
                                 </td>
                                 <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                                   <span className="text-xs font-medium text-neutral-500 md:hidden">วันเช็คเอาท์</span>
                                   <span className="text-neutral-700 whitespace-nowrap">
-                                    {(() => {
-                                      const res = residents.find(x => x.id === r.residentId)
-                                      return res?.moveOutDate ? new Date(res.moveOutDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
-                                    })()}
+                                    {formatTHDate(res?.moveOutDate)}
                                   </span>
                                 </td>
                                 <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
@@ -438,16 +491,12 @@ export default function Billing() {
                             </td>
                             <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                               <span className="text-xs font-medium text-neutral-500 md:hidden">สถานะ</span>
-                              {inv._saved ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 whitespace-nowrap">บันทึกแล้ว</span>
-                              ) : (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100 whitespace-nowrap">ยังไม่บันทึก</span>
-                              )}
+                              <StatusBadge paid={inv.paid} onClick={() => handleTogglePaid(r, inv)} />
                             </td>
                             <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
                               <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
                               <div className="flex gap-1.5">
-                                <button onClick={() => handleView(inv)} className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${
+                                <button onClick={e => { e.stopPropagation(); handleView(inv) }} className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${
                                   activeTab === 'invoice'
                                     ? 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
                                     : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100'
@@ -455,10 +504,9 @@ export default function Billing() {
 
                               </div>
                             </td>
-                          </tr>
-                        )
-                      })
-                      })()}
+                        </tr>
+                      )
+                    })}
                     </tbody>
                   </table>
                 </div>
@@ -469,9 +517,14 @@ export default function Billing() {
                     <span className="text-neutral-500">รวมทั้งสิ้น <span className="font-semibold text-neutral-800">{selectedIds.size}</span> {activeTab === 'invoice' ? 'ใบแจ้งหนี้' : 'ใบเสร็จ'}</span>
                     <span className="text-lg font-bold text-lime-600">{selectedTotal.toLocaleString()} บาท</span>
                   </div>
-                  <Button size="sm" onClick={handleBulkSave} disabled={selectedIds.size === 0 || savingIds.size > 0} className="bg-lime-500 hover:bg-lime-600 text-white gap-1.5">
-                    บันทึกทั้งหมด
-                  </Button>
+                  <div className="flex gap-2">
+                    <BulkActions
+                      onLine={rentalTab === 'monthly' ? () => setConfirmAction('line') : null}
+                      onSave={() => setConfirmAction('save')}
+                      disabledLine={selectedIds.size === 0 || bulkProcessing}
+                      disabledSave={selectedIds.size === 0 || savingIds.size > 0}
+                    />
+                  </div>
                 </div>
               </div>
             </>
@@ -483,6 +536,64 @@ export default function Billing() {
         <div className="fixed left-0 top-0 -z-50 opacity-0 pointer-events-none" aria-hidden="true">
           {activeTab === 'invoice' ? <InvoicePreview inv={sendingInv} /> : <ReceiptPreview inv={sendingInv} />}
         </div>
+      )}
+
+      {confirmAction && (
+        <Modal open={true} onClose={() => setConfirmAction(null)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">
+              {confirmAction === 'line' ? 'ส่ง LINE' : 'ชำระทั้งหมด'}
+            </h3>
+            <p className="text-xs text-neutral-500 mb-4">
+              ยืนยันการ{confirmAction === 'line' ? 'ส่ง LINE' : 'ชำระ'} {selectedPreview.length} รายการ?
+            </p>
+            <div className="max-h-52 overflow-y-auto space-y-1.5 mb-5">
+              {selectedPreview.map((item, i) => (
+                <div key={i} className="flex items-center justify-between px-3 py-2 bg-neutral-50 rounded-lg">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs font-bold text-neutral-800 shrink-0">ห้อง {item.room}</span>
+                    <span className="text-[11px] text-neutral-500 truncate">{item.tenant || '—'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {item.saved && <span className="text-[10px] text-green-500 font-medium">ชำระแล้ว</span>}
+                    <span className="text-xs font-bold text-lime-600">{item.total.toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmAction(null)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirm}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-lime-500 hover:bg-lime-600 transition-colors shadow-sm">
+                {confirmAction === 'line' ? 'ยืนยันส่ง LINE' : 'ยืนยันชำระ'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {cancelPaymentTarget && (
+        <Modal open={true} onClose={() => setCancelPaymentTarget(null)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ยกเลิกการชำระ</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              ต้องการยกเลิกชำระห้อง <strong>{cancelPaymentTarget.inv.room}</strong> ({cancelPaymentTarget.inv.tenant}) และลบเอกสารนี้ทิ้งใช่หรือไม่?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setCancelPaymentTarget(null)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ไม่ใช่
+              </button>
+              <button onClick={handleCancelPaymentConfirm}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ใช่, ยกเลิกชำระ
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </motion.div>
   )

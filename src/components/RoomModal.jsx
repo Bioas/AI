@@ -25,6 +25,7 @@ export default function RoomModal() {
   const [note, setNote] = useState(editRoom?.note || '')
  
   const [errors, setErrors] = useState({})
+  const [confirmRemoveResident, setConfirmRemoveResident] = useState(false)
 
   const formatRent = (val) => {
     const nums = val.replace(/[^\d]/g, '')
@@ -65,6 +66,24 @@ export default function RoomModal() {
   }
 
   const residentName = editRoom?.tenantName || ''
+
+  const handleConfirmRemoveResident = () => {
+    setConfirmRemoveResident(false)
+    saveRoom({
+      id: editRoom.id,
+      roomNumber: roomNumber.trim(),
+      roomCode: roomCode.trim(),
+      rentPrice: Number(rentPrice) || 0,
+      rentalType,
+      roomType,
+      prevElecMeter: rentalType === 'daily' || rentalType === 'รายวัน' ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
+      prevWaterMeter: rentalType === 'daily' || rentalType === 'รายวัน' ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
+      extraBed: Number(extraBed) || 0,
+      discount: Number(discount) || 0,
+      note: note.trim(),
+      residentId: null,
+    })
+  }
 
   return (
     <Modal open={true} onClose={() => setModal(null)} maxWidth="max-w-xl">
@@ -152,24 +171,7 @@ export default function RoomModal() {
                 <div className="flex-1 h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-500">
                   {residentName}
                 </div>
-                <button onClick={() => {
-                  if (window.confirm(`ต้องการลบ "${residentName}" ออกจากห้องนี้?`)) {
-                    saveRoom({
-                      id: editRoom.id,
-                      roomNumber: roomNumber.trim(),
-                      roomCode: roomCode.trim(),
-                      rentPrice: Number(rentPrice) || 0,
-                      rentalType,
-                      roomType,
-                      prevElecMeter: rentalType === 'daily' || rentalType === 'รายวัน' ? 0 : (prevElecMeter ? Number(prevElecMeter) : 0),
-                      prevWaterMeter: rentalType === 'daily' || rentalType === 'รายวัน' ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
-                      extraBed: Number(extraBed) || 0,
-                      discount: Number(discount) || 0,
-                      note: note.trim(),
-                      residentId: null,
-                    })
-                  }
-                }}
+                <button onClick={() => setConfirmRemoveResident(true)}
                   className="h-10 px-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors border border-rose-200 shrink-0">
                   ลบผู้เช่า
                 </button>
@@ -201,6 +203,27 @@ export default function RoomModal() {
           <Button onClick={handleSave}>{editRoom ? 'บันทึกการเปลี่ยนแปลง' : 'เพิ่มห้อง'}</Button>
         </div>
       </div>
+
+      {confirmRemoveResident && (
+        <Modal open={true} onClose={() => setConfirmRemoveResident(false)} maxWidth="max-w-sm">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ลบผู้เช่า</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              ต้องการลบ <strong>{residentName}</strong> ออกจากห้องนี้?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmRemoveResident(false)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmRemoveResident}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ยืนยันการลบ
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Modal>
   )
 }

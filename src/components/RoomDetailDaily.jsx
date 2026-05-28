@@ -10,6 +10,7 @@ import PageHeader from './ui/page-header'
 import Badge from './ui/badge'
 import Button from './ui/button'
 import Spinner from './ui/spinner'
+import Modal from './ui/modal'
 
 const TABS = [
   { id: 'detail', label: 'รายละเอียด', icon: '🏠' },
@@ -26,6 +27,8 @@ export default function RoomDetailDaily() {
   const [showSelectResident, setShowSelectResident] = useState(false)
   const [searchResident, setSearchResident] = useState('')
   const [showDeleteOptions, setShowDeleteOptions] = useState(false)
+  const [confirmDeleteRoom, setConfirmDeleteRoom] = useState(false)
+  const [confirmDeleteResident, setConfirmDeleteResident] = useState(false)
   const [selectedResidentForDates, setSelectedResidentForDates] = useState(null)
   const [checkInDate, setCheckInDate] = useState(null)
   const [checkOutDate, setCheckOutDate] = useState(null)
@@ -35,15 +38,38 @@ export default function RoomDetailDaily() {
   const room = useMemo(() => rooms.find(r => r.id === id), [rooms, id])
   const resident = useMemo(() => {
     if (!room) return null
-    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const now = new Date()
+    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
     const daily = residents.filter(r =>
       r.roomId === room.id &&
       (r.rentalType === 'daily' || r.rentalType === 'รายวัน')
     )
     for (const res of daily) {
-      const inD = new Date(res.moveInDate); inD.setHours(0, 0, 0, 0)
-      const outD = new Date(res.moveOutDate); outD.setHours(0, 0, 0, 0)
-      if (inD <= today && outD >= today) return res
+      const inBkk = new Date(res.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+      const outBkk = new Date(res.moveOutDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+      if (outBkk < todayBkk) continue
+      if (outBkk === todayBkk && bkkHour >= 12) continue
+      if (inBkk > todayBkk) continue
+      if (inBkk === todayBkk && bkkHour < 14) continue
+      return res
+    }
+    return null
+  }, [room, residents])
+
+  const upcomingResident = useMemo(() => {
+    if (!room) return null
+    const now = new Date()
+    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
+    const daily = residents.filter(r =>
+      r.roomId === room.id &&
+      (r.rentalType === 'daily' || r.rentalType === 'รายวัน')
+    ).sort((a, b) => new Date(a.moveInDate) - new Date(b.moveInDate))
+    for (const res of daily) {
+      const inBkk = new Date(res.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+      if (inBkk > todayBkk) return res
+      if (inBkk === todayBkk && bkkHour < 14) return res
     }
     return null
   }, [room, residents])
@@ -161,11 +187,17 @@ export default function RoomDetailDaily() {
   const isDaily = room.rentalType === 'daily' || room.rentalType === 'รายวัน'
   const status = resident
     ? { label: 'มีผู้พัก', variant: 'success' }
-    : { label: 'ว่าง', variant: 'default' }
+    : upcomingResident
+      ? { label: 'กำลังจะมีผู้เข้าพัก', variant: 'warning' }
+      : { label: 'ว่าง', variant: 'default' }
 
   const handleEdit = () => { setEditRoom(room); setModal('room') }
   const handleDelete = () => {
-    if (!window.confirm(`⚠️ ต้องการลบห้อง ${displayNumber} ใช่หรือไม่?`)) return
+    setConfirmDeleteRoom(true)
+  }
+
+  const handleConfirmDelete = () => {
+    setConfirmDeleteRoom(false)
     deleteRoom(room.id)
     navigate('/rooms')
   }
@@ -234,7 +266,11 @@ export default function RoomDetailDaily() {
   }
 
   const handleDeleteFromSystem = () => {
-    if (!window.confirm(`⚠️ ต้องการลบข้อมูลผู้พัก "${resident.name}" ออกจากระบบถาวรใช่หรือไม่?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`)) return
+    setConfirmDeleteResident(true)
+  }
+
+  const handleConfirmDeleteResident = () => {
+    setConfirmDeleteResident(false)
     deleteResident(resident.id)
     fetchRooms()
     setShowDeleteOptions(false)
@@ -254,13 +290,12 @@ export default function RoomDetailDaily() {
   const getDailyStatus = (r) => {
     if (!r?.moveOutDate) return { label: 'เช็คอิน', variant: 'success' }
     const now = new Date()
-    now.setHours(0, 0, 0, 0)
-    const inDate = new Date(r.moveInDate)
-    inDate.setHours(0, 0, 0, 0)
-    if (inDate > now) return { label: 'จอง', variant: 'warning' }
-    const out = new Date(r.moveOutDate)
-    out.setHours(0, 0, 0, 0)
-    if (out >= now) return { label: 'เช็คอิน', variant: 'success' }
+    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const inBkk = new Date(r.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const outBkk = new Date(r.moveOutDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
+    if (inBkk > todayBkk || (inBkk === todayBkk && bkkHour < 14)) return { label: 'จอง', variant: 'warning' }
+    if (outBkk > todayBkk || (outBkk === todayBkk && bkkHour < 12)) return { label: 'เช็คอิน', variant: 'success' }
     return { label: 'เช็คเอาท์แล้ว', variant: 'default' }
   }
 
@@ -659,6 +694,49 @@ export default function RoomDetailDaily() {
             </div>
           </div>
         </div>
+      )}
+
+      {confirmDeleteRoom && (
+        <Modal open={true} onClose={() => setConfirmDeleteRoom(false)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ลบห้อง</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              ต้องการลบห้อง <strong>{displayNumber}</strong> ใช่หรือไม่?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDeleteRoom(false)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmDelete}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ยืนยันการลบ
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {confirmDeleteResident && (
+        <Modal open={true} onClose={() => setConfirmDeleteResident(false)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ลบผู้พัก</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              ต้องการลบข้อมูลผู้พัก <strong>{resident?.name}</strong> ออกจากระบบถาวรใช่หรือไม่?<br />
+              การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDeleteResident(false)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmDeleteResident}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ยืนยันการลบ
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {showDeleteOptions && resident && (

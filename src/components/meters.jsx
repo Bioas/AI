@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, memo } from 'react'
 import { useApp } from '../context/AppContext'
 import { formatMonth, naturalSortRoomNumber } from '../lib/constants'
 import DatePickerField from './ui/datepicker'
@@ -9,13 +9,120 @@ import EmptyState from './ui/empty-state'
 import MeterModal from './MeterModal'
 import ReloadButton from './ui/reload-button'
 
+const METER_HEADERS = ['ห้อง', 'ผู้พัก', '⚡ ไฟก่อน', '⚡ ปัจจุบัน', '⚡ ใช้จริง', '💧 น้ำก่อน', '💧 ปัจจุบัน', '💧 ใช้จริง', 'จัดการ']
+
+const RATE_CARDS = [
+  { key: 'elec', icon: '⚡', label: 'ค่าไฟ', field: 'rateElec', default: 7, bg: 'amber' },
+  { key: 'water', icon: '💧', label: 'ค่าน้ำ', field: 'rateWater', default: 20, bg: 'cyan' },
+]
+
+const RATE_STYLES = {
+  amber: {
+    card: 'from-amber-50 to-amber-50/60 border-amber-200/60',
+    circle1: 'bg-amber-200/20', circle2: 'bg-amber-300/10',
+    icon: 'from-amber-400 to-amber-500', text: 'text-amber-700',
+  },
+  cyan: {
+    card: 'from-cyan-50 to-cyan-50/60 border-cyan-200/60',
+    circle1: 'bg-cyan-200/20', circle2: 'bg-cyan-300/10',
+    icon: 'from-cyan-400 to-cyan-500', text: 'text-cyan-700',
+  },
+}
+
+const MOBILE_CARD_META = {
+  elec: { container: 'bg-amber-50/60 rounded-xl px-3.5 py-2.5 border border-amber-100/50', icon: '⚡', label: 'ไฟ' },
+  water: { container: 'bg-cyan-50/60 rounded-xl px-3.5 py-2.5 border border-cyan-100/50', icon: '💧', label: 'น้ำ' },
+}
+
+function getMeterUsage(cur, prev) {
+  if (cur === '' || prev === '') return null
+  return Math.max(0, Number(cur) - Number(prev))
+}
+
+function MeterValue({ val }) {
+  return val !== '' && val !== undefined && val !== null
+    ? <span>{val}</span>
+    : <span className="text-neutral-300">—</span>
+}
+
+function UsageBadge({ val }) {
+  if (val === null) return <span className="text-neutral-300">—</span>
+  return <span className="inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 text-xs font-bold">{val}</span>
+}
+
+function MeterCellGroup({ prev, cur, usage }) {
+  return (
+    <>
+      <td className="px-3 py-3.5 text-neutral-600 font-mono text-xs align-middle"><MeterValue val={prev} /></td>
+      <td className="px-3 py-3.5 text-neutral-800 font-mono text-sm font-semibold align-middle"><MeterValue val={cur} /></td>
+      <td className="px-3 py-3.5 align-middle"><UsageBadge val={usage} /></td>
+    </>
+  )
+}
+
+const DesktopRow = memo(function DesktopRow({ room, ml, eu, wu, onEdit }) {
+  const number = room.roomNumber || room.number
+  const name = room.tenantName || '—'
+  return (
+    <tr onClick={() => onEdit(room)} className="cursor-pointer hover:bg-lime-50/30 transition-colors">
+      <td className="px-3 py-3.5 align-middle">
+        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{number}</span>
+      </td>
+      <td className="px-3 py-3.5 text-neutral-700 align-middle">{name}</td>
+      <MeterCellGroup prev={ml.prev.elec} cur={ml.cur.elec} usage={eu} />
+      <MeterCellGroup prev={ml.prev.water} cur={ml.cur.water} usage={wu} />
+      <td className="px-3 py-3.5 align-middle text-center">
+        <button onClick={(e) => { e.stopPropagation(); onEdit(room) }} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-100">แก้ไข</button>
+      </td>
+    </tr>
+  )
+})
+
+function MobileMeterCard({ ml, type, usage }) {
+  const m = MOBILE_CARD_META[type]
+  const prev = ml.prev[type]
+  const cur = ml.cur[type]
+  return (
+    <div className={m.container}>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5">
+        <span>{m.icon}</span>
+        <span>{m.label}</span>
+      </div>
+      <div className="flex items-center gap-1.5 text-sm">
+        <span className="font-mono text-neutral-700"><MeterValue val={prev} /></span>
+        <span className="text-neutral-400">→</span>
+        <span className="font-mono text-neutral-800 font-semibold"><MeterValue val={cur} /></span>
+        {usage !== null && (
+          <span className="ml-auto text-xs font-semibold text-teal-600">+{usage}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const MobileCard = memo(function MobileCard({ room, ml, eu, wu, onEdit }) {
+  const number = room.roomNumber || room.number
+  const name = room.tenantName || '—'
+  return (
+    <div onClick={() => onEdit(room)} className="px-4 py-4 space-y-3 cursor-pointer active:bg-lime-50/40 transition-colors">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{number}</span>
+          <span className="text-sm font-medium text-neutral-700">{name}</span>
+        </div>
+        <button onClick={(e) => { e.stopPropagation(); onEdit(room) }} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-100">แก้ไข</button>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <MobileMeterCard ml={ml} type="elec" usage={eu} />
+        <MobileMeterCard ml={ml} type="water" usage={wu} />
+      </div>
+    </div>
+  )
+})
+
 export default function Meters() {
   const { rooms: allRooms, settings, meterMonth, setMeterMonth, meterLocal, fetchAll } = useApp()
   const [editRoom, setEditRoom] = useState(null)
-
-  const handleReload = async () => {
-    await fetchAll()
-  }
 
   const meterDate = useMemo(() => {
     if (!meterMonth) return null
@@ -23,16 +130,18 @@ export default function Meters() {
     return new Date(y, m - 1, 1)
   }, [meterMonth])
 
-  const handleMeterMonthChange = (date) => {
-    if (date) {
-      setMeterMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`)
-    }
-  }
   const occRooms = useMemo(() => {
     const filtered = allRooms.filter(r => (r.residentId || r.tenantName) && r.rentalType !== 'daily' && r.rentalType !== 'รายวัน')
     filtered.sort(naturalSortRoomNumber)
     return filtered
   }, [allRooms])
+
+  const roomMetersData = useMemo(() => {
+    return occRooms.map(r => {
+      const ml = meterLocal[r.id] || { cur: { elec: '', water: '' }, prev: { elec: '', water: '' } }
+      return { room: r, ml, eu: getMeterUsage(ml.cur.elec, ml.prev.elec), wu: getMeterUsage(ml.cur.water, ml.prev.water) }
+    })
+  }, [occRooms, meterLocal])
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -41,9 +150,9 @@ export default function Meters() {
       <div className="flex flex-row items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
         <label className="text-sm font-medium text-neutral-600 shrink-0">เดือน:</label>
         <div className="flex-1 sm:flex-none sm:w-44">
-          <DatePickerField selected={meterDate} onChange={handleMeterMonthChange} showMonthPicker placeholder="เลือกเดือน" />
+          <DatePickerField selected={meterDate} onChange={(date) => { if (date) setMeterMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`) }} showMonthPicker placeholder="เลือกเดือน" />
         </div>
-        <ReloadButton onReload={handleReload} className="ml-auto" />
+        <ReloadButton onReload={fetchAll} className="ml-auto" />
       </div>
 
       <Card>
@@ -52,97 +161,65 @@ export default function Meters() {
             <div className="w-2 h-2 rounded-full bg-lime-400" />
             <h3 className="text-sm font-semibold text-neutral-800">ข้อมูลมิเตอร์ — {formatMonth(meterMonth)}</h3>
           </div>
-          <p className="text-xs text-neutral-400 mb-6 ml-5">กดปุ่ม "แก้ไข" เพื่อบันทึกเลขมาตรแต่ละห้อง</p>
+          <p className="text-xs text-neutral-400 mb-6 ml-5">กดปุ่มแก้ไขเพื่อบันทึกเลขมาตรแต่ละห้อง</p>
 
           {occRooms.length === 0 ? (
             <EmptyState icon="📝" title="ไม่มีห้องที่มีผู้พัก" description="เพิ่มผู้พักในห้องก่อนจึงจะบันทึกเลขมิเตอร์ได้" />
           ) : (
             <div className="border border-neutral-100 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="hidden md:table-header-group">
+              <table className="w-full text-sm hidden md:table">
+                <colgroup>
+                  <col className="w-16" />
+                  <col />
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <col key={i} className={i < 3 ? 'bg-amber-50/40' : 'bg-cyan-50/40'} />
+                  ))}
+                  <col className="w-20" />
+                </colgroup>
+                <thead>
                   <tr className="bg-neutral-50/80">
-                    {['ห้อง', 'ผู้พัก', 'ไฟก่อน', 'ไฟปัจจุบัน', 'ใช้จริง', 'น้ำก่อน', 'น้ำปัจจุบัน', 'ใช้จริง', 'จัดการ'].map(h => (
-                      <th key={h} className="text-left px-3 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
+                    {METER_HEADERS.map((h, i) => (
+                      <th key={h} scope="col" className={`text-left px-3 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap ${i === 8 ? 'text-center' : ''}`}>{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-50">
-                  {occRooms.map(r => {
-                    const ml = meterLocal[r.id] || { cur: { elec: '', water: '' }, prev: { elec: '', water: '' } }
-                    const eu = (ml.cur.elec !== '' && ml.prev.elec !== '') ? Math.max(0, Number(ml.cur.elec) - Number(ml.prev.elec)) : '—'
-                    const wu = (ml.cur.water !== '' && ml.prev.water !== '') ? Math.max(0, Number(ml.cur.water) - Number(ml.prev.water)) : '—'
-                    return (
-                      <tr key={r.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
-                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{r.roomNumber || r.number}</span>
-                        </td>
-                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ผู้พัก</span>
-                          <span className="text-neutral-700">{r.tenantName || '—'}</span>
-                        </td>
-                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ไฟก่อน</span>
-                          <span className="text-neutral-700 font-mono text-xs">{ml.prev.elec || <span className="text-neutral-300">—</span>}</span>
-                        </td>
-                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ไฟปัจจุบัน</span>
-                          <span className="text-neutral-700 font-mono text-xs">{ml.cur.elec || <span className="text-neutral-300">—</span>}</span>
-                        </td>
-                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ใช้จริง</span>
-                          <span className="text-sm font-semibold text-teal-600">{eu}</span>
-                        </td>
-                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">น้ำก่อน</span>
-                          <span className="text-neutral-700 font-mono text-xs">{ml.prev.water || <span className="text-neutral-300">—</span>}</span>
-                        </td>
-                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">น้ำปัจจุบัน</span>
-                          <span className="text-neutral-700 font-mono text-xs">{ml.cur.water || <span className="text-neutral-300">—</span>}</span>
-                        </td>
-                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ใช้จริง</span>
-                          <span className="text-sm font-semibold text-teal-600">{wu}</span>
-                        </td>
-                        <td className="px-0 md:px-3 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
-                          <button onClick={() => setEditRoom(r)}
-                            className="h-8 px-3.5 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-100">แก้ไข</button>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                <tbody className="divide-y divide-neutral-100">
+                  {roomMetersData.map(d => (
+                    <DesktopRow key={d.room.id} {...d} onEdit={setEditRoom} />
+                  ))}
                 </tbody>
               </table>
+
+              <div className="divide-y divide-neutral-100 md:hidden">
+                {roomMetersData.map(d => (
+                  <MobileCard key={d.room.id} {...d} onEdit={setEditRoom} />
+                ))}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-base shadow-sm border border-amber-100">⚡</div>
-              <div>
-                <h3 className="text-sm font-semibold text-neutral-800">อัตราค่าไฟ</h3>
-                <p className="text-2xl font-bold text-neutral-800 mt-0.5">{settings?.rateElec || 7} <span className="text-sm font-medium text-neutral-400">บาท/หน่วย</span></p>
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6">
+        {RATE_CARDS.map(c => {
+          const s = RATE_STYLES[c.bg]
+          return (
+            <div key={c.key} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${s.card} border shadow-sm`}>
+              <div className={`absolute top-0 right-0 w-24 h-24 -mr-6 -mt-6 rounded-full ${s.circle1}`} />
+              <div className={`absolute bottom-0 left-0 w-16 h-16 -ml-4 -mb-4 rounded-full ${s.circle2}`} />
+              <div className="relative px-5 py-4 sm:px-6 sm:py-5">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <span className={`inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br ${s.icon} text-white text-base shadow-sm`}>{c.icon}</span>
+                  <span className={`text-xs font-semibold tracking-wide ${s.text} uppercase`}>{c.label}</span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl sm:text-4xl font-bold text-neutral-800 tracking-tight">{settings?.[c.field] || c.default}</span>
+                  <span className="text-sm font-medium text-neutral-400">บาท/หน่วย</span>
+                </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center text-base shadow-sm border border-cyan-100">💧</div>
-              <div>
-                <h3 className="text-sm font-semibold text-neutral-800">อัตราค่าน้ำ</h3>
-                <p className="text-2xl font-bold text-neutral-800 mt-0.5">{settings?.rateWater || 20} <span className="text-sm font-medium text-neutral-400">บาท/หน่วย</span></p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          )
+        })}
       </div>
 
       {editRoom && <MeterModal room={editRoom} onClose={() => setEditRoom(null)} />}

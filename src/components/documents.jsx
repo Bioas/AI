@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { formatMonth, formatThaiDate, naturalSortRoomNumber, THAI_SHORT_MONTHS } from '../lib/constants'
+import { formatMonth, naturalSortRoomNumber, THAI_SHORT_MONTHS } from '../lib/constants'
 import DatePickerField from './ui/datepicker'
 import Card, { CardContent } from './ui/card'
 import PageHeader from './ui/page-header'
@@ -10,6 +10,45 @@ import InvoicePreview from './InvoicePreview'
 import ReceiptPreview from './ReceiptPreview'
 import ReloadButton from './ui/reload-button'
 import Select from './ui/select'
+import Modal from './ui/modal'
+
+const HEADERS = ['วันที่', 'เลขที่เอกสาร', 'ประเภท', 'ห้อง', 'ชื่อลูกค้า', 'รวม', 'จัดการ']
+
+const DOC_TABS = [
+  { key: 'invoice', icon: '🧾', title: 'ใบแจ้งหนี้', desc: 'ดูใบแจ้งหนี้ที่บันทึกไว้', color: 'lime' },
+  { key: 'receipt', icon: '📄', title: 'ใบเสร็จรับเงิน', desc: 'ดูใบเสร็จรับเงินที่บันทึกไว้', color: 'emerald' },
+]
+
+const VIEW_MODES = [
+  { key: 'month', label: 'เดือน' },
+  { key: 'year', label: 'ปี' },
+]
+
+const ACTIVE_STYLES = {
+  invoice: {
+    bg: 'border-lime-500 bg-lime-50 shadow-md shadow-lime-100',
+    icon: 'bg-lime-500 text-white',
+    text: 'text-lime-700',
+    dot: 'bg-lime-400',
+    label: 'ใบแจ้งหนี้',
+  },
+  receipt: {
+    bg: 'border-emerald-500 bg-emerald-50 shadow-md shadow-emerald-100',
+    icon: 'bg-emerald-500 text-white',
+    text: 'text-emerald-700',
+    dot: 'bg-emerald-400',
+    label: 'ใบเสร็จรับเงิน',
+  },
+}
+
+const INACTIVE_TAB = 'border-neutral-200 bg-white hover:border-neutral-300'
+const INACTIVE_ICON = 'bg-neutral-100'
+const INACTIVE_TEXT = 'text-neutral-700'
+
+const BUTTON_VIEW = 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
+const BUTTON_RECEIPT = 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100'
+const BADGE_DAILY = 'bg-sky-50 text-sky-600 border-sky-100'
+const BADGE_MONTHLY = 'bg-lime-50 text-lime-600 border-lime-100'
 
 function formatDateTime(isoStr) {
   if (!isoStr) return '—'
@@ -20,7 +59,7 @@ function formatDateTime(isoStr) {
   return `${day} ${month} ${year}`
 }
 
-function generateDocNumber(inv, invoices, rooms) {
+function generateDocNumber(inv, invoices, rooms, docType) {
   if (!inv.month) return '—'
   const room = rooms.find(r => r.id === inv.roomId)
   const roomRef = room?.roomCode || inv.roomNumber || '—'
@@ -30,19 +69,21 @@ function generateDocNumber(inv, invoices, rooms) {
     .sort((a, b) => a.month.localeCompare(b.month))
   const runningIndex = sameYearInvoices.findIndex(x => x.id === inv.id) + 1
   const running = String(runningIndex).padStart(3, '0')
-  return `INV-${roomRef}-${inv.month.replace('-', '')}-${running}`
+  const prefix = docType === 'receipt' ? 'REC' : 'INV'
+  return `${prefix}-${roomRef}-${inv.month.replace('-', '')}-${running}`
 }
 
 export default function Documents() {
   const { rooms, invoices, invMonth, setInvMonth, downloadPdf, setViewInv, setModal, fetchAll } = useApp()
   const [activeTab, setActiveTab] = useState('invoice')
   const [actionId, setActionId] = useState(null)
+  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState(null)
   const [viewMode, setViewMode] = useState('month')
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
 
-  const handleReload = async () => {
-    await fetchAll()
-  }
+  const isInvoice = activeTab === 'invoice'
+  const activeStyle = ACTIVE_STYLES[activeTab]
+  const emptyLabel = isInvoice ? 'ใบแจ้งหนี้' : 'ใบเสร็จรับเงิน'
 
   const invDate = useMemo(() => {
     if (!invMonth) return null
@@ -56,10 +97,16 @@ export default function Documents() {
     }
   }
 
-  const handleView = (inv) => { setViewInv(inv); setModal(activeTab === 'invoice' ? 'invoice' : 'receipt') }
+  const handleView = (inv) => { setViewInv(inv); setModal(isInvoice ? 'invoice' : 'receipt') }
 
-  const handleDelete = async (inv) => {
-    if (!window.confirm(`ต้องการลบเอกสารใบนี้ใช่หรือไม่?`)) return
+  const handleDelete = (inv) => {
+    setConfirmDeleteDoc(inv)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteDoc) return
+    const inv = confirmDeleteDoc
+    setConfirmDeleteDoc(null)
     setActionId(inv.id)
     try {
       const res = await fetch('/api/invoices', {
@@ -75,56 +122,58 @@ export default function Documents() {
     setActionId(null)
   }
 
+  const roomById = useMemo(() => {
+    const map = {}
+    for (const r of rooms) map[r.id] = r
+    return map
+  }, [rooms])
+
+  const yearOptions = useMemo(() =>
+    Array.from({ length: 5 }, (_, i) => {
+      const y = new Date().getFullYear() - 2 + i
+      return { value: y, label: String(y + 543) }
+    }), []
+  )
+
   const savedInvoices = useMemo(() => {
     let filtered
     if (viewMode === 'year') {
       filtered = invoices.filter(x => x.month && x.month.startsWith(String(selectedYear)))
     } else {
-      filtered = invoices.filter(x => x.month === invMonth)
+      filtered = invoices.filter(x => x.month && x.month.startsWith(invMonth))
     }
-    const byTab = activeTab === 'invoice'
-      ? filtered.filter(x => !x.receiptOnly)
-      : filtered.filter(x => x.paid || x.receiptOnly)
-    byTab.sort((a, b) => {
-      const roomA = rooms.find(r => r.id === a.roomId)
-      const roomB = rooms.find(r => r.id === b.roomId)
+    const result = isInvoice ? filtered.filter(x => !x.receiptOnly) : filtered
+    result.sort((a, b) => {
+      const roomA = roomById[a.roomId]
+      const roomB = roomById[b.roomId]
       const numA = roomA ? (roomA.roomNumber || roomA.number || '') : ''
       const numB = roomB ? (roomB.roomNumber || roomB.number || '') : ''
       return naturalSortRoomNumber(numA, numB)
     })
-    return byTab
-  }, [invoices, invMonth, activeTab, rooms, viewMode, selectedYear])
+    return result
+  }, [invoices, invMonth, isInvoice, roomById, viewMode, selectedYear])
 
-  const getRoomInfo = (inv) => {
-    const room = rooms.find(r => r.id === inv.roomId)
-    return {
-      number: inv.roomNumber || room?.roomNumber || room?.number || '—',
-      tenant: inv.tenantName || room?.tenantName || '—',
-      rentalType: room?.rentalType || 'monthly',
-    }
-  }
+  const displayData = useMemo(() => {
+    return savedInvoices.map(inv => {
+      const room = roomById[inv.roomId]
+      const number = inv.roomNumber || room?.roomNumber || room?.number || '—'
+      const tenant = inv.tenantName || room?.tenantName || '—'
+      const rentalType = room?.rentalType || 'monthly'
+      const isDaily = rentalType === 'daily' || rentalType === 'รายวัน'
+      const docNumber = generateDocNumber(inv, invoices, rooms, activeTab)
+      return { inv, number, tenant, isDaily, docNumber }
+    })
+  }, [savedInvoices, roomById, invoices, rooms, activeTab])
 
-  const toPreviewInv = (inv) => {
-    const { number, tenant } = getRoomInfo(inv)
-    const docNumber = generateDocNumber(inv, invoices, rooms)
+  const toPreviewInv = (inv, dt) => {
+    const room = roomById[inv.roomId]
+    const number = inv.roomNumber || room?.roomNumber || room?.number || '—'
+    const tenant = inv.tenantName || room?.tenantName || '—'
+    const docNumber = generateDocNumber(inv, invoices, rooms, dt)
     return {
+      ...inv,
       room: number,
       tenant,
-      phone: inv.tenantPhone || '',
-      userId: inv.tenantUserId || '',
-      month: inv.month,
-      rent: inv.rent || 0,
-      elecUnits: inv.elecUnits || 0,
-      elecCost: inv.elecCost || 0,
-      waterUnits: inv.waterUnits || 0,
-      waterCost: inv.waterCost || 0,
-      prevElec: inv.prevElec || 0,
-      curElec: inv.curElec || 0,
-      prevWater: inv.prevWater || 0,
-      curWater: inv.curWater || 0,
-      total: inv.total || 0,
-      rateElec: inv.rateElec,
-      rateWater: inv.rateWater,
       docNumber,
       _saved: true,
       _id: inv.id,
@@ -135,68 +184,41 @@ export default function Documents() {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader title="เอกสาร" description="ดูใบแจ้งหนี้และใบเสร็จรับเงินทั้งหมดที่บันทึกไว้" />
 
-      {/* Document Type Buttons - Large */}
+      {/* Document Type Buttons */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <button
-          onClick={() => setActiveTab('invoice')}
-          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${
-            activeTab === 'invoice'
-              ? 'border-lime-500 bg-lime-50 shadow-md shadow-lime-100'
-              : 'border-neutral-200 bg-white hover:border-neutral-300'
-          }`}>
-          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${
-            activeTab === 'invoice' ? 'bg-lime-500 text-white' : 'bg-neutral-100'
-          }`}>
-            🧾
-          </div>
-          <div className="min-w-0">
-            <div className={`text-sm sm:text-base font-bold truncate ${activeTab === 'invoice' ? 'text-lime-700' : 'text-neutral-700'}`}>ใบแจ้งหนี้</div>
-            <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">ดูใบแจ้งหนี้ที่บันทึกไว้</div>
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('receipt')}
-          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${
-            activeTab === 'receipt'
-              ? 'border-emerald-500 bg-emerald-50 shadow-md shadow-emerald-100'
-              : 'border-neutral-200 bg-white hover:border-neutral-300'
-          }`}>
-          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${
-            activeTab === 'receipt' ? 'bg-emerald-500 text-white' : 'bg-neutral-100'
-          }`}>
-            📄
-          </div>
-          <div className="min-w-0">
-            <div className={`text-sm sm:text-base font-bold truncate ${activeTab === 'receipt' ? 'text-emerald-700' : 'text-neutral-700'}`}>ใบเสร็จรับเงิน</div>
-            <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">ดูใบเสร็จรับเงินที่บันทึกไว้</div>
-          </div>
-        </button>
+        {DOC_TABS.map(t => {
+          const active = activeTab === t.key
+          const s = ACTIVE_STYLES[t.key]
+          return (
+            <button key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl border-2 transition-all text-left ${active ? s.bg : INACTIVE_TAB}`}>
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 ${active ? s.icon : INACTIVE_ICON}`}>
+                {t.icon}
+              </div>
+              <div className="min-w-0">
+                <div className={`text-sm sm:text-base font-bold truncate ${active ? s.text : INACTIVE_TEXT}`}>{t.title}</div>
+                <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 hidden sm:block">{t.desc}</div>
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* View Mode Toggle + Picker */}
       <div className="flex flex-row items-center gap-3 mb-6 sm:mb-8 bg-white rounded-2xl shadow-card border border-lime-100/40 px-4 sm:px-6 py-4">
-        {/* Pill Toggle */}
         <div className="flex items-center bg-neutral-100 rounded-xl p-1 shrink-0">
-          <button
-            onClick={() => setViewMode('month')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-              viewMode === 'month'
-                ? 'bg-lime-500 text-white shadow-sm'
-                : 'text-neutral-500 hover:text-neutral-700'
-            }`}
-          >
-            เดือน
-          </button>
-          <button
-            onClick={() => setViewMode('year')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-              viewMode === 'year'
-                ? 'bg-lime-500 text-white shadow-sm'
-                : 'text-neutral-500 hover:text-neutral-700'
-            }`}
-          >
-            ปี
-          </button>
+          {VIEW_MODES.map(m => (
+            <button key={m.key}
+              onClick={() => setViewMode(m.key)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                viewMode === m.key
+                  ? 'bg-lime-500 text-white shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-700'
+              }`}>
+              {m.label}
+            </button>
+          ))}
         </div>
 
         {viewMode === 'month' ? (
@@ -205,96 +227,97 @@ export default function Documents() {
           </div>
         ) : (
           <div className="flex-1 sm:flex-none sm:w-44">
-            <Select
-              value={selectedYear}
-              onChange={setSelectedYear}
-              options={Array.from({ length: 5 }, (_, i) => {
-                const y = new Date().getFullYear() - 2 + i
-                return { value: y, label: String(y + 543) }
-              })}
-              placeholder="เลือกปี"
-            />
+            <Select value={selectedYear} onChange={setSelectedYear} options={yearOptions} placeholder="เลือกปี" />
           </div>
         )}
-        <ReloadButton onReload={handleReload} className="ml-auto" />
+        <ReloadButton onReload={fetchAll} className="ml-auto" />
       </div>
 
       {/* Table */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className={`w-2 h-2 rounded-full ${activeTab === 'invoice' ? 'bg-lime-400' : 'bg-emerald-400'}`} />
+            <div className={`w-2 h-2 rounded-full ${activeStyle.dot}`} />
             <h3 className="text-sm font-semibold text-neutral-800">
-              {activeTab === 'invoice' ? 'ใบแจ้งหนี้ทั้งหมด' : 'ใบเสร็จรับเงินทั้งหมด'} — {viewMode === 'year' ? `ปี ${selectedYear + 543}` : formatMonth(invMonth)}
+              {activeStyle.label}ทั้งหมด — {viewMode === 'year' ? `ปี ${selectedYear + 543}` : formatMonth(invMonth)}
             </h3>
           </div>
-          {savedInvoices.length === 0 ? (
-            <EmptyState icon="📄" title="ไม่มีเอกสารที่บันทึกไว้" description={`ยังไม่มี${activeTab === 'invoice' ? 'ใบแจ้งหนี้' : 'ใบเสร็จรับเงิน'}${viewMode === 'year' ? `ในปี ${selectedYear + 543}` : 'ในเดือนนี้'}`} />
+          {displayData.length === 0 ? (
+            <EmptyState icon="📄" title="ไม่มีเอกสารที่บันทึกไว้" description={`ยังไม่มี${emptyLabel}${viewMode === 'year' ? `ในปี ${selectedYear + 543}` : 'ในเดือนนี้'}`} />
           ) : (
             <div className="border border-neutral-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
-                    {['วันที่', 'เลขที่เอกสาร', 'ประเภท', 'ห้อง', 'ชื่อลูกค้า', 'รวม', 'จัดการ'].map(h => (
+                    {HEADERS.map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
-                  {savedInvoices.map(inv => {
-                    const { number, tenant, rentalType } = getRoomInfo(inv)
-                    const isDaily = rentalType === 'daily' || rentalType === 'รายวัน'
-                    return (
-                      <tr key={inv.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">วันที่</span>
-                          <span className="text-neutral-700 whitespace-nowrap">{formatDateTime(inv.createdAt)}</span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">เลขที่เอกสาร</span>
-                          <span className="font-mono text-xs text-neutral-600 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-100">{generateDocNumber(inv, invoices, rooms)}</span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภท</span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDaily ? 'bg-sky-50 text-sky-600 border-sky-100' : 'bg-lime-50 text-lime-600 border-lime-100'}`}>
-                            {rentalType === 'daily' || rentalType === 'รายวัน' ? 'รายวัน' : 'รายเดือน'}
-                          </span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{number}</span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">ชื่อลูกค้า</span>
-                          <span className="text-neutral-700">{tenant}</span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">รวม</span>
-                          <span className="text-base font-bold text-neutral-800 whitespace-nowrap">{(inv.total || 0).toLocaleString()} บาท</span>
-                        </td>
-                        <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
-                          <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => handleView(toPreviewInv(inv))} className={`h-8 px-3.5 rounded-lg text-xs font-medium transition-colors border ${
-                              activeTab === 'invoice'
-                                ? 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
-                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100'
-                            }`}>ดู</button>
-                            <button onClick={() => downloadPdf(toPreviewInv(inv))} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-100">PDF</button>
-                            <button onClick={() => handleDelete(inv)} disabled={actionId === inv.id} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-100 disabled:opacity-50">
-                              {actionId === inv.id ? '...' : 'ลบ'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                  {displayData.map(({ inv, number, tenant, isDaily, docNumber }) => (
+                    <tr key={inv.id} className="block md:table-row p-4 md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">วันที่</span>
+                        <span className="text-neutral-700 whitespace-nowrap">{formatDateTime(inv.createdAt)}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">เลขที่เอกสาร</span>
+                        <span className="font-mono text-xs text-neutral-600 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-100">{docNumber}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">ประเภท</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDaily ? BADGE_DAILY : BADGE_MONTHLY}`}>
+                          {isDaily ? 'รายวัน' : 'รายเดือน'}
+                        </span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">ห้อง</span>
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{number}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">ชื่อลูกค้า</span>
+                        <span className="text-neutral-700">{tenant}</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">รวม</span>
+                        <span className="text-base font-bold text-neutral-800 whitespace-nowrap">{(inv.total || 0).toLocaleString()} บาท</span>
+                      </td>
+                      <td className="px-0 md:px-4 py-2 md:py-3.5 flex items-center justify-between md:table-cell">
+                        <span className="text-xs font-medium text-neutral-500 md:hidden">จัดการ</span>
+                        <div className="flex gap-1.5">
+                          <button onClick={() => handleView(toPreviewInv(inv, activeTab))} className={`h-8 px-3.5 rounded-lg text-xs font-medium transition-colors border ${isInvoice ? BUTTON_VIEW : BUTTON_RECEIPT}`}>ดู</button>
+                          <button onClick={() => handleDelete(inv)} disabled={actionId === inv.id} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-100 disabled:opacity-50">
+                            {actionId === inv.id ? '...' : 'ลบ'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           )}
         </CardContent>
       </Card>
+      {confirmDeleteDoc && (
+        <Modal open={true} onClose={() => setConfirmDeleteDoc(null)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ลบเอกสาร</h3>
+            <p className="text-sm text-neutral-600 mb-5">ต้องการลบเอกสารใบนี้ใช่หรือไม่?</p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDeleteDoc(null)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmDelete}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ยืนยันการลบ
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </motion.div>
   )
 }

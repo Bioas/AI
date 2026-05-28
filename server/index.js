@@ -81,29 +81,35 @@ async function runAutoCheckout() {
     const client = await connectDB()
     const db = client.db('dorm_billing')
     const now = new Date()
-    const todayStr = now.toISOString().split('T')[0]
-    const isAfterNoon = now.getHours() >= 12
+    const todayBangkok = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const bangkokHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
 
-    if (!isAfterNoon) return
-
-    const dailyRooms = await db.collection('rooms').find({ rentalType: { $in: ['daily', 'รายวัน'] }, status: 'มีผู้เช่า', residentId: { $ne: null } }).toArray()
-    const residents = await db.collection('residents').find({}).toArray()
+    const dailyRooms = await db.collection('rooms').find({ rentalType: { $in: ['daily', 'รายวัน'] } }).toArray()
+    const allResidents = await db.collection('residents').find({}).toArray()
 
     for (const room of dailyRooms) {
-      const resident = residents.find(r => r.id === room.residentId)
-      if (!resident || !resident.moveOutDate) continue
+      // Find ALL residents linked to this room by roomId (not room.residentId)
+      const roomResidents = allResidents.filter(r => r.roomId === room.id)
 
-      const moveOutDate = resident.moveOutDate.split('T')[0]
-        if (moveOutDate < todayStr) {
-        await db.collection('residents').updateOne(
-          { id: resident.id },
-          { $set: { roomId: '', roomNumber: '', updatedAt: now.toISOString() } }
-        )
-        await db.collection('rooms').updateOne(
-          { id: room.id },
-          { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, updatedAt: now.toISOString() } }
-        )
-        console.log(`Auto-checkout: Room ${room.roomNumber} resident ${resident.name} moved out`)
+      for (const resident of roomResidents) {
+        if (!resident.moveOutDate) continue
+
+        const outBangkok = new Date(resident.moveOutDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+        if (outBangkok < todayBangkok || (outBangkok === todayBangkok && bangkokHour >= 12)) {
+          // Clear this resident's roomId
+          await db.collection('residents').updateOne(
+            { id: resident.id },
+            { $set: { roomId: '', updatedAt: now.toISOString() } }
+          )
+          // Only clear room's residentId if it matches this resident
+          if (room.residentId === resident.id) {
+            await db.collection('rooms').updateOne(
+              { id: room.id },
+              { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, updatedAt: now.toISOString() } }
+            )
+          }
+          console.log(`Auto-checkout: Room ${room.roomNumber} resident ${resident.name} moved out`)
+        }
       }
     }
   } catch (e) {

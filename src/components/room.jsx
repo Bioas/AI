@@ -10,6 +10,7 @@ import Badge from './ui/badge'
 import Button from './ui/button'
 import Select from './ui/select'
 import ReloadButton from './ui/reload-button'
+import Modal from './ui/modal'
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'ทั้งหมด' },
@@ -23,6 +24,7 @@ export default function Room() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [viewMode, setViewMode] = useState('grid')
+  const [confirmDeleteRoom, setConfirmDeleteRoom] = useState(null)
 
   const handleReload = async () => {
     const params = new URLSearchParams()
@@ -50,13 +52,13 @@ export default function Room() {
 
   const handleDelete = (room, e) => {
     e.stopPropagation()
-    const label = room.roomNumber || room.number
-    const hasResident = room.residentId || room.tenantName
-    if (hasResident) {
-      if (!window.confirm(`⚠️ ห้อง ${label} มีผู้พัก (${room.tenantName || 'ไม่ระบุ'}) อยู่\nการลบห้องนี้จะทำให้ข้อมูลผู้พักถูกยกเลิกการเชื่อมโยงกับห้อง\nต้องการดำเนินการต่อหรือไม่?`)) return
-    } else {
-      if (!window.confirm(`⚠️ ต้องการลบห้อง ${label} ใช่หรือไม่?`)) return
-    }
+    setConfirmDeleteRoom(room)
+  }
+
+  const handleConfirmDelete = () => {
+    if (!confirmDeleteRoom) return
+    const room = confirmDeleteRoom
+    setConfirmDeleteRoom(null)
     deleteRoom(room.id)
   }
 
@@ -74,23 +76,31 @@ export default function Room() {
   }
 
   const getCurrentResident = (room) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const now = new Date()
+    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
     const roomRes = getRoomResidents(room)
     for (const res of roomRes) {
-      const inD = new Date(res.moveInDate); inD.setHours(0, 0, 0, 0)
-      const outD = new Date(res.moveOutDate); outD.setHours(0, 0, 0, 0)
-      if (inD <= today && outD >= today) return res
+      const inBkk = new Date(res.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+      const outBkk = new Date(res.moveOutDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+      if (outBkk < todayBkk) continue
+      if (outBkk === todayBkk && bkkHour >= 12) continue
+      if (inBkk > todayBkk) continue
+      if (inBkk === todayBkk && bkkHour < 14) continue
+      return res
     }
     return null
   }
 
   const getUpcomingResidents = (room) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const now = new Date()
+    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
     return getRoomResidents(room).filter(r => {
-      const inD = new Date(r.moveInDate); inD.setHours(0, 0, 0, 0)
-      return inD > today
+      const inBkk = new Date(r.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+      if (inBkk > todayBkk) return true
+      if (inBkk === todayBkk && bkkHour < 14) return true
+      return false
     })
   }
 
@@ -403,6 +413,34 @@ export default function Room() {
             </div>
           </CardContent>
         </Card>
+      )}
+      {confirmDeleteRoom && (
+        <Modal open={true} onClose={() => setConfirmDeleteRoom(null)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ลบห้อง</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              {(() => {
+                const room = confirmDeleteRoom
+                const label = room.roomNumber || room.number
+                const hasResident = room.residentId || room.tenantName
+                if (hasResident) {
+                  return <>ห้อง <strong>{label}</strong> มีผู้พัก (<strong>{room.tenantName || 'ไม่ระบุ'}</strong>) อยู่<br />การลบห้องนี้จะทำให้ข้อมูลผู้พักถูกยกเลิกการเชื่อมโยงกับห้อง<br />ต้องการดำเนินการต่อหรือไม่?</>
+                }
+                return <>ต้องการลบห้อง <strong>{label}</strong> ใช่หรือไม่?</>
+              })()}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDeleteRoom(null)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmDelete}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ยืนยันการลบ
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </motion.div>
   )

@@ -41,6 +41,9 @@ export default function Resident() {
   const [lineMappedFilter, setLineMappedFilter] = useState('all')
   const [lineDetailUser, setLineDetailUser] = useState(null)
   const [lineReloading, setLineReloading] = useState(false)
+  const [confirmDeleteResident, setConfirmDeleteResident] = useState(null)
+  const [confirmToggleLine, setConfirmToggleLine] = useState(null)
+  const [confirmSyncLine, setConfirmSyncLine] = useState(false)
 
   const handleReload = async () => {
     await fetchResidents(search.trim())
@@ -103,14 +106,30 @@ export default function Resident() {
   }
 
   const handleDelete = (resident) => {
-    if (!window.confirm(`⚠️ ต้องการลบข้อมูลผู้พัก "${resident.name}" ใช่หรือไม่?`)) return
-    deleteResident(resident.id)
+    setConfirmDeleteResident(resident)
+  }
+
+  const handleConfirmDelete = () => {
+    if (!confirmDeleteResident) return
+    const r = confirmDeleteResident
+    setConfirmDeleteResident(null)
+    deleteResident(r.id)
   }
 
   const handleLineToggle = (user) => {
-    const msg = user.isActive ? `ปิดการใช้งาน "${user.displayName}"?` : `เปิดการใช้งาน "${user.displayName}"?`
-    if (!window.confirm(msg)) return
+    setConfirmToggleLine(user)
+  }
+
+  const handleConfirmToggleLine = () => {
+    if (!confirmToggleLine) return
+    const user = confirmToggleLine
+    setConfirmToggleLine(null)
     toggleLineUser(user.userId)
+  }
+
+  const handleConfirmSyncLine = () => {
+    setConfirmSyncLine(false)
+    syncLineFollowers()
   }
 
   const getResidentName = (residentId) => {
@@ -129,13 +148,12 @@ export default function Resident() {
   const getDailyStatus = (resident) => {
     if (!resident.moveOutDate) return { label: 'เช็คอิน', variant: 'success' }
     const now = new Date()
-    now.setHours(0, 0, 0, 0)
-    const inDate = new Date(resident.moveInDate)
-    inDate.setHours(0, 0, 0, 0)
-    if (inDate > now) return { label: 'จอง', variant: 'warning' }
-    const out = new Date(resident.moveOutDate)
-    out.setHours(0, 0, 0, 0)
-    if (out >= now) return { label: 'เช็คอิน', variant: 'success' }
+    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const inBkk = new Date(resident.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    if (inBkk > todayBkk) return { label: 'จอง', variant: 'warning' }
+    const outBkk = new Date(resident.moveOutDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
+    if (outBkk > todayBkk || (outBkk === todayBkk && bkkHour < 12)) return { label: 'เช็คอิน', variant: 'success' }
     return { label: 'เช็คเอาท์แล้ว', variant: 'default' }
   }
 
@@ -268,9 +286,7 @@ export default function Resident() {
           try { await fetchLineUsers() } finally { setLineReloading(false) }
         }} />
         <button
-          onClick={() => {
-            if (window.confirm('ดึงรายชื่อผู้ติดตาม LINE ล่าสุด?\nระบบจะนำเข้าผู้ติดตามที่มีอยู่แล้วทั้งหมด')) syncLineFollowers()
-          }}
+          onClick={() => setConfirmSyncLine(true)}
           title="ซิงค์ผู้ติดตาม LINE"
           className="inline-flex items-center justify-center h-10 px-3.5 rounded-xl text-sm font-medium bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 active:bg-neutral-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-lime-300 focus:ring-offset-2 shadow-sm gap-2"
         >
@@ -454,6 +470,73 @@ export default function Resident() {
       </div>
 
       {activeTab === 'line' ? renderLineUsersTab() : renderResidentTab()}
+
+      {confirmDeleteResident && (
+        <Modal open={true} onClose={() => setConfirmDeleteResident(null)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ลบผู้พัก</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              ต้องการลบข้อมูลผู้พัก <strong>{confirmDeleteResident.name}</strong> ใช่หรือไม่?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDeleteResident(null)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmDelete}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ยืนยันการลบ
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {confirmToggleLine && (
+        <Modal open={true} onClose={() => setConfirmToggleLine(null)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">
+              {confirmToggleLine.isActive ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
+            </h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              {confirmToggleLine.isActive
+                ? <>ต้องการปิดการใช้งาน <strong>{confirmToggleLine.displayName}</strong> ใช่หรือไม่?</>
+                : <>ต้องการเปิดการใช้งาน <strong>{confirmToggleLine.displayName}</strong> ใช่หรือไม่?</>}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmToggleLine(null)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmToggleLine}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ยืนยัน
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {confirmSyncLine && (
+        <Modal open={true} onClose={() => setConfirmSyncLine(false)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ซิงค์ผู้ติดตาม LINE</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              ดึงรายชื่อผู้ติดตาม LINE ล่าสุด?<br />ระบบจะนำเข้าผู้ติดตามที่มีอยู่แล้วทั้งหมด
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmSyncLine(false)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmSyncLine}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-lime-500 hover:bg-lime-600 transition-colors shadow-sm">
+                ยืนยัน
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </motion.div>
   )
 }

@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useRef, useState, useCallback } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import Sidebar from './components/Sidebar'
@@ -22,8 +22,41 @@ const InvoicePreview = lazy(() => import('./components/InvoicePreview'))
 const ReceiptPreview = lazy(() => import('./components/ReceiptPreview'))
 const ModalOverlay = lazy(() => import('./components/ui/modal'))
 
+function PreviewWrapper({ children }) {
+  const outerRef = useRef(null)
+  const innerRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    const outer = outerRef.current
+    const inner = innerRef.current
+    if (!outer || !inner) return
+    const update = () => {
+      const cw = outer.clientWidth
+      const s = Math.min(1, cw / 550)
+      setScale(s)
+      setHeight(inner.scrollHeight * s)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(outer)
+    return () => ro.disconnect()
+  }, [])
+
+  return (
+    <div ref={outerRef} className="overflow-hidden" style={{ height: height || 'auto' }}>
+      <div ref={innerRef} data-preview-scaler="true" style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 550 }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const { modal, viewInv, downloadPdf, sendPdfToLine, setModal, settings } = useApp()
+  const location = useLocation()
+  const isDocumentsPage = location.pathname === '/documents'
 
   useEffect(() => {
     document.title = settings.dormName || 'ระบบจัดการหอพัก'
@@ -65,11 +98,13 @@ export default function App() {
               <ModalOverlay open={true} onClose={() => setModal(null)} maxWidth="max-w-[550px]">
             <div className="p-6">
               <h3 className="text-base font-semibold text-neutral-800 mb-4">🧾 ใบแจ้งหนี้</h3>
-              <InvoicePreview inv={viewInv} />
+              <PreviewWrapper>
+                <InvoicePreview inv={viewInv} />
+              </PreviewWrapper>
               <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
                 <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
                 <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 hover:from-lime-300 hover:to-lime-400 transition-all shadow-md shadow-lime-200/50 font-semibold">📄 PDF</button>
-                <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>
+                {!isDocumentsPage && <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>}
               </div>
             </div>
           </ModalOverlay>
@@ -78,11 +113,13 @@ export default function App() {
               <ModalOverlay open={true} onClose={() => setModal(null)} maxWidth="max-w-[550px]">
             <div className="p-6">
               <h3 className="text-base font-semibold text-neutral-800 mb-4"> ใบเสร็จรับเงิน</h3>
-              <ReceiptPreview inv={viewInv} />
+              <PreviewWrapper>
+                <ReceiptPreview inv={viewInv} />
+              </PreviewWrapper>
               <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
                 <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
                 <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-emerald-400 to-emerald-500 text-white hover:from-emerald-300 hover:to-emerald-400 transition-all shadow-md shadow-emerald-200/50 font-semibold">📄 PDF</button>
-                <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>
+                {!isDocumentsPage && <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>}
               </div>
             </div>
           </ModalOverlay>

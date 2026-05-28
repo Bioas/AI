@@ -11,6 +11,7 @@ import Badge from './ui/badge'
 import Button from './ui/button'
 import ContractPreview from './ContractPreview'
 import Spinner from './ui/spinner'
+import Modal from './ui/modal'
 
 const TABS = [
   { id: 'detail', label: 'รายละเอียด', icon: '' },
@@ -30,6 +31,8 @@ export default function RoomDetailMonthly() {
   const [showSelectResident, setShowSelectResident] = useState(false)
   const [searchResident, setSearchResident] = useState('')
   const [showDeleteOptions, setShowDeleteOptions] = useState(false)
+  const [confirmDeleteRoom, setConfirmDeleteRoom] = useState(false)
+  const [confirmDeleteResident, setConfirmDeleteResident] = useState(false)
   const [selectedResidentForDates, setSelectedResidentForDates] = useState(null)
   const [moveInDate, setMoveInDate] = useState(null)
   const [moveOutDate, setMoveOutDate] = useState(null)
@@ -134,7 +137,11 @@ export default function RoomDetailMonthly() {
 
   const handleEdit = () => { setEditRoom(room); setModal('room') }
   const handleDelete = () => {
-    if (!window.confirm(`⚠️ ต้องการลบห้อง ${displayNumber} ใช่หรือไม่?`)) return
+    setConfirmDeleteRoom(true)
+  }
+
+  const handleConfirmDelete = () => {
+    setConfirmDeleteRoom(false)
     deleteRoom(room.id)
     navigate('/rooms')
   }
@@ -194,7 +201,11 @@ export default function RoomDetailMonthly() {
   }
 
   const handleDeleteFromSystem = () => {
-    if (!window.confirm(`⚠️ ต้องการลบข้อมูลผู้พัก "${resident.name}" ออกจากระบบถาวรใช่หรือไม่?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`)) return
+    setConfirmDeleteResident(true)
+  }
+
+  const handleConfirmDeleteResident = () => {
+    setConfirmDeleteResident(false)
     deleteResident(resident.id)
     fetchRooms()
     setShowDeleteOptions(false)
@@ -628,6 +639,49 @@ export default function RoomDetailMonthly() {
             </div>
           </div>
         </div>
+      )}
+
+      {confirmDeleteRoom && (
+        <Modal open={true} onClose={() => setConfirmDeleteRoom(false)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ลบห้อง</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              ต้องการลบห้อง <strong>{displayNumber}</strong> ใช่หรือไม่?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDeleteRoom(false)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmDelete}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ยืนยันการลบ
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {confirmDeleteResident && (
+        <Modal open={true} onClose={() => setConfirmDeleteResident(false)} maxWidth="max-w-md">
+          <div className="p-5">
+            <h3 className="text-base font-bold text-neutral-800 mb-1">ลบผู้พัก</h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              ต้องการลบข้อมูลผู้พัก <strong>{resident?.name}</strong> ออกจากระบบถาวรใช่หรือไม่?<br />
+              การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDeleteResident(false)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button onClick={handleConfirmDeleteResident}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm">
+                ยืนยันการลบ
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {showDeleteOptions && resident && (

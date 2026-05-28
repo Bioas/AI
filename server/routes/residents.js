@@ -143,7 +143,8 @@ router.put('/', async (req, res) => {
     const db = client.db('dorm_billing')
 
     const newRoomId = data.roomId || ''
-    let roomNumber = ''
+    const oldResident = await db.collection('residents').findOne({ id })
+    let roomNumber = oldResident?.roomNumber || ''
     if (newRoomId) {
       const room = await db.collection('rooms').findOne({ id: newRoomId })
       if (!room) return res.status(400).json({ error: 'ไม่พบหมายเลขห้องในระบบ' })
@@ -176,8 +177,6 @@ router.put('/', async (req, res) => {
       companyTaxId: data.companyTaxId || '',
       updatedAt: new Date().toISOString(),
     }
-
-    const oldResident = await db.collection('residents').findOne({ id })
 
     if (oldResident?.roomId && oldResident.roomId !== newRoomId) {
       await db.collection('rooms').updateOne(
