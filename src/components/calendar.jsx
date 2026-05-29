@@ -17,7 +17,7 @@ export default function Calendar() {
   const navigate = useNavigate()
   const { rooms, residents, toast, fetchRooms, fetchResidents } = useApp()
   const today = new Date()
-  const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
+  const [viewDate, setViewDate] = useState(new Date())
   const [showAdd, setShowAdd] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
   const [detailRoomId, setDetailRoomId] = useState(null)
@@ -30,7 +30,7 @@ export default function Calendar() {
   const [formDiscount, setFormDiscount] = useState(0)
   const [saving, setSaving] = useState(false)
   const [isEditingDetail, setIsEditingDetail] = useState(false)
-  const [viewMode, setViewMode] = useState('month')
+  const [viewMode, setViewMode] = useState('week')
 
   const getMonday = (d) => {
     const date = new Date(d)
@@ -331,7 +331,7 @@ export default function Calendar() {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <PageHeader
-        title="📅 ปฏิทินการจอง"
+        title="ปฏิทินการจอง"
         description="ดูภาพรวมการจองห้องพักรายวัน"
         action={<Button onClick={() => openAdd('')}>＋ จองห้องพัก</Button>}
       />
@@ -359,13 +359,13 @@ export default function Calendar() {
                 </button>
               </div>
               <div className="flex rounded-lg sm:rounded-xl border border-neutral-200 overflow-hidden">
-                <button onClick={() => { setViewDate(new Date(today.getFullYear(), today.getMonth(), 1)); setViewMode('month') }}
-                  className={`px-2.5 sm:px-3 h-8 sm:h-9 text-[11px] sm:text-xs font-semibold transition-all ${viewMode === 'month' ? 'bg-lime-500 text-white shadow-sm' : 'text-neutral-500 hover:bg-neutral-50'}`}>
-                  เดือน
-                </button>
                 <button onClick={() => { setViewDate(getMonday(today)); setViewMode('week') }}
                   className={`px-2.5 sm:px-3 h-8 sm:h-9 text-[11px] sm:text-xs font-semibold transition-all ${viewMode === 'week' ? 'bg-lime-500 text-white shadow-sm' : 'text-neutral-500 hover:bg-neutral-50'}`}>
                   สัปดาห์
+                </button>
+                <button onClick={() => { setViewDate(new Date(today.getFullYear(), today.getMonth(), 1)); setViewMode('month') }}
+                  className={`px-2.5 sm:px-3 h-8 sm:h-9 text-[11px] sm:text-xs font-semibold transition-all ${viewMode === 'month' ? 'bg-lime-500 text-white shadow-sm' : 'text-neutral-500 hover:bg-neutral-50'}`}>
+                  เดือน
                 </button>
               </div>
             </div>
@@ -378,7 +378,7 @@ export default function Calendar() {
 
           {dailyRooms.length === 0 ? (
             <div className="text-center py-12 sm:py-16 px-4">
-              <div className="text-4xl sm:text-5xl mb-4">📅</div>
+              <div className="text-lime-400 text-4xl sm:text-5xl mb-4"><svg className="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
               <h3 className="text-base font-semibold text-neutral-700 mb-1">ไม่มีห้องรายวัน</h3>
               <p className="text-sm text-neutral-400">กรุณาเพิ่มห้องพักประเภท รายวัน ก่อน</p>
             </div>
@@ -619,7 +619,7 @@ export default function Calendar() {
       <Modal open={showAdd} onClose={() => setShowAdd(false)}>
         <div className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-5 pb-4 border-b border-neutral-100">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm sm:text-base shadow-sm shrink-0">📅</div>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm sm:text-base shadow-sm shrink-0"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
             <div className="min-w-0">
               <h3 className="text-sm sm:text-base font-semibold text-neutral-800">เพิ่มการจอง</h3>
               <p className="text-xs text-neutral-400">บันทึกการจองห้องพักรายวัน</p>
@@ -697,7 +697,7 @@ export default function Calendar() {
       <Modal open={showDetail} onClose={() => { setShowDetail(false); setDetailRoomId(null); setDetailResidentId(null); setIsEditingDetail(false) }}>
         <div className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-5 pb-4 border-b border-neutral-100">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm sm:text-base shadow-sm shrink-0">📋</div>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm sm:text-base shadow-sm shrink-0"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div>
             <div>
               <h3 className="text-sm sm:text-base font-semibold text-neutral-800">{isEditingDetail ? 'แก้ไขการจอง' : 'รายละเอียดการจอง'}</h3>
             </div>

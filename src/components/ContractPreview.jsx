@@ -13,7 +13,7 @@ export default function ContractPreview({ resident }) {
   const d = now.getDate()
 
   return (
-    <div id="contractPdfContent" className="bg-white mx-auto font-sans text-[13px] text-neutral-700 leading-relaxed" style={{ padding: 40, minHeight: 1200 }}>
+    <div id="contractPdfContent" className="bg-white mx-auto font-sans text-[13px] text-neutral-700 leading-relaxed" style={{ padding: 36, minHeight: 1280 }}>
       <div className="h-1.5 bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full mb-6" />
 
       <div className="text-center mb-6">
@@ -48,60 +48,47 @@ export default function ContractPreview({ resident }) {
         </div>
       </div>
 
-      <table className="w-full mb-5">
-        <thead>
-          <tr className="border-b-2 border-emerald-200/60">
-            <th className="text-left pb-2 font-semibold text-[12px] text-emerald-700 uppercase tracking-wider" colSpan="2">รายละเอียดสัญญา</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="border-b border-emerald-50">
-            <td className="py-2 pr-4 text-emerald-600 w-36 whitespace-nowrap">อัตราค่าเช่า</td>
-            <td className="py-2 font-medium text-neutral-800">{rentPrice.toLocaleString()} บาท/เดือน</td>
-          </tr>
-          <tr className="border-b border-emerald-50">
-            <td className="py-2 pr-4 text-emerald-600 whitespace-nowrap">ค่ามัดจำ</td>
-            <td className="py-2 font-medium text-neutral-800">{(resident.deposit || 0).toLocaleString()} บาท</td>
-          </tr>
-          <tr className="border-b border-emerald-50">
-            <td className="py-2 pr-4 text-emerald-600 whitespace-nowrap">ค่าไฟฟ้า</td>
-            <td className="py-2 text-neutral-700">หน่วยละ {settings.rateElec || 7} บาท</td>
-          </tr>
-          <tr className="border-b border-emerald-50">
-            <td className="py-2 pr-4 text-emerald-600 whitespace-nowrap">ค่าน้ำประปา</td>
-            <td className="py-2 text-neutral-700">หน่วยละ {settings.rateWater || 20} บาท (เหมาจ่าย 150 บาท สำหรับ 0-4 หน่วยแรก)</td>
-          </tr>
-          <tr className="border-b border-emerald-50">
-            <td className="py-2 pr-4 text-emerald-600 whitespace-nowrap">ประเภทห้อง</td>
-            <td className="py-2 text-neutral-700">{room?.roomType || '—'}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div className="mb-5">
+        <div className="text-[12px] font-semibold text-emerald-700 uppercase tracking-wider mb-3 pb-1.5 border-b-2 border-emerald-200/60">รายละเอียดสัญญา</div>
+        <div className="grid grid-cols-2 gap-x-6">
+          <div className="flex items-baseline gap-2 py-2 border-b border-emerald-50">
+            <span className="text-[12px] text-emerald-600 whitespace-nowrap">อัตราค่าเช่า</span>
+            <span className="text-[12px] font-medium text-neutral-800">{rentPrice.toLocaleString()} บาท/เดือน</span>
+          </div>
+          <div className="flex items-baseline gap-2 py-2 border-b border-emerald-50">
+            <span className="text-[12px] text-emerald-600 whitespace-nowrap">ค่ามัดจำ</span>
+            <span className="text-[12px] font-medium text-neutral-800">{(resident.deposit || 0).toLocaleString()} บาท</span>
+          </div>
+          <div className="flex items-baseline gap-2 py-2 border-b border-emerald-50">
+            <span className="text-[12px] text-emerald-600 whitespace-nowrap">ค่าไฟฟ้า</span>
+            <span className="text-[12px] text-neutral-700">{settings.rateElec || 7} บาท/หน่วย</span>
+          </div>
+          <div className="flex items-baseline gap-2 py-2 border-b border-emerald-50">
+            <span className="text-[12px] text-emerald-600 whitespace-nowrap">ค่าน้ำประปา</span>
+            <span className="text-[12px] text-neutral-700">{settings.rateWater || 20} บาท/หน่วย</span>
+          </div>
+          <div className="flex items-baseline gap-2 py-2 col-span-2 border-b border-emerald-50">
+            <span className="text-[12px] text-emerald-600 whitespace-nowrap">ประเภทห้อง</span>
+            <span className="text-[12px] text-neutral-700">{room?.roomType || '—'}</span>
+          </div>
+        </div>
+      </div>
 
       <div className="mb-5">
         <div className="text-[12px] font-semibold text-emerald-700 uppercase tracking-wider mb-2 border-b border-emerald-100 pb-1">ข้อกำหนดและเงื่อนไข</div>
-        <ol className="text-[12px] text-neutral-600 space-y-2 pl-4" style={{ listStyle: 'decimal' }}>
-          <li>ผู้เช่าต้องชำระค่าเช่าตรงตามกำหนด ทุกวันที่ 5 ของเดือน หากชำระเกินกำหนดจะถูกปรับวันละ 50 บาท</li>
-          <li>ผู้เช่าต้องชำระค่าสาธารณูปโภค (ค่าไฟฟ้า ค่าน้ำประปา) ตามจำนวนที่ใช้งานจริงในแต่ละเดือน</li>
-          <li>ค่ามัดจำจะคืนให้แก่ผู้เช่าเมื่อสิ้นสุดสัญญา ในสภาพที่ห้องไม่มีความเสียหาย เว้นแต่ความสึกหรอตามปกติ และผู้เช่าได้ชำระค่าใช้จ่ายต่างๆ ครบถ้วนแล้ว</li>
-          <li>หากผู้เช่าต้องการบอกเลิกสัญญาก่อนกำหนด ต้องแจ้งเป็นลายลักษณ์อักษรล่วงหน้าอย่างน้อย 30 วัน มิฉะนั้นจะไม่ได้รับเงินมัดจำคืน</li>
-          <li>ห้ามนำสัตว์เลี้ยงทุกชนิดเข้ามาในห้องพัก</li>
-          <li>ห้ามส่งเสียงดังหรือกระทำการใดๆ ที่รบกวนผู้เช่าห้องอื่น ระหว่างเวลา 22:00 - 07:00 น.</li>
-          <li>ผู้เช่าต้องรักษาความสะอาดภายในห้องพักและบริเวณส่วนกลาง</li>
-          <li>ผู้เช่าต้องรับผิดชอบต่อความเสียหายใดๆ ที่เกิดขึ้นแก่ทรัพย์สินของหอพักอันเกิดจากการกระทำของผู้เช่า</li>
-          <li>ห้ามนำสารเสพติด อาวุธปืน หรือสิ่งผิดกฎหมายเข้ามาในบริเวณหอพัก</li>
-          <li>หากพบว่าผู้เช่ากระทำผิดเงื่อนไขข้อใดข้อหนึ่ง ให้ผู้ให้เช่ามีสิทธิบอกเลิกสัญญาได้ทันที โดยไม่ต้องคืนเงินมัดจำ</li>
-        </ol>
-      </div>
-
-      {resident.emergencyContact && (
-        <div className="mb-5 px-4 py-2.5 bg-amber-50/50 rounded-lg border border-amber-100/60">
-          <div className="text-[12px] font-semibold text-amber-700 mb-1">ผู้ติดต่อฉุกเฉิน</div>
-          <div className="text-[12px] text-neutral-600">
-            {resident.emergencyContact} {resident.emergencyPhone ? `— ${resident.emergencyPhone}` : ''}
-          </div>
+        <div className="text-[12px] text-neutral-600 space-y-2">
+          <div>1. ผู้เช่าต้องชำระค่าเช่าตรงตามกำหนด ทุกวันที่ 5 ของเดือน หากชำระเกินกำหนดจะถูกปรับวันละ 50 บาท</div>
+          <div>2. ผู้เช่าต้องชำระค่าสาธารณูปโภค (ค่าไฟฟ้า ค่าน้ำประปา) ตามจำนวนที่ใช้งานจริงในแต่ละเดือน</div>
+          <div>3. ค่ามัดจำจะคืนให้แก่ผู้เช่าเมื่อสิ้นสุดสัญญา ในสภาพที่ห้องไม่มีความเสียหาย เว้นแต่ความสึกหรอตามปกติ และผู้เช่าได้ชำระค่าใช้จ่ายต่างๆ ครบถ้วนแล้ว</div>
+          <div>4. หากผู้เช่าต้องการบอกเลิกสัญญาก่อนกำหนด ต้องแจ้งเป็นลายลักษณ์อักษรล่วงหน้าอย่างน้อย 30 วัน มิฉะนั้นจะไม่ได้รับเงินมัดจำคืน</div>
+          <div>5. ห้ามนำสัตว์เลี้ยงทุกชนิดเข้ามาในห้องพัก</div>
+          <div>6. ห้ามส่งเสียงดังหรือกระทำการใดๆ ที่รบกวนผู้เช่าห้องอื่น ระหว่างเวลา 22:00 - 07:00 น.</div>
+          <div>7. ผู้เช่าต้องรักษาความสะอาดภายในห้องพักและบริเวณส่วนกลาง</div>
+          <div>8. ผู้เช่าต้องรับผิดชอบต่อความเสียหายใดๆ ที่เกิดขึ้นแก่ทรัพย์สินของหอพักอันเกิดจากการกระทำของผู้เช่า</div>
+          <div>9. ห้ามนำสารเสพติด อาวุธปืน หรือสิ่งผิดกฎหมายเข้ามาในบริเวณหอพัก</div>
+          <div>10. หากพบว่าผู้เช่ากระทำผิดเงื่อนไขข้อใดข้อหนึ่ง ให้ผู้ให้เช่ามีสิทธิบอกเลิกสัญญาได้ทันที โดยไม่ต้องคืนเงินมัดจำ</div>
         </div>
-      )}
+      </div>
 
       <div className="flex justify-around mt-8 pt-6 border-t border-emerald-100">
         <div className="text-center w-64">

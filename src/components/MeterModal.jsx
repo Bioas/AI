@@ -46,7 +46,7 @@ export default function MeterModal({ room, onClose }) {
         <div className="space-y-6">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-md bg-amber-50 border border-amber-100 flex items-center justify-center text-xs">⚡</div>
+              <div className="w-6 h-6 rounded-md bg-amber-50 border border-amber-100 flex items-center justify-center text-xs"><svg className="w-3 h-3 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
               <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">มิเตอร์ไฟฟ้า</h4>
             </div>
             <Input label="เลขปัจจุบัน" type="number" value={curElec} onChange={e => setCurElec(e.target.value.replace(/\D/g, ''))} inputMode="numeric" />
@@ -54,7 +54,7 @@ export default function MeterModal({ room, onClose }) {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-md bg-cyan-50 border border-cyan-100 flex items-center justify-center text-xs">💧</div>
+              <div className="w-6 h-6 rounded-md bg-cyan-50 border border-cyan-100 flex items-center justify-center text-xs"><svg className="w-3 h-3 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
               <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">มิเตอร์น้ำ</h4>
             </div>
             <Input label="เลขปัจจุบัน" type="number" value={curWater} onChange={e => setCurWater(e.target.value.replace(/\D/g, ''))} inputMode="numeric" />

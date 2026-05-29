@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion'
 
-export default function Card({ className = '', children, hover = false, delay = 0 }) {
+export default function Card({ className = '', children, hover = false, delay = 0, onClick }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className={`bg-white rounded-2xl shadow-card border border-lime-100/40 ${hover ? 'card-lime-hover' : ''} ${className}`}
+      className={`bg-white rounded-2xl shadow-card border border-lime-100/40 ${hover ? 'card-lime-hover' : ''} ${onClick ? 'cursor-pointer active:scale-[0.99] transition-transform' : ''} ${className}`}
+      onClick={onClick}
     >
       {children}
     </motion.div>

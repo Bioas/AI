@@ -164,8 +164,8 @@ export default function Resident() {
 
   const renderResidentTab = () => (
     <>
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 w-full">
             <div className="relative flex-1 min-w-0">
               <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -174,13 +174,13 @@ export default function Resident() {
             </div>
             <ReloadButton onReload={handleReload} className="shrink-0" />
           </div>
-          <div className="text-xs text-neutral-400 text-center sm:text-left sm:ml-auto">{filtered.length} รายการ</div>
+          <div className="text-xs text-neutral-400 text-center">{filtered.length} รายการ</div>
       </div>
 
       <Card>
         <CardContent className="pt-6">
           {filtered.length === 0 ? (
-            <EmptyState icon="👥" title={search ? 'ไม่พบข้อมูลที่ค้นหา' : activeTab === 'monthly' ? 'ยังไม่มีผู้พักรายเดือน' : 'ยังไม่มีผู้พักรายวัน'}
+            <EmptyState icon={<svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>} title={search ? 'ไม่พบข้อมูลที่ค้นหา' : activeTab === 'monthly' ? 'ยังไม่มีผู้พักรายเดือน' : 'ยังไม่มีผู้พักรายวัน'}
               description={search ? 'ลองเปลี่ยนคำค้นหาหรือตรวจสอบการสะกด' : activeTab === 'monthly' ? 'เพิ่มผู้พักรายเดือนคนแรกเพื่อเริ่มต้นจัดการ' : 'ยังไม่มีผู้เช่าห้องรายวัน'}
               action={!search && activeTab === 'monthly' ? <Button onClick={() => { setEditResident(null); setViewOnly(false); setModal('resident') }}>เพิ่มผู้พัก</Button> : undefined} />
           ) : (
@@ -308,19 +308,19 @@ export default function Resident() {
   const renderLineUsersTab = () => (
     <>
       <div className="flex flex-col gap-2 mb-4 sm:mb-6">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 min-w-0">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" value={lineSearch} onChange={e => setLineSearch(e.target.value)}
-                placeholder="ค้นหาชื่อ LINE หรือ User ID..."
-                className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="relative flex-1 min-w-0">
+                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" value={lineSearch} onChange={e => setLineSearch(e.target.value)}
+                  placeholder="ค้นหาชื่อ LINE หรือ User ID..."
+                  className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+              </div>
+              <ReloadButton onReload={async () => {
+                setLineReloading(true)
+                try { await fetchLineUsers() } finally { setLineReloading(false) }
+              }} className="shrink-0" />
             </div>
-            <ReloadButton onReload={async () => {
-              setLineReloading(true)
-              try { await fetchLineUsers() } finally { setLineReloading(false) }
-            }} className="shrink-0" />
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch gap-2">
             <button
               onClick={() => setConfirmSyncLine(true)}
               title="ซิงค์ผู้ติดตาม LINE"
@@ -334,14 +334,14 @@ export default function Resident() {
               </svg>
               <span>ซิงค์ผู้พัก</span>
             </button>
-            <div className="text-xs text-neutral-400 text-center sm:text-left sm:ml-auto self-center">{filteredLineUsers.length} รายการ</div>
           </div>
+          <div className="text-xs text-neutral-400 text-center">{filteredLineUsers.length} รายการ</div>
         </div>
 
       <Card>
         <CardContent className="pt-6">
           {filteredLineUsers.length === 0 ? (
-            <EmptyState icon="📱" title="ยังไม่มีผู้ใช้ LINE" description="เมื่อมีผู้ใช้ Add Friend LINE OA ของคุณ ระบบจะบันทึกข้อมูลโดยอัตโนมัติ" />
+            <EmptyState icon={<svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>} title="ยังไม่มีผู้ใช้ LINE" description="เมื่อมีผู้ใช้ Add Friend LINE OA ของคุณ ระบบจะบันทึกข้อมูลโดยอัตโนมัติ" />
           ) : (
             <div className="border border-neutral-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
@@ -514,7 +514,7 @@ export default function Resident() {
               ? 'bg-lime-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
           }`}>
-          <span className="hidden sm:inline">📅 </span>รายเดือน
+          <span className="hidden sm:inline"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> </span>รายเดือน
           <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'monthly' ? 'bg-white/20' : 'bg-neutral-100'}`}>{monthlyCount}</span>
         </button>
         <button onClick={() => setActiveTab('daily')}
@@ -523,7 +523,7 @@ export default function Resident() {
               ? 'bg-amber-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
           }`}>
-          <span className="hidden sm:inline">🌙 </span>รายวัน
+          <span className="hidden sm:inline"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> </span>รายวัน
           <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'daily' ? 'bg-white/20' : 'bg-neutral-100'}`}>{dailyCount}</span>
         </button>
         <button onClick={() => setActiveTab('line')}
@@ -532,7 +532,7 @@ export default function Resident() {
               ? 'bg-teal-500 text-white shadow-sm'
               : 'text-neutral-500 hover:bg-neutral-50'
           }`}>
-          <span className="hidden sm:inline">📱 </span>ผู้ใช้ LINE
+          <span className="hidden sm:inline"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> </span>ผู้ใช้ LINE
           <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md ${activeTab === 'line' ? 'bg-white/20' : 'bg-neutral-100'}`}>{lineUsers.length}</span>
         </button>
       </div>

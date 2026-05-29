@@ -36,9 +36,9 @@ function generateDocNumber(inv, invoices, rooms, docType) {
 }
 
 const DOC_TABS = [
-  { key: 'invoice', icon: '🧾', title: 'ใบแจ้งหนี้', desc: 'ออกใบแจ้งหนี้ให้ผู้พัก',
+  { key: 'invoice', icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>, title: 'ใบแจ้งหนี้', desc: 'ออกใบแจ้งหนี้ให้ผู้พัก',
     active: 'border-lime-500 bg-lime-50 shadow-lime-100', iconActive: 'bg-lime-500 text-white', textActive: 'text-lime-700' },
-  { key: 'receipt', icon: '📄', title: 'ใบเสร็จรับเงิน', desc: 'ออกใบเสร็จเมื่อชำระแล้ว',
+  { key: 'receipt', icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>, title: 'ใบเสร็จรับเงิน', desc: 'ออกใบเสร็จเมื่อชำระแล้ว',
     active: 'border-emerald-500 bg-emerald-50 shadow-emerald-100', iconActive: 'bg-emerald-500 text-white', textActive: 'text-emerald-700' },
 ]
 
@@ -119,7 +119,7 @@ export default function Billing() {
 
   const handleView = (inv) => {
     const docNumber = generateDocNumber(inv, invoices, rooms, activeTab)
-    setViewInv({ ...inv, docNumber })
+    setViewInv({ ...inv, docNumber, _isDaily: rentalTab === 'daily' })
     setModal(activeTab === 'invoice' ? 'invoice' : 'receipt')
   }
 
@@ -414,7 +414,7 @@ export default function Billing() {
           </div>
 
           {displayRooms.length === 0 ? (
-            <EmptyState icon="🧾" title="ไม่มีข้อมูล" description="เพิ่มผู้พักในห้องก่อนจึงจะออกเอกสารได้" />
+            <EmptyState icon={<svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>} title="ไม่มีข้อมูล" description="เพิ่มผู้พักในห้องก่อนจึงจะออกเอกสารได้" />
           ) : (
             <>
               <div className="px-5 pb-5">

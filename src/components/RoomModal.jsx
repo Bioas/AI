@@ -89,7 +89,7 @@ export default function RoomModal() {
     <Modal open={true} onClose={() => setModal(null)} maxWidth="max-w-xl">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">🚪</div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
           <div>
             <h3 className="text-base font-semibold text-neutral-800">{editRoom ? 'แก้ไขห้องพัก' : 'เพิ่มห้องพัก'}</h3>
             <p className="text-xs text-neutral-400">{editRoom ? 'แก้ไขข้อมูลห้องพัก' : 'เพิ่มห้องพักใหม่ในระบบ'}</p>

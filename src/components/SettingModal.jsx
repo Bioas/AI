@@ -44,7 +44,7 @@ export function DormInfoModal({ onClose }) {
   }
 
   return (
-    <SettingFrame title="แก้ไขข้อมูลหอพัก" subtitle="แก้ไขชื่อหอพัก เบอร์โทร เลขประจำตัวผู้เสียภาษี และที่อยู่" icon="🏢" onClose={onClose} onSave={handleSave} saving={saving}>
+    <SettingFrame title="แก้ไขข้อมูลหอพัก" subtitle="แก้ไขชื่อหอพัก เบอร์โทร เลขประจำตัวผู้เสียภาษี และที่อยู่" icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><line x1="8" y1="6" x2="10" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="6" x2="16" y2="6"/><line x1="14" y1="10" x2="16" y2="10"/></svg>} onClose={onClose} onSave={handleSave} saving={saving}>
       <Input label="ชื่อหอพัก" value={dormName} onChange={e => setDormName(e.target.value)} placeholder="ชื่อหอพัก" />
       <Input label="เบอร์โทรศัพท์" value={phone} onChange={e => setPhone(e.target.value)} placeholder="081-234-5678" />
       <Input label="เลขประจำตัวผู้เสียภาษี" value={taxId} onChange={e => setTaxId(e.target.value)} placeholder="1-2345-67890-12-3" />
@@ -60,7 +60,7 @@ export function LogoModal({ onClose }) {
     <Modal open={true} onClose={onClose}>
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">🖼️</div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
           <div>
             <h3 className="text-base font-semibold text-neutral-800">จัดการโลโก้</h3>
             <p className="text-xs text-neutral-400">อัปโหลดหรือลบโลโก้หอพัก</p>
@@ -70,7 +70,7 @@ export function LogoModal({ onClose }) {
           {settings.logo ? (
             <img src={settings.logo} alt="โลโก้" className="w-24 h-24 object-contain rounded-xl border border-neutral-200 shadow-sm" />
           ) : (
-            <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-3xl">🏠</div>
+            <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-3xl"><svg className="w-3.5 h-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
           )}
           <div className="flex gap-2">
             <Button size="sm" onClick={() => document.getElementById('modalLogoInput')?.click()}>อัปโหลดรูป</Button>
@@ -107,7 +107,7 @@ export function RatesModal({ onClose }) {
   }
 
   return (
-    <SettingFrame title="แก้ไขอัตราค่าใช้จ่าย" subtitle="แก้ไขอัตราค่าไฟ ค่าน้ำ ค่าส่วนกลาง และค่าอินเทอร์เน็ต" icon="💰" onClose={onClose} onSave={handleSave} saving={saving}>
+    <SettingFrame title="แก้ไขอัตราค่าใช้จ่าย" subtitle="แก้ไขอัตราค่าไฟ ค่าน้ำ ค่าส่วนกลาง และค่าอินเทอร์เน็ต" icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M9 9.5c0-1 1.5-1.5 3-1.5s3 .5 3 1.5"/><path d="M9 14.5c0 1 1.5 1.5 3 1.5s3-.5 3-1.5"/></svg>} onClose={onClose} onSave={handleSave} saving={saving}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Input label="ค่าไฟ (บาท/หน่วย)" type="number" value={rateElec} onChange={e => setRateElec(e.target.value)} />
         <Input label="ค่าน้ำ (บาท/หน่วย)" type="number" value={rateWater} onChange={e => setRateWater(e.target.value)} />
@@ -126,7 +126,7 @@ export function QrModal({ onClose }) {
     <Modal open={true} onClose={onClose}>
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">📱</div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
           <div>
             <h3 className="text-base font-semibold text-neutral-800">จัดการ QR Code</h3>
             <p className="text-xs text-neutral-400">อัปโหลด QR Code สำหรับชำระเงิน</p>
@@ -136,7 +136,7 @@ export function QrModal({ onClose }) {
           {settings.qrCode ? (
             <img src={settings.qrCode} alt="QR Code" className="w-32 h-32 object-contain rounded-xl border border-neutral-200 shadow-sm" />
           ) : (
-            <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-3xl border border-dashed border-lime-200">📱</div>
+            <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-3xl border border-dashed border-lime-200"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
           )}
           <div className="flex gap-2">
             <Button size="sm" onClick={() => document.getElementById('modalQrInput')?.click()}>อัปโหลด QR Code</Button>
@@ -160,7 +160,7 @@ export function SignatureModal({ onClose }) {
     <Modal open={true} onClose={onClose}>
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">✍️</div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
           <div>
             <h3 className="text-base font-semibold text-neutral-800">จัดการลายเซ็น</h3>
             <p className="text-xs text-neutral-400">อัปโหลดหรือลบลายเซ็นในใบแจ้งหนี้</p>
@@ -170,7 +170,7 @@ export function SignatureModal({ onClose }) {
           {settings.signature ? (
             <img src={settings.signature} alt="ลายเซ็น" className="w-32 h-16 object-contain rounded-lg border border-neutral-200 shadow-sm" />
           ) : (
-            <div className="w-32 h-16 rounded-lg bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-3xl border border-dashed border-lime-200">✍️</div>
+            <div className="w-32 h-16 rounded-lg bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-3xl border border-dashed border-lime-200"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
           )}
           <div className="flex gap-2">
             <Button size="sm" onClick={() => document.getElementById('modalSignatureInput')?.click()}>อัปโหลดลายเซ็น</Button>
@@ -194,7 +194,7 @@ export function StampModal({ onClose }) {
     <Modal open={true} onClose={onClose}>
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">🔴</div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="6"/></svg></div>
           <div>
             <h3 className="text-base font-semibold text-neutral-800">จัดการตรายาง</h3>
             <p className="text-xs text-neutral-400">อัปโหลดตรายางสำหรับใบเสร็จรับเงิน</p>
@@ -204,7 +204,7 @@ export function StampModal({ onClose }) {
           {settings.stamp ? (
             <img src={settings.stamp} alt="ตรายาง" className="w-32 h-32 object-contain rounded-lg border border-neutral-200 shadow-sm" />
           ) : (
-            <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-4xl border border-dashed border-lime-200">🔴</div>
+            <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-4xl border border-dashed border-lime-200"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="6"/></svg></div>
           )}
           <div className="flex gap-2">
             <Button size="sm" onClick={() => document.getElementById('modalStampInput')?.click()}>อัปโหลดตรายาง</Button>
@@ -241,7 +241,7 @@ export function LineModal({ onClose }) {
     <Modal open={true} onClose={onClose} maxWidth="max-w-md">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">📱</div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
           <div>
             <h3 className="text-base font-semibold text-neutral-800">ตั้งค่า LINE Messaging</h3>
             <p className="text-xs text-neutral-400">ส่งใบแจ้งหนี้ให้ผู้พักผ่าน LINE</p>
@@ -256,8 +256,8 @@ export function LineModal({ onClose }) {
           <Button variant="secondary" size="sm" onClick={async () => {
             const uid = prompt('กรอก LINE User ID (ขึ้นต้นด้วย U):')
             if (!uid || !uid.startsWith('U')) { toast('User ID ไม่ถูกต้อง', true); return }
-            await sendLineMsg(uid, `🧪 ข้อความทดสอบ\nเวลา: ${new Date().toLocaleString('th-TH')}\n✅ ระบบพร้อมใช้งาน!`)
-          }}>🧪 ทดสอบส่งข้อความ</Button>
+            await sendLineMsg(uid, `<svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 22h16"/><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="7" x2="18" y2="7"/></svg> ข้อความทดสอบ\nเวลา: ${new Date().toLocaleString('th-TH')}\n<svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ระบบพร้อมใช้งาน!`)
+          }}><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 22h16"/><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="7" x2="18" y2="7"/></svg> ทดสอบส่งข้อความ</Button>
         </div>
         <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
           <Button variant="ghost" onClick={onClose} disabled={saving}>ยกเลิก</Button>

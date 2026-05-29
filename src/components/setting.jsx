@@ -22,7 +22,10 @@ export default function Setting() {
       <div className="space-y-6">
         <Card><CardContent className="pt-6">
           <div className="flex items-start justify-between mb-4">
-            <h3 className="text-sm font-semibold text-neutral-800">🏢 ข้อมูลหอพัก</h3>
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-4 rounded-full bg-gradient-to-b from-lime-400 to-lime-500" />
+              <h3 className="text-sm font-semibold text-neutral-800">ข้อมูลหอพัก</h3>
+            </div>
             <Button size="sm" variant="secondary" onClick={() => setActiveSection('dorm')}>แก้ไข</Button>
           </div>
           <dl className="divide-y divide-neutral-50">
@@ -34,61 +37,73 @@ export default function Setting() {
         </CardContent></Card>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <Card><CardContent className="pt-6">
+          <Card onClick={() => setActiveSection('logo')}><CardContent className="pt-6">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-sm font-semibold text-neutral-800">🖼️ โลโก้หอพัก</h3>
-              <Button size="sm" variant="secondary" onClick={() => setActiveSection('logo')}>จัดการ</Button>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 rounded-full bg-gradient-to-b from-sky-400 to-sky-500" />
+                <h3 className="text-sm font-semibold text-neutral-800">โลโก้หอพัก</h3>
+              </div>
+              <span className="hidden sm:inline"><Button size="sm" variant="secondary">จัดการ</Button></span>
             </div>
             <div className="flex items-center gap-4">
               {settings.logo ? (
                 <img src={settings.logo} alt="โลโก้" className="w-16 h-16 object-contain rounded-xl border border-neutral-200 shadow-sm" />
               ) : (
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl">🏠</div>
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl"><svg className="w-3.5 h-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
               )}
               <div className="text-xs text-neutral-500">{settings.logo ? 'มีโลโก้' : 'ยังไม่มีโลโก้'}</div>
             </div>
           </CardContent></Card>
 
-          <Card><CardContent className="pt-6">
+          <Card onClick={() => setActiveSection('qr')}><CardContent className="pt-6">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-sm font-semibold text-neutral-800">📱 QR Code ชำระเงิน</h3>
-              <Button size="sm" variant="secondary" onClick={() => setActiveSection('qr')}>จัดการ</Button>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 rounded-full bg-gradient-to-b from-violet-400 to-violet-500" />
+                <h3 className="text-sm font-semibold text-neutral-800">QR Code ชำระเงิน</h3>
+              </div>
+              <span className="hidden sm:inline"><Button size="sm" variant="secondary">จัดการ</Button></span>
             </div>
             <div className="flex items-center gap-4">
               {settings.qrCode ? (
                 <img src={settings.qrCode} alt="QR Code" className="w-16 h-16 object-contain rounded-xl border border-neutral-200 shadow-sm" />
               ) : (
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl border border-dashed border-lime-200">📱</div>
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl border border-dashed border-lime-200"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
               )}
               <div className="text-xs text-neutral-500">{settings.qrCode ? 'มี QR Code' : 'ยังไม่มี QR Code'}</div>
             </div>
           </CardContent></Card>
 
-          <Card><CardContent className="pt-6">
+          <Card onClick={() => setActiveSection('signature')}><CardContent className="pt-6">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-sm font-semibold text-neutral-800">✍️ ลายเซ็น</h3>
-              <Button size="sm" variant="secondary" onClick={() => setActiveSection('signature')}>จัดการ</Button>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 rounded-full bg-gradient-to-b from-amber-400 to-amber-500" />
+                <h3 className="text-sm font-semibold text-neutral-800">ลายเซ็น</h3>
+              </div>
+              <span className="hidden sm:inline"><Button size="sm" variant="secondary">จัดการ</Button></span>
             </div>
             <div className="flex items-center gap-4">
               {settings.signature ? (
                 <img src={settings.signature} alt="ลายเซ็น" className="w-16 h-8 object-contain rounded-lg border border-neutral-200 shadow-sm" />
               ) : (
-                <div className="w-16 h-8 rounded-lg bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-lg border border-dashed border-lime-200">✍️</div>
+                <div className="w-16 h-8 rounded-lg bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-lg border border-dashed border-lime-200"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
               )}
               <div className="text-xs text-neutral-500">{settings.signature ? 'มีลายเซ็น' : 'ยังไม่มีลายเซ็น'}</div>
             </div>
           </CardContent></Card>
 
-          <Card><CardContent className="pt-6">
+          <Card onClick={() => setActiveSection('stamp')}><CardContent className="pt-6">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-sm font-semibold text-neutral-800">🔴 ตรายาง</h3>
-              <Button size="sm" variant="secondary" onClick={() => setActiveSection('stamp')}>จัดการ</Button>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 rounded-full bg-gradient-to-b from-rose-400 to-rose-500" />
+                <h3 className="text-sm font-semibold text-neutral-800">ตรายาง</h3>
+              </div>
+              <span className="hidden sm:inline"><Button size="sm" variant="secondary">จัดการ</Button></span>
             </div>
             <div className="flex items-center gap-4">
               {settings.stamp ? (
                 <img src={settings.stamp} alt="ตรายาง" className="w-16 h-16 object-contain rounded-xl border border-neutral-200 shadow-sm" />
               ) : (
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl border border-dashed border-lime-200">🔴</div>
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-lime-100 to-lime-50 flex items-center justify-center text-2xl border border-dashed border-lime-200"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="6"/></svg></div>
               )}
               <div className="text-xs text-neutral-500">{settings.stamp ? 'มีตรายาง' : 'ยังไม่มีตรายาง'}</div>
             </div>
@@ -97,7 +112,10 @@ export default function Setting() {
 
         <Card><CardContent className="pt-6">
           <div className="flex items-start justify-between mb-4">
-            <h3 className="text-sm font-semibold text-neutral-800">💰 อัตราค่าใช้จ่าย</h3>
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-4 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+              <h3 className="text-sm font-semibold text-neutral-800">อัตราค่าใช้จ่าย</h3>
+            </div>
             <Button size="sm" variant="secondary" onClick={() => setActiveSection('rates')}>แก้ไข</Button>
           </div>
           <dl className="divide-y divide-neutral-50">
@@ -112,7 +130,10 @@ export default function Setting() {
         <Card><CardContent className="pt-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-sm font-semibold text-neutral-800">📱 LINE Messaging</h3>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 rounded-full bg-gradient-to-b from-teal-400 to-teal-500" />
+                <h3 className="text-sm font-semibold text-neutral-800">LINE Messaging</h3>
+              </div>
               <p className="text-xs text-neutral-400 mt-0.5">ส่งใบแจ้งหนี้ผ่าน LINE ให้ผู้พัก</p>
             </div>
             <Button size="sm" variant="secondary" onClick={() => setActiveSection('line')}>ตั้งค่า</Button>
@@ -128,11 +149,14 @@ export default function Setting() {
         </CardContent></Card>
 
         <Card><CardContent className="pt-6">
-          <h3 className="text-sm font-semibold text-neutral-800 mb-1">🗂️ สำรองและกู้คืนข้อมูล</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-4 rounded-full bg-gradient-to-b from-indigo-400 to-indigo-500" />
+            <h3 className="text-sm font-semibold text-neutral-800">สำรองและกู้คืนข้อมูล</h3>
+          </div>
           <p className="text-xs text-neutral-400 mb-5">ส่งออกข้อมูลเพื่อสำรอง หรือนำเข้าจากไฟล์สำรอง</p>
           <div className="flex gap-3">
-            <Button variant="outline" size="sm" onClick={exportData}>📤 ส่งออกข้อมูล</Button>
-            <Button size="sm" onClick={() => document.getElementById('importFile')?.click()}>📥 นำเข้าข้อมูล</Button>
+            <Button variant="outline" size="sm" onClick={exportData}><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> ส่งออกข้อมูล</Button>
+            <Button size="sm" onClick={() => document.getElementById('importFile')?.click()}><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> นำเข้าข้อมูล</Button>
             <input type="file" id="importFile" accept=".json" style={{ display: 'none' }} onChange={importData} />
           </div>
         </CardContent></Card>

@@ -492,17 +492,14 @@ export function AppProvider({ children }) {
       const imgH = canvas.height
       const ratio = pw / imgW
       const pageH = ph / ratio
-      const pages = Math.ceil(imgH / pageH)
-      for (let i = 0; i < pages; i++) {
-        if (i > 0) doc.addPage()
-        const srcY = pageH * i
-        const canvasCrop = document.createElement('canvas')
-        canvasCrop.width = imgW
-        canvasCrop.height = Math.min(pageH, imgH - srcY)
-        const ctx = canvasCrop.getContext('2d')
-        ctx.drawImage(canvas, 0, srcY, imgW, canvasCrop.height, 0, 0, imgW, canvasCrop.height)
-        doc.addImage(canvasCrop.toDataURL('image/jpeg', 0.95), 'JPEG', mg, mg, pw, canvasCrop.height * ratio)
-      }
+      const srcY = 0
+      const cropH = Math.min(pageH, imgH)
+      const canvasCrop = document.createElement('canvas')
+      canvasCrop.width = imgW
+      canvasCrop.height = cropH
+      const ctx = canvasCrop.getContext('2d')
+      ctx.drawImage(canvas, 0, srcY, imgW, cropH, 0, 0, imgW, cropH)
+      doc.addImage(canvasCrop.toDataURL('image/jpeg', 0.95), 'JPEG', mg, mg, pw, cropH * ratio)
       doc.save(`contract_${resident.name?.replace(/\s/g, '_')}.pdf`)
       toast('ดาวน์โหลดสัญญา PDF สำเร็จ')
     } catch (e) {

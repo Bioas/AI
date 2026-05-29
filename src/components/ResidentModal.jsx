@@ -228,7 +228,7 @@ export default function ResidentModal() {
   const renderForm = () => (
     <div className="p-6">
       <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm">👤</div>
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm"><svg className="w-5 h-5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
         <div className="flex-1">
           <h3 className="text-base font-semibold text-neutral-800">
             {ro ? 'ดูข้อมูลผู้พัก' : isNewForRoom ? `เพิ่มผู้พัก — ห้อง ${selectedRoom?.roomNumber || selectedRoom?.number || ''}` : editResident ? 'แก้ไขข้อมูลผู้พัก' : rentalType === 'daily' ? 'เพิ่มผู้พักรายวัน' : 'เพิ่มผู้พักรายเดือน'}
@@ -475,7 +475,7 @@ export default function ResidentModal() {
         {ro ? (
           <>
             <Button variant="ghost" onClick={() => setModal(null)}>ปิด</Button>
-            <Button onClick={() => { setViewOnly(false); setEditResident(editResident) }}>✎ แก้ไขข้อมูล</Button>
+            <Button onClick={() => { setViewOnly(false); setEditResident(editResident) }}><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> แก้ไขข้อมูล</Button>
           </>
         ) : (
           <>

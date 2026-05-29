@@ -97,14 +97,14 @@ export default function App() {
         {modal === 'invoice' && viewInv && (
               <ModalOverlay open={true} onClose={() => setModal(null)} maxWidth="max-w-[550px]">
             <div className="p-6">
-              <h3 className="text-base font-semibold text-neutral-800 mb-4">🧾 ใบแจ้งหนี้</h3>
+              <h3 className="text-base font-semibold text-neutral-800 mb-4"><svg className="text-lime-500 w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> ใบแจ้งหนี้</h3>
               <PreviewWrapper>
                 <InvoicePreview inv={viewInv} />
               </PreviewWrapper>
               <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
                 <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
-                <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 hover:from-lime-300 hover:to-lime-400 transition-all shadow-md shadow-lime-200/50 font-semibold">📄 PDF</button>
-                {!isDocumentsPage && <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>}
+                <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 hover:from-lime-300 hover:to-lime-400 transition-all shadow-md shadow-lime-200/50 font-semibold"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> PDF</button>
+                {!isDocumentsPage && !viewInv._isDaily && <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> LINE</button>}
               </div>
             </div>
           </ModalOverlay>
@@ -118,8 +118,8 @@ export default function App() {
               </PreviewWrapper>
               <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
                 <button onClick={() => setModal(null)} className="h-9 px-4 rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors">ปิด</button>
-                <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-emerald-400 to-emerald-500 text-white hover:from-emerald-300 hover:to-emerald-400 transition-all shadow-md shadow-emerald-200/50 font-semibold">📄 PDF</button>
-                {!isDocumentsPage && <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50">📱 LINE</button>}
+                <button onClick={() => downloadPdf(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-emerald-400 to-emerald-500 text-white hover:from-emerald-300 hover:to-emerald-400 transition-all shadow-md shadow-emerald-200/50 font-semibold"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> PDF</button>
+                {!isDocumentsPage && !viewInv._isDaily && <button onClick={() => sendPdfToLine(viewInv)} className="h-9 px-4 rounded-xl text-sm font-medium bg-gradient-to-br from-teal-400 to-teal-500 text-white hover:from-teal-300 hover:to-teal-400 transition-all shadow-md shadow-teal-200/50"><svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> LINE</button>}
               </div>
             </div>
           </ModalOverlay>
