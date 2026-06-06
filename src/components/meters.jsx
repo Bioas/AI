@@ -36,8 +36,8 @@ const RATE_STYLES = {
 }
 
 const MOBILE_CARD_META = {
-  elec: { container: 'bg-amber-50/60 rounded-xl px-3.5 py-2.5 border border-amber-100/50', icon: 'elec', label: 'ไฟ' },
-  water: { container: 'bg-cyan-50/60 rounded-xl px-3.5 py-2.5 border border-cyan-100/50', icon: 'water', label: 'น้ำ' },
+  elec: { container: 'bg-amber-50/60 rounded-xl px-3.5 py-2.5 border border-amber-100/50', icon: 'elec', label: 'ไฟ', labelColor: 'text-amber-500' },
+  water: { container: 'bg-cyan-50/60 rounded-xl px-3.5 py-2.5 border border-cyan-100/50', icon: 'water', label: 'น้ำ', labelColor: 'text-cyan-600' },
 }
 
 function getMeterUsage(cur, prev) {
@@ -81,7 +81,7 @@ const DesktopRow = memo(function DesktopRow({ room, ml, eu, wu, onEdit }) {
   return (
     <tr onClick={() => onEdit(room)} className="cursor-pointer hover:bg-lime-50/30 transition-colors">
       <td className="px-3 py-3.5 align-middle">
-        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{number}</span>
+        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{room.roomCode || number}</span>
       </td>
       <td className="px-3 py-3.5 text-neutral-700 align-middle">{name}</td>
       <MeterCellGroup prev={ml.prev.elec} cur={ml.cur.elec} usage={eu} />
@@ -99,9 +99,9 @@ function MobileMeterCard({ ml, type, usage }) {
   const cur = ml.cur[type]
   return (
     <div className={m.container}>
-      <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5">
+      <div className="flex items-center gap-1.5 text-xs font-medium mb-1.5">
         <span>{m.icon === 'elec' ? <ElecIcon className="w-3.5 h-3.5 inline text-amber-500" /> : <WaterIcon className="w-3.5 h-3.5 inline text-cyan-500" />}</span>
-        <span>{m.label}</span>
+        <span className={m.labelColor}>{m.label}</span>
       </div>
       <div className="flex items-center gap-1.5 text-sm">
         <span className="font-mono text-neutral-700"><MeterValue val={prev} /></span>
@@ -122,7 +122,7 @@ const MobileCard = memo(function MobileCard({ room, ml, eu, wu, onEdit }) {
     <div onClick={() => onEdit(room)} className="px-4 py-4 space-y-3 cursor-pointer active:bg-lime-50/40 transition-colors">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{number}</span>
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{room.roomCode || number}</span>
           <span className="text-sm font-medium text-neutral-700">{name}</span>
         </div>
         <button onClick={(e) => { e.stopPropagation(); onEdit(room) }} className="h-8 px-3.5 rounded-lg text-xs font-medium bg-lime-50 text-lime-700 hover:bg-lime-100 transition-colors border border-lime-100">แก้ไข</button>

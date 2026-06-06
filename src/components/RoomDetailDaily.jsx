@@ -433,8 +433,8 @@ export default function RoomDetailDaily() {
            </div>
 
           <div className="flex items-center gap-4 mb-6 p-4 rounded-xl bg-lime-50 border border-lime-100">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-xl font-bold shadow-sm">
-              {resident.name?.charAt(0) || '?'}
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 shadow-sm">
+              <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
             <div className="flex-1">
               <div className="text-base font-bold text-neutral-800">{resident.name}</div>
@@ -806,7 +806,7 @@ export default function RoomDetailDaily() {
           <div className="flex items-center gap-4 sm:gap-5">
             <div className="relative shrink-0">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-2xl sm:text-3xl font-bold shadow-lg shadow-lime-200/50">
-                {displayNumber}
+                {room.roomCode || displayNumber}
               </div>
               <div className={`absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm ${
                 status.variant === 'success' ? 'bg-lime-500' : status.variant === 'warning' ? 'bg-amber-400' : 'bg-neutral-300'
@@ -825,8 +825,8 @@ export default function RoomDetailDaily() {
               </div>
               {resident && (
                 <div className="flex items-center gap-2 mt-2 pt-2 border-t border-neutral-100">
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                    {resident.name.charAt(0)}
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white shrink-0">
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                   </div>
                   <span className="text-sm text-neutral-600 truncate">{resident.name}</span>
                 </div>
@@ -899,8 +899,8 @@ export default function RoomDetailDaily() {
                 filteredUnassigned.map(r => (
                   <button key={r.id} onClick={() => handleSelectResident(r.id)}
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-lime-50 transition-colors text-left">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-sm font-bold shrink-0">
-                      {r.name?.charAt(0) || '?'}
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 shrink-0">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

@@ -17,7 +17,7 @@ function validateResident(data) {
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.push('รูปแบบอีเมลไม่ถูกต้อง')
   if (!data.moveInDate) errors.push('กรุณาเลือกวันที่เข้าพัก')
   if (!data.moveOutDate) errors.push('กรุณาเลือกวันหมดสัญญา')
-  if (data.deposit === undefined || data.deposit === '' || isNaN(Number(data.deposit))) errors.push('กรุณากรอกค่ามัดจำ')
+  if (!isDaily && (data.deposit === undefined || data.deposit === '' || isNaN(Number(data.deposit)))) errors.push('กรุณากรอกค่ามัดจำ')
   return errors
 }
 

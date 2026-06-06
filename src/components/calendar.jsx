@@ -8,6 +8,7 @@ import Card, { CardContent } from './ui/card'
 import Modal from './ui/modal'
 import Button from './ui/button'
 import DatePickerField from './ui/datepicker'
+import Select from './ui/select'
 
 const THAI_MONTHS = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
 const DAY_HEADERS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
@@ -28,6 +29,8 @@ export default function Calendar() {
   const [formCheckOut, setFormCheckOut] = useState('')
   const [formExtraBed, setFormExtraBed] = useState(0)
   const [formDiscount, setFormDiscount] = useState(0)
+  const [formPhone, setFormPhone] = useState('')
+  const [formTenantType, setFormTenantType] = useState('individual')
   const [saving, setSaving] = useState(false)
   const [isEditingDetail, setIsEditingDetail] = useState(false)
   const [viewMode, setViewMode] = useState('week')
@@ -220,16 +223,18 @@ export default function Calendar() {
     })
   }, [weeks, dailyResidents, dailyRooms, roomLabel, viewMode])
 
-  const openAdd = useCallback((dateStr) => {
+  const openAdd = useCallback((dateStr, roomId) => {
     const d = dateStr ? new Date(dateStr) : new Date()
     const next = new Date(d)
     next.setDate(d.getDate() + 1)
     setFormCheckIn(d.toISOString().split('T')[0])
     setFormCheckOut(next.toISOString().split('T')[0])
     setFormName('')
-    setFormRoom(dailyRooms.length > 0 ? dailyRooms[0].id : '')
+    setFormRoom(roomId || (dailyRooms.length > 0 ? dailyRooms[0].id : ''))
     setFormExtraBed(0)
     setFormDiscount(0)
+    setFormPhone('')
+    setFormTenantType('individual')
     setShowAdd(true)
   }, [dailyRooms])
 
@@ -250,10 +255,10 @@ export default function Calendar() {
     try {
       const room = dailyRooms.find(r => r.id === formRoom)
       const res = await api('/api/residents', 'POST', {
-        name: formName.trim(), idCard: '', phone: '', email: '',
+        name: formName.trim(), idCard: '', phone: formPhone.trim(), email: '',
         roomId: formRoom, moveInDate: formCheckIn, moveOutDate: formCheckOut,
         deposit: 0, licensePlate: '', emergencyContact: '', emergencyPhone: '',
-        lineUserId: '', rentalType: 'daily', tenantType: 'individual',
+        lineUserId: '', rentalType: 'daily', tenantType: formTenantType,
       })
       await api('/api/rooms', 'PUT', {
         id: formRoom, roomNumber: room.roomNumber, roomCode: room.roomCode || '',
@@ -336,45 +341,44 @@ export default function Calendar() {
         action={<Button onClick={() => openAdd('')}>＋ จองห้องพัก</Button>}
       />
 
-      <Card className="overflow-hidden">
-        <CardContent className="pt-0 p-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 sm:px-5 py-3 sm:py-4 border-b border-neutral-100">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-1">
-                <button onClick={prev}
-                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 transition-all">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <h2 className="text-sm sm:text-base font-bold text-neutral-800 min-w-[140px] sm:min-w-[180px] text-center select-none leading-tight">
-                  {viewMode === 'week' && weekStart && weekEnd
-                    ? (weekStart.getMonth() === weekEnd.getMonth() && weekStart.getFullYear() === weekEnd.getFullYear()
-                      ? `${weekStart.getDate()}-${weekEnd.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}`
-                      : `${weekStart.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })} - ${weekEnd.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}`)
-                    : `${THAI_MONTHS[month + 1]} ${yearBE}`
-                  }
-                </h2>
-                <button onClick={next}
-                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 transition-all">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </button>
-              </div>
-              <div className="flex rounded-lg sm:rounded-xl border border-neutral-200 overflow-hidden">
-                <button onClick={() => { setViewDate(getMonday(today)); setViewMode('week') }}
-                  className={`px-2.5 sm:px-3 h-8 sm:h-9 text-[11px] sm:text-xs font-semibold transition-all ${viewMode === 'week' ? 'bg-lime-500 text-white shadow-sm' : 'text-neutral-500 hover:bg-neutral-50'}`}>
-                  สัปดาห์
-                </button>
-                <button onClick={() => { setViewDate(new Date(today.getFullYear(), today.getMonth(), 1)); setViewMode('month') }}
-                  className={`px-2.5 sm:px-3 h-8 sm:h-9 text-[11px] sm:text-xs font-semibold transition-all ${viewMode === 'month' ? 'bg-lime-500 text-white shadow-sm' : 'text-neutral-500 hover:bg-neutral-50'}`}>
-                  เดือน
-                </button>
-              </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-neutral-100">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1">
+              <button onClick={prev}
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 transition-all">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <h2 className="text-sm sm:text-base font-bold text-neutral-800 min-w-[140px] sm:min-w-[180px] text-center select-none leading-tight">
+                {viewMode === 'week' && weekStart && weekEnd
+                  ? (weekStart.getMonth() === weekEnd.getMonth() && weekStart.getFullYear() === weekEnd.getFullYear()
+                    ? `${weekStart.getDate()}-${weekEnd.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                    : `${weekStart.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })} - ${weekEnd.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}`)
+                  : `${THAI_MONTHS[month + 1]} ${yearBE}`
+                }
+              </h2>
+              <button onClick={next}
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 transition-all">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-xs text-neutral-400">
-              <span>{dailyRooms.length} ห้อง</span>
-              <span className="w-1 h-1 rounded-full bg-neutral-300" />
-              <span>{dailyResidents.length} การจอง</span>
+            <div className="flex rounded-lg sm:rounded-xl border border-neutral-200 overflow-hidden">
+              <button onClick={() => { setViewDate(getMonday(today)); setViewMode('week') }}
+                className={`px-2.5 sm:px-3 h-8 sm:h-9 text-[11px] sm:text-xs font-semibold transition-all ${viewMode === 'week' ? 'bg-lime-500 text-white shadow-sm' : 'text-neutral-500 hover:bg-neutral-50'}`}>
+                สัปดาห์
+              </button>
+              <button onClick={() => { setViewDate(new Date(today.getFullYear(), today.getMonth(), 1)); setViewMode('month') }}
+                className={`px-2.5 sm:px-3 h-8 sm:h-9 text-[11px] sm:text-xs font-semibold transition-all ${viewMode === 'month' ? 'bg-lime-500 text-white shadow-sm' : 'text-neutral-500 hover:bg-neutral-50'}`}>
+                เดือน
+              </button>
             </div>
           </div>
+          <div className="hidden sm:flex items-center gap-2 text-xs text-neutral-400">
+            <span>{dailyRooms.length} ห้อง</span>
+            <span className="w-1 h-1 rounded-full bg-neutral-300" />
+            <span>{dailyResidents.length} การจอง</span>
+          </div>
+        </div>
 
           {dailyRooms.length === 0 ? (
             <div className="text-center py-12 sm:py-16 px-4">
@@ -390,7 +394,7 @@ export default function Calendar() {
                   <div>
                     <div className="flex border-b border-neutral-100">
                       {['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'].map(h => (
-                        <div key={h} className="w-[14.285%] shrink-0 px-1 py-2 text-center text-[10px] font-semibold text-neutral-400">
+                        <div key={h} className="w-[14.285%] shrink-0 px-1 py-2.5 text-center text-xs font-semibold text-neutral-400">
                           {h}
                         </div>
                       ))}
@@ -398,7 +402,7 @@ export default function Calendar() {
                     {weeks.map((week, wi) => {
                       const wkBookings = weekBookings[wi] || []
                       const maxTracks = Math.max(1, ...wkBookings.map(b => b.totalTracks || 1))
-                      const rowH = Math.max(64, 28 + maxTracks * 18)
+                      const rowH = Math.max(90, 36 + maxTracks * 22)
                       return (
                         <div key={wi} className="relative border-b border-neutral-50" style={{ minHeight: rowH + 'px' }}>
                           <div className="flex" style={{ minHeight: rowH + 'px' }}>
@@ -410,7 +414,7 @@ export default function Calendar() {
                                   className={`w-[14.285%] shrink-0 border-r border-neutral-50 cursor-pointer hover:bg-lime-50/30 transition-colors ${
                                     d.isToday ? 'bg-lime-50/60' : ''
                                   }`}>
-                                  <div className={`text-[10px] font-semibold text-center pt-1.5 pb-0.5 ${
+                                  <div className={`text-xs font-semibold text-center pt-2 pb-1 ${
                                     d.isToday ? 'text-lime-700' : d.dayOfWeek === 0 ? 'text-rose-400' : 'text-neutral-500'
                                   }`}>
                                     {d.day}
@@ -422,7 +426,7 @@ export default function Calendar() {
                           {wkBookings.length > 0 && (
                             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                               {wkBookings.map(b => {
-                                const barTop = 26 + (b.track || 0) * 18
+                                const barTop = 32 + (b.track || 0) * 22
                                 const isBooking = b.status === 'จอง'
                                 const isCheckin = b.status === 'เช็คอิน'
                                 const bg = isBooking ? 'bg-amber-100 text-amber-800 border-amber-200' : isCheckin ? 'bg-lime-100 text-lime-800 border-lime-200' : 'bg-neutral-100 text-neutral-500 border-neutral-200'
@@ -432,17 +436,17 @@ export default function Calendar() {
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ duration: 0.2, delay: Math.min((b.track || 0) * 0.03, 0.15) }}
                                     onClick={() => openDetail(b.roomId, b.id)}
-                                    className={'absolute pointer-events-auto rounded-[2px] flex items-center px-1 gap-0.5 cursor-pointer hover:opacity-80 transition-opacity z-20 overflow-hidden ' + bg}
+                                    className={'absolute pointer-events-auto rounded-[3px] flex items-center px-1.5 gap-1 cursor-pointer hover:opacity-80 transition-opacity z-20 overflow-hidden ' + bg}
                                     style={{
                                       left: b.barLeftPct + '%',
                                       width: Math.max(0.5, b.barWidthPct) + '%',
                                       top: barTop + 'px',
-                                      height: '16px',
+                                      height: '20px',
                                       borderWidth: '1px',
                                     }}>
-                                    <span className="font-semibold shrink-0 text-[8px] leading-none">{b.roomNum}</span>
-                                    <span className="truncate text-[8px] leading-none">{b.name}</span>
-                                    <span className="shrink-0 text-[7px] leading-none ml-auto opacity-60">{b.status}</span>
+                                    <span className="font-semibold shrink-0 text-[10px] leading-none">{b.roomNum}</span>
+                                    <span className="truncate text-[10px] leading-none">{b.name}</span>
+                                    <span className="shrink-0 text-[8px] leading-none ml-auto opacity-60">{b.status}</span>
                                   </motion.div>
                                 )
                               })}
@@ -456,36 +460,36 @@ export default function Calendar() {
                   /* Mobile week view: compact horizontal scroll */
                   <div className="overflow-x-auto">
                     <div className="min-w-0">
-                      <div className="grid" style={{ gridTemplateColumns: `64px repeat(${days.length}, 1fr)` }}>
-                        <div className="sticky left-0 z-10 bg-white px-1.5 py-2 border-b border-r border-neutral-100 text-[10px] font-semibold text-neutral-500">
+                      <div className="grid" style={{ gridTemplateColumns: `80px repeat(${days.length}, 1fr)` }}>
+                        <div className="sticky left-0 z-10 bg-white px-2 py-2 border-b border-r border-neutral-100 text-xs font-semibold text-neutral-500">
                           ห้อง
                         </div>
                         {days.map(d => (
                           <div key={d.dateStr}
-                            className={`px-0.5 py-1.5 border-b border-r border-neutral-50 text-center text-[10px] font-medium ${
+                            className={`px-0.5 py-2 border-b border-r border-neutral-50 text-center text-xs font-medium ${
                               d.isToday ? 'bg-lime-50 text-lime-700 font-bold' : 'text-neutral-400'
                             } ${d.dayOfWeek === 0 ? 'text-rose-400' : ''}`}>
                             <div>{d.day}</div>
-                            <div className="text-[8px] opacity-60">{DAY_HEADERS[d.dayOfWeek]}</div>
+                            <div className="text-[9px] opacity-60">{DAY_HEADERS[d.dayOfWeek]}</div>
                           </div>
                         ))}
                       </div>
                       {dailyRooms.map(room => {
                         const bookings = roomBookings[room.id] || []
                         return (
-                          <div key={room.id} className="grid" style={{ gridTemplateColumns: `64px repeat(${days.length}, 1fr)` }}>
-                            <div className="sticky left-0 z-10 bg-white px-1.5 py-2.5 border-b border-r border-neutral-50 text-[11px] font-medium text-neutral-700 truncate">
+                          <div key={room.id} className="grid" style={{ gridTemplateColumns: `80px repeat(${days.length}, 1fr)` }}>
+                            <div onClick={() => openAdd(days[0]?.dateStr, room.id)} className="sticky left-0 z-10 bg-white px-2 py-3 border-b border-r border-neutral-50 text-xs font-medium text-neutral-700 truncate cursor-pointer hover:bg-neutral-50 transition-colors">
                               {roomLabel(room)}
                             </div>
                             {(() => {
                               const maxTracks = Math.max(1, ...bookings.map(b => b.totalTracks || 1))
-                              const rowHeight = Math.max(40, maxTracks * 40)
+                              const rowHeight = Math.max(60, maxTracks * 60)
                               return (
                                 <div className="relative col-span-full" style={{ gridColumn: '2 / ' + (days.length + 2), minHeight: rowHeight + 'px' }}>
                                   <div className="grid h-full" style={{ gridTemplateColumns: 'repeat(' + days.length + ', 1fr)' }}>
                                     {days.map(d => (
                                       <div key={d.dateStr}
-                                        onClick={() => openAdd(d.dateStr)}
+                                        onClick={() => openAdd(d.dateStr, room.id)}
                                         className={`border-b border-r border-neutral-50 transition-colors cursor-pointer hover:bg-lime-50/30 ${
                                           d.isToday ? 'bg-lime-50/50' : ''
                                         }`} />
@@ -506,10 +510,10 @@ export default function Calendar() {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.2, delay: Math.min(track * 0.04, 0.15) }}
                                         onClick={() => openDetail(b.roomId, b.id)}
-                                        className={'absolute rounded-[3px] flex items-center justify-center px-1 gap-0.5 cursor-pointer hover:scale-[1.03] hover:shadow-sm transition-all overflow-hidden z-20 border ' + barStyle}
+                                        className={'absolute rounded-[4px] flex items-center justify-between px-1.5 cursor-pointer hover:scale-[1.03] hover:shadow-sm transition-all overflow-hidden z-20 border ' + barStyle}
                                         style={{ left: left + '%', width: width + '%', top: barTop, height: barHeight }}>
-                                        <span className="truncate text-[8px] leading-none font-medium">{b.name}</span>
-                                        <span className="shrink-0 text-[7px] leading-none font-medium opacity-60">{s}</span>
+                                        <span className="truncate text-[10px] leading-none font-medium">{b.name}</span>
+                                        <span className="shrink-0 text-[8px] leading-none font-medium opacity-60">{s}</span>
                                       </motion.div>
                                     )
                                   })}
@@ -527,25 +531,25 @@ export default function Calendar() {
               {/* Desktop: horizontal scroll layout */}
               <div className="hidden lg:block overflow-x-auto overflow-y-visible">
                 <div className={viewMode === 'week' ? 'min-w-0' : 'min-w-0'}>
-                  <div className="grid" style={{ gridTemplateColumns: `110px repeat(${days.length}, 1fr)` }}>
-                    <div className="sticky left-0 z-10 bg-white px-3 py-2.5 border-b border-r border-neutral-100 text-xs font-semibold text-neutral-500">
+                  <div className="grid" style={{ gridTemplateColumns: `150px repeat(${days.length}, 1fr)` }}>
+                    <div className="sticky left-0 z-10 bg-white px-4 py-3 border-b border-r border-neutral-100 text-sm font-semibold text-neutral-500">
                       ห้อง
                     </div>
                     {days.map(d => (
                       <div key={d.dateStr}
-                        className={`px-0.5 py-2 border-b border-r border-neutral-50 text-center text-[11px] font-medium transition-colors ${
+                        className={`px-1 py-3 border-b border-r border-neutral-50 text-center text-sm font-medium transition-colors ${
                           d.isToday ? 'bg-lime-50 text-lime-700 font-bold' : 'text-neutral-400'
                         } ${d.dayOfWeek === 0 ? 'text-rose-400' : ''}`}>
-                        <div>{d.day}</div>
-                        <div className="text-[9px] opacity-60">{DAY_HEADERS[d.dayOfWeek]}</div>
+                        <div className="text-base">{d.day}</div>
+                        <div className="text-[10px] opacity-60">{DAY_HEADERS[d.dayOfWeek]}</div>
                       </div>
                     ))}
                   </div>
                   {dailyRooms.map(room => {
                     const bookings = roomBookings[room.id] || []
                     return (
-                      <div key={room.id} className="grid" style={{ gridTemplateColumns: `110px repeat(${days.length}, 1fr)` }}>
-                        <div className="sticky left-0 z-10 bg-white px-3 py-3 border-b border-r border-neutral-50 text-sm font-medium text-neutral-700 truncate flex items-center gap-2">
+                      <div key={room.id} className="grid" style={{ gridTemplateColumns: `150px repeat(${days.length}, 1fr)` }}>
+                        <div onClick={() => openAdd(days[0]?.dateStr, room.id)} className="sticky left-0 z-10 bg-white px-4 py-4 border-b border-r border-neutral-50 text-base font-semibold text-neutral-700 truncate cursor-pointer hover:bg-neutral-50 transition-colors flex items-center gap-2">
                           {roomLabel(room)}
                           {(() => {
                             if (!room.residentId && !room.tenantName) return null
@@ -555,45 +559,45 @@ export default function Calendar() {
                               today.setHours(0, 0, 0, 0)
                               const inDate = new Date(res.moveInDate)
                               inDate.setHours(0, 0, 0, 0)
-                              if (inDate > today) return <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                              if (inDate > today) return <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
                             }
-                            return <span className="w-1.5 h-1.5 rounded-full bg-lime-500 shrink-0" />
+                            return <span className="w-2 h-2 rounded-full bg-lime-500 shrink-0" />
                           })()}
                         </div>
                         {(() => {
                           const maxTracks = Math.max(1, ...bookings.map(b => b.totalTracks || 1))
-                          const rowHeight = Math.max(52, maxTracks * 52)
+                          const rowHeight = Math.max(80, maxTracks * 80)
                           return (
-                            <div className="relative col-span-full" style={{ gridColumn: '2 / ' + (days.length + 2), minHeight: rowHeight + 'px' }}>
-                              <div className="grid h-full" style={{ gridTemplateColumns: 'repeat(' + days.length + ', 1fr)' }}>
-                                {days.map(d => (
-                                  <div key={d.dateStr}
-                                    onClick={() => openAdd(d.dateStr)}
-                                    className={`border-b border-r border-neutral-50 transition-colors cursor-pointer hover:bg-lime-50/30 ${
-                                      d.isToday ? 'bg-lime-50/50' : ''
-                                    }`} />
-                                ))}
-                              </div>
-                              {bookings.map(b => {
-                                const left = ((b.startDay - 1) / days.length) * 100
-                                const width = ((b.endDay - b.startDay + 1) / days.length) * 100
-                                const track = b.track || 0
-                                const totalTracks = b.totalTracks || 1
-                                const barTop = totalTracks > 1 ? ((track / totalTracks) * rowHeight) + 2 + 'px' : '2px'
-                                const barHeight = totalTracks > 1 ? ((1 / totalTracks) * rowHeight) - 4 + 'px' : (rowHeight - 4) + 'px'
-                                const s = bookingStatus(b)
-                                const barStyle = s === 'จอง' ? 'bg-amber-100 text-amber-800 border-amber-200' : s === 'เช็คอิน' ? 'bg-lime-100 text-lime-800 border-lime-200' : 'bg-neutral-100 text-neutral-500 border-neutral-200'
-                                return (
-                                  <motion.div key={b.id}
-                                    initial={{ opacity: 0, y: 4 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.25, delay: Math.min(track * 0.04, 0.2) }}
-                                    onClick={() => openDetail(b.roomId, b.id)}
-                                    className={'absolute rounded-[3px] flex items-center justify-center px-1 gap-1 cursor-pointer hover:scale-[1.02] hover:shadow-sm transition-all overflow-hidden z-20 border ' + barStyle}
-                                    style={{ left: left + '%', width: width + '%', top: barTop, height: barHeight }}>
-                                    <span className="truncate text-xs font-medium">{b.name}</span>
-                                    <span className="shrink-0 text-[10px] font-medium opacity-60">{s}</span>
-                                  </motion.div>
+                                <div className="relative col-span-full" style={{ gridColumn: '2 / ' + (days.length + 2), minHeight: rowHeight + 'px' }}>
+                                  <div className="grid h-full" style={{ gridTemplateColumns: 'repeat(' + days.length + ', 1fr)' }}>
+                                    {days.map(d => (
+                                      <div key={d.dateStr}
+                                        onClick={() => openAdd(d.dateStr, room.id)}
+                                        className={`border-b border-r border-neutral-50 transition-colors cursor-pointer hover:bg-lime-50/30 ${
+                                          d.isToday ? 'bg-lime-50/50' : ''
+                                        }`} />
+                                    ))}
+                                  </div>
+                                  {bookings.map(b => {
+                                    const left = ((b.startDay - 1) / days.length) * 100
+                                    const width = ((b.endDay - b.startDay + 1) / days.length) * 100
+                                    const track = b.track || 0
+                                    const totalTracks = b.totalTracks || 1
+                                    const barTop = totalTracks > 1 ? ((track / totalTracks) * rowHeight) + 3 + 'px' : '3px'
+                                    const barHeight = totalTracks > 1 ? ((1 / totalTracks) * rowHeight) - 6 + 'px' : (rowHeight - 6) + 'px'
+                                    const s = bookingStatus(b)
+                                    const barStyle = s === 'จอง' ? 'bg-amber-100 text-amber-800 border-amber-200' : s === 'เช็คอิน' ? 'bg-lime-100 text-lime-800 border-lime-200' : 'bg-neutral-100 text-neutral-500 border-neutral-200'
+                                    return (
+                                      <motion.div key={b.id}
+                                        initial={{ opacity: 0, y: 4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.25, delay: Math.min(track * 0.04, 0.2) }}
+                                        onClick={() => openDetail(b.roomId, b.id)}
+                                        className={'absolute rounded-[5px] flex items-center justify-between px-2 cursor-pointer hover:scale-[1.02] hover:shadow-md transition-all overflow-hidden z-20 border ' + barStyle}
+                                        style={{ left: left + '%', width: width + '%', top: barTop, height: barHeight }}>
+                                        <span className="truncate text-sm font-medium">{b.name}</span>
+                                        {viewMode !== 'month' && <span className="shrink-0 text-[11px] font-medium opacity-60">{s}</span>}
+                                      </motion.div>
                                 )
                               })}
                             </div>
@@ -606,8 +610,7 @@ export default function Calendar() {
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
       {dailyRooms.length > 0 && (
         <div className="mt-3 sm:mt-4 text-center sm:text-left text-[11px] sm:text-xs text-neutral-400">
@@ -628,26 +631,36 @@ export default function Calendar() {
           <div className="space-y-3 sm:space-y-4">
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">ห้อง</label>
-              <select value={formRoom} onChange={e => setFormRoom(e.target.value)}
-                className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-white focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all">
-                {dailyRooms.map(r => {
+              <Select value={formRoom} onChange={setFormRoom}
+                options={dailyRooms.map(r => {
                   const existingRes = dailyResidents.find(x => x.id === r.residentId)
                   const label = existingRes
                     ? `(เช็คเอาท์ ${new Date(existingRes.moveOutDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })})`
                     : '(ว่าง)'
-                  return (
-                    <option key={r.id} value={r.id}>
-                      ห้อง {roomLabel(r)} {label}
-                    </option>
-                  )
-                })}
-              </select>
+                  return { value: r.id, label: `ห้อง ${roomLabel(r)} ${label}` }
+                })} />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">ชื่อผู้เข้าพัก</label>
               <input type="text" value={formName} onChange={e => setFormName(e.target.value)}
                 placeholder="ชื่อ-นามสกุล"
                 className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">เบอร์โทรศัพท์</label>
+                <input type="tel" value={formPhone} onChange={e => setFormPhone(e.target.value)}
+                  placeholder="08X-XXX-XXXX"
+                  className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">ประเภทผู้พัก</label>
+                <Select value={formTenantType} onChange={setFormTenantType}
+                  options={[
+                    { value: 'individual', label: 'บุคคล' },
+                    { value: 'company', label: 'บริษัท' },
+                  ]} />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div>

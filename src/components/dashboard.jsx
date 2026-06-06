@@ -134,7 +134,7 @@ export default function Dashboard() {
     const sorted = [...invoices].sort((a, b) => b.month.localeCompare(a.month))
     return sorted.slice(0, 8).map(inv => {
       const room = rooms.find(r => r.id === inv.roomId)
-      return { ...inv, room, roomDisplay: inv.roomNumber || room?.roomNumber || '-' }
+      return { ...inv, room, roomDisplay: room?.roomCode || inv.roomNumber || room?.roomNumber || '-' }
     })
   }, [invoices, rooms])
 

@@ -59,18 +59,43 @@ function formatDateTime(isoStr) {
   return `${day} ${month} ${year}`
 }
 
+function isNearMonthEnd(dateStr) {
+  if (!dateStr) return false
+  const d = new Date(dateStr)
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  return d.getDate() >= lastDay - 2
+}
+
+function getRefYm(inv, rooms) {
+  if (!inv?.month) return ''
+  const room = rooms.find(r => r.id === inv.roomId)
+  const isDaily = room?.rentalType === 'daily' || room?.rentalType === 'รายวัน'
+  if (isDaily) {
+    const checkOut = inv.moveOutDate || ''
+    if (checkOut) return checkOut.slice(0, 7).replace('-', '')
+  }
+  return inv.month.replace('-', '')
+}
+
 function generateDocNumber(inv, invoices, rooms, docType) {
   if (!inv.month) return '—'
   const room = rooms.find(r => r.id === inv.roomId)
   const roomRef = room?.roomCode || inv.roomNumber || '—'
-  const year = inv.month.split('-')[0]
-  const sameYearInvoices = invoices
-    .filter(x => x.month && x.month.startsWith(year))
-    .sort((a, b) => a.month.localeCompare(b.month))
-  const runningIndex = sameYearInvoices.findIndex(x => x.id === inv.id) + 1
-  const running = String(runningIndex).padStart(3, '0')
   const prefix = docType === 'receipt' ? 'REC' : 'INV'
-  return `${prefix}-${roomRef}-${inv.month.replace('-', '')}-${running}`
+  const refYm = getRefYm(inv, rooms)
+
+  const sorted = [...invoices]
+    .filter(x => x.month)
+    .sort((a, b) => {
+      const aRef = getRefYm(a, rooms)
+      const bRef = getRefYm(b, rooms)
+      if (aRef !== bRef) return aRef.localeCompare(bRef)
+      return (a.id || '').localeCompare(b.id || '')
+    })
+
+  const idx = sorted.findIndex(x => x.id === inv.id)
+  const running = String(Math.max(1, idx + 1)).padStart(3, '0')
+  return `${prefix}-${roomRef}-${refYm}-${running}`
 }
 
 export default function Documents() {
@@ -142,26 +167,22 @@ export default function Documents() {
     } else {
       filtered = invoices.filter(x => x.month && x.month.startsWith(invMonth))
     }
-    const result = isInvoice ? filtered.filter(x => !x.receiptOnly) : filtered
-    result.sort((a, b) => {
-      const roomA = roomById[a.roomId]
-      const roomB = roomById[b.roomId]
-      const numA = roomA ? (roomA.roomNumber || roomA.number || '') : ''
-      const numB = roomB ? (roomB.roomNumber || roomB.number || '') : ''
-      return naturalSortRoomNumber(numA, numB)
-    })
-    return result
-  }, [invoices, invMonth, isInvoice, roomById, viewMode, selectedYear])
+    return isInvoice ? filtered.filter(x => !x.receiptOnly) : filtered
+  }, [invoices, invMonth, isInvoice, viewMode, selectedYear])
 
   const displayData = useMemo(() => {
     return savedInvoices.map(inv => {
       const room = roomById[inv.roomId]
-      const number = inv.roomNumber || room?.roomNumber || room?.number || '—'
+      const number = room?.roomCode || inv.roomNumber || room?.roomNumber || room?.number || '—'
       const tenant = inv.tenantName || room?.tenantName || '—'
       const rentalType = room?.rentalType || 'monthly'
       const isDaily = rentalType === 'daily' || rentalType === 'รายวัน'
       const docNumber = generateDocNumber(inv, invoices, rooms, activeTab)
       return { inv, number, tenant, isDaily, docNumber }
+    }).sort((a, b) => {
+      const na = parseInt(a.docNumber.split('-').pop(), 10)
+      const nb = parseInt(b.docNumber.split('-').pop(), 10)
+      return na - nb
     })
   }, [savedInvoices, roomById, invoices, rooms, activeTab])
 
@@ -268,13 +289,13 @@ export default function Documents() {
                             </span>
                           </div>
                           <div className="grid grid-cols-2 gap-1.5">
-                            <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
-                              <div className="text-[10px] text-neutral-400">เลขที่เอกสาร</div>
-                              <div className="font-mono text-xs text-neutral-700 truncate">{docNumber}</div>
+                            <div className="bg-violet-50/60 rounded-lg px-2.5 py-2 border border-violet-100/40">
+                              <div className="text-[10px] text-violet-600 font-medium">เลขที่เอกสาร</div>
+                              <div className="font-mono text-xs text-neutral-800 truncate">{docNumber}</div>
                             </div>
-                            <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
-                              <div className="text-[10px] text-neutral-400">วันที่</div>
-                              <div className="font-semibold text-neutral-800 text-xs">{formatDateTime(inv.createdAt)}</div>
+                            <div className="bg-sky-50/60 rounded-lg px-2.5 py-2 border border-sky-100/40">
+                              <div className="text-[10px] text-sky-600 font-medium">วันที่</div>
+                              <div className="font-semibold text-xs text-neutral-800">{formatDateTime(inv.createdAt)}</div>
                             </div>
                           </div>
                           <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-neutral-100">

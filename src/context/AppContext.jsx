@@ -92,7 +92,7 @@ export function AppProvider({ children }) {
   useEffect(() => { fetchAll() }, [fetchAll])
 
   const calcInv = useCallback((room, m) => {
-      const saved = invoices.find(x => x.roomId === room.id && x.month === m)
+      const saved = invoices.find(x => x.roomId === room.id && x.month && x.month.startsWith(m))
       if (saved) {
         const resData = residents.find(r => r.id === saved.residentId)
         return {
@@ -135,7 +135,9 @@ export function AppProvider({ children }) {
     const inf = settings.internetFee || 0
     const elecCost = eu * settings.rateElec
 
-    const isDaily = room.rentalType === 'daily' || room.rentalType === 'รายวัน'
+    const isRoomDaily = room.rentalType === 'daily' || room.rentalType === 'รายวัน'
+    const isResidentDaily = resident && (resident.rentalType === 'daily' || resident.rentalType === 'รายวัน')
+    const isDaily = isResidentDaily || (isRoomDaily && !resident)
     let rent = rentPrice
     let days = 1
     if (isDaily && resident?.moveInDate && resident?.moveOutDate) {
@@ -330,13 +332,14 @@ export function AppProvider({ children }) {
       const method = data.id ? 'PUT' : 'POST'
       await api('/api/residents', method, data)
       await fetchResidents()
+      await fetchRooms()
       setModal(null)
       setEditResident(null)
       toast(data.id ? 'แก้ไขข้อมูลผู้พักสำเร็จ' : 'เพิ่มผู้พักอาศัยสำเร็จ')
     } catch (e) {
       toast(`ไม่สำเร็จ: ${e.message}`, true)
     }
-  }, [fetchResidents, toast])
+  }, [fetchResidents, fetchRooms, toast])
 
   const deleteResident = useCallback(async (id) => {
     try {

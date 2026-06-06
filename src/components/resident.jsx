@@ -203,23 +203,23 @@ export default function Resident() {
                         <td colSpan={99} className="block md:hidden p-3 w-full">
                           <div className="space-y-1.5 w-full">
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-[11px] font-bold shadow-sm shrink-0">{r.roomNumber || '—'}</span>
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-[11px] font-bold shadow-sm shrink-0">{(() => { const rm = rooms.find(x => x.id === r.roomId || x.roomNumber === r.roomNumber); return rm?.roomCode || r.roomNumber || '—' })()}</span>
                               <span className="font-medium text-neutral-800 truncate">{r.name}</span>
                               <Badge variant={status.variant} className="ml-auto shrink-0">{status.label}</Badge>
                             </div>
                             <div className="grid grid-cols-2 gap-1.5">
-                              <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
-                                <div className="text-[10px] text-neutral-400">เบอร์โทร</div>
+                              <div className="bg-teal-50/60 rounded-lg px-2.5 py-2 border border-teal-100/40">
+                                <div className="text-[10px] text-teal-600 font-medium">เบอร์โทร</div>
                                 <div className="font-semibold text-neutral-800 text-xs truncate">{r.phone}</div>
                               </div>
                               {!isDaily ? (
-                                <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
-                                  <div className="text-[10px] text-neutral-400">LINE</div>
+                                <div className="bg-lime-50/60 rounded-lg px-2.5 py-2 border border-lime-200/50">
+                                  <div className="text-[10px] text-lime-600 font-medium">LINE</div>
                                   <div className="font-semibold text-neutral-800 text-xs truncate">{getLineName(r.lineUserId) || '—'}</div>
                                 </div>
                               ) : (
-                                <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
-                                  <div className="text-[10px] text-neutral-400">ประเภท</div>
+                                <div className="bg-amber-50/60 rounded-lg px-2.5 py-2 border border-amber-100/40">
+                                  <div className="text-[10px] text-amber-500 font-medium">ประเภท</div>
                                   <div className="font-semibold text-neutral-800 text-xs">{r.tenantType === 'company' ? 'บริษัท' : 'บุคคล'}</div>
                                 </div>
                               )}
@@ -242,8 +242,8 @@ export default function Resident() {
                         {/* Desktop cells */}
                         <td className="hidden md:table-cell px-4 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-xs font-bold shadow-sm shrink-0">
-                              {r.name?.charAt(0) || '?'}
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 shadow-sm shrink-0">
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                             </div>
                             <div className="min-w-0">
                               <div className="font-medium text-neutral-800 truncate max-w-[200px]">{r.name}</div>
@@ -252,7 +252,7 @@ export default function Resident() {
                           </div>
                         </td>
                         <td className="hidden md:table-cell px-4 py-3.5">
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">{r.roomNumber || '—'}</span>
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">{(() => { const rm = rooms.find(x => x.id === r.roomId || x.roomNumber === r.roomNumber); return rm?.roomCode || r.roomNumber || '—' })()}</span>
                         </td>
                         <td className="hidden md:table-cell px-4 py-3.5">
                           <span className="text-neutral-700 whitespace-nowrap">{r.phone}</span>

@@ -45,7 +45,12 @@ export default function Room() {
     }
     if (statusFilter === 'รายวัน') result = result.filter(r => r.rentalType === 'daily' || r.rentalType === 'รายวัน')
     if (statusFilter === 'รายเดือน') result = result.filter(r => !r.rentalType || r.rentalType === 'monthly' || r.rentalType === 'รายเดือน')
-    result.sort(naturalSortRoomNumber)
+    result.sort((a, b) => {
+      const aDaily = a.rentalType === 'daily' || a.rentalType === 'รายวัน'
+      const bDaily = b.rentalType === 'daily' || b.rentalType === 'รายวัน'
+      if (aDaily !== bDaily) return aDaily ? -1 : 1
+      return naturalSortRoomNumber(a, b)
+    })
     return result
   }, [rooms, search, statusFilter, residents])
 
@@ -200,7 +205,7 @@ export default function Room() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-base font-bold shadow-sm transition-transform group-hover:scale-105 ${isOccupied ? 'bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900' : isUpcoming ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white' : 'bg-gradient-to-br from-neutral-100 to-neutral-200 text-neutral-500'}`}>
-                        {displayNumber}
+                        {r.roomCode || displayNumber}
                       </div>
                       <div>
                         <div className="text-sm font-bold text-neutral-800">ห้อง {displayNumber}</div>
@@ -229,8 +234,8 @@ export default function Room() {
                         : ''
                       return (
                         <div className="flex items-center gap-2.5 mb-4 p-2.5 rounded-xl bg-amber-50/50 border border-amber-100/50">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
-                            {residentName?.charAt(0)}
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white shadow-sm shrink-0">
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                           </div>
                           <div className="min-w-0">
                             <div className="text-xs font-medium text-neutral-700 truncate">{residentName}</div>
@@ -246,20 +251,17 @@ export default function Room() {
                       return (
                         <>
                         <div className="flex items-center gap-2.5 mb-2 p-2.5 rounded-xl bg-lime-50/50 border border-lime-100/50">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
-                            {residentName.charAt(0)}
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="text-xs font-medium text-neutral-700 truncate">{residentName}</div>
                           </div>
-                          {(() => {
-                            if (!currentRes?.tenantType) return null
-                            return (
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${currentRes.tenantType === 'company' ? 'bg-amber-50 text-amber-600' : 'bg-sky-50 text-sky-600'}`}>
-                                {currentRes.tenantType === 'company' ? 'บริษัท' : 'ทั่วไป'}
-                              </span>
-                            )
-                          })()}
+                          {isDailyR && currentRes?.tenantType ? (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${currentRes.tenantType === 'company' ? 'bg-amber-50 text-amber-600' : 'bg-sky-50 text-sky-600'}`}>
+                              {currentRes.tenantType === 'company' ? 'บริษัท' : 'ทั่วไป'}
+                            </span>
+                          ) : null}
                         </div>
                         {nextUpcoming ? (
                           <div className="flex items-center gap-2 mb-4 pl-2.5">
@@ -321,7 +323,7 @@ export default function Room() {
                         <td colSpan={99} className="block md:hidden p-3 w-full">
                           <div className="space-y-1.5 w-full">
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-[11px] font-bold shadow-sm shrink-0">{displayNumber}</span>
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-[11px] font-bold shadow-sm shrink-0">{r.roomCode || displayNumber}</span>
                               <span className="font-medium text-neutral-800 truncate">{residentName || '—'}</span>
                               <Badge variant={status.variant} className="ml-auto shrink-0">{status.label}</Badge>
                             </div>
@@ -348,7 +350,7 @@ export default function Room() {
                         </td>
                         {/* Desktop cells */}
                         <td className="hidden md:table-cell px-4 py-3.5">
-                          <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-sm font-bold shadow-sm">{displayNumber}</span>
+                          <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-sm font-bold shadow-sm">{r.roomCode || displayNumber}</span>
                         </td>
                         <td className="hidden md:table-cell px-4 py-3.5">
                           {status.label === 'กำลังจะมีผู้เข้าพัก' ? (
@@ -360,8 +362,8 @@ export default function Room() {
                                 : ''
                               return (
                                 <div className="flex items-center gap-2">
-                                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                    {residentName?.charAt(0)}
+                                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white shrink-0">
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                   </div>
                                   <div>
                                     <div className="text-neutral-700">{residentName}</div>
@@ -377,9 +379,9 @@ export default function Room() {
                               return (
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                      {residentName.charAt(0)}
-                                    </div>
+                                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white shrink-0">
+                                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                      </div>
                                     <span className="text-neutral-700">{residentName}</span>
                                   </div>
                                   {nextUpcoming && (() => {

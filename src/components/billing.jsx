@@ -13,26 +13,36 @@ import ReloadButton from './ui/reload-button'
 import Button from './ui/button'
 import Modal from './ui/modal'
 
-function generateDocNumber(inv, invoices, rooms, docType) {
-  if (!inv.month) return '—'
-  const room = rooms.find(r => r.id === inv._id || r.roomNumber === inv.room || r.number === inv.room)
-  const roomRef = room?.roomCode || inv.room || '—'
+function getRefYm(inv, room) {
+  if (!inv?.month) return ''
   const isDaily = room?.rentalType === 'daily' || room?.rentalType === 'รายวัน'
-  
-  const year = inv.month.split('-')[0]
-  const sameYearInvoices = invoices
-    .filter(x => x.month && x.month.startsWith(year))
-    .sort((a, b) => a.month.localeCompare(b.month))
-  const runningIndex = sameYearInvoices.findIndex(x => x.id === inv._id) + 1
-  const running = String(Math.max(1, runningIndex)).padStart(3, '0')
-  const prefix = docType === 'receipt' ? 'REC' : 'INV'
-  
   if (isDaily) {
-    const ym = inv.month.slice(0, 7).replace('-', '')
-    return `${prefix}-${roomRef}-${ym}-${running}`
+    const checkOut = inv.moveOutDate || ''
+    if (checkOut) return checkOut.slice(0, 7).replace('-', '')
   }
-  
-  return `${prefix}-${roomRef}-${inv.month.replace('-', '')}-${running}`
+  return inv.month.replace('-', '')
+}
+
+function isNearMonthEnd(dateStr) {
+  if (!dateStr) return false
+  const d = new Date(dateStr)
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  return d.getDate() >= lastDay - 2
+}
+
+function getSortPrefix(inv, room) {
+  const isDaily = room?.rentalType === 'daily' || room?.rentalType === 'รายวัน'
+  if (!isDaily) return '2'
+  return isNearMonthEnd(inv.moveOutDate) ? '3' : '1'
+}
+
+function formatDocNumber(inv, room, docType, runningNum) {
+  if (!inv.month) return '—'
+  const roomRef = room?.roomCode || inv.room || '—'
+  const prefix = docType === 'receipt' ? 'REC' : 'INV'
+  const refYm = getRefYm(inv, room)
+  const running = String(runningNum || 1).padStart(3, '0')
+  return `${prefix}-${roomRef}-${refYm}-${running}`
 }
 
 const DOC_TABS = [
@@ -84,8 +94,8 @@ const BulkActions = ({ onLine, onSave, disabledLine, disabledSave, loading, clas
   </div>
 )
 
-const DAILY_HEADERS = ['ห้อง', 'ผู้พัก', 'ประเภทผู้พัก', 'ค่าเช่า', 'วันเช็คอิน', 'วันเช็คเอาท์', 'จำนวนคืน', 'ยอดรวม', 'สถานะ', 'จัดการ']
-const MONTHLY_HEADERS = ['ห้อง', 'ผู้พัก', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'ยอดรวม', 'สถานะ', 'จัดการ']
+const DAILY_HEADERS = ['ห้อง', 'ผู้พัก', 'เลขที่เอกสาร', 'ประเภทผู้พัก', 'ค่าเช่า', 'วันเช็คอิน', 'วันเช็คเอาท์', 'จำนวนคืน', 'ยอดรวม', 'สถานะ', 'จัดการ']
+const MONTHLY_HEADERS = ['ห้อง', 'ผู้พัก', 'เลขที่เอกสาร', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'ยอดรวม', 'สถานะ', 'จัดการ']
 
 export default function Billing() {
   const { rooms, invoices, invMonth, setInvMonth, calcInv, saveInvoice, downloadPdf, sendPdfToLine, setViewInv, setModal, fetchAll, toast, residents } = useApp()
@@ -96,10 +106,9 @@ export default function Billing() {
   const [savingIds, setSavingIds] = useState(new Set())
   const [confirmAction, setConfirmAction] = useState(null)
   const [cancelPaymentTarget, setCancelPaymentTarget] = useState(null)
-  const [dailyDate, setDailyDate] = useState(new Date())
   const [sendingInv, setSendingInv] = useState(null)
 
-  const period = rentalTab === 'daily' && dailyDate ? dailyDate.toISOString().split('T')[0] : invMonth
+  const period = invMonth
 
   const handleReload = async () => {
     await fetchAll()
@@ -117,15 +126,30 @@ export default function Billing() {
     }
   }
 
-  const handleView = (inv) => {
-    const docNumber = generateDocNumber(inv, invoices, rooms, activeTab)
+  const hasDailyCheckinsInMonth = useMemo(() => {
+    if (rentalTab !== 'daily' || !invMonth) return true
+    const [y, m] = invMonth.split('-').map(Number)
+    const monthStart = new Date(y, m - 1, 1)
+    const monthEnd = new Date(y, m, 0, 23, 59, 59)
+    return rooms.some(r => {
+      const isDaily = r.rentalType === 'daily' || r.rentalType === 'รายวัน'
+      if (!isDaily || !r.residentId) return false
+      const res = residents.find(res => res.id === r.residentId)
+      if (!res || !res.moveInDate) return false
+      const inDate = new Date(res.moveInDate)
+      const outDate = res.moveOutDate ? new Date(res.moveOutDate) : null
+      return inDate <= monthEnd && (!outDate || outDate >= monthStart)
+    })
+  }, [rentalTab, invMonth, rooms, residents])
+
+  const handleView = (inv, docNumber) => {
     setViewInv({ ...inv, docNumber, _isDaily: rentalTab === 'daily' })
     setModal(activeTab === 'invoice' ? 'invoice' : 'receipt')
   }
 
   const displayRooms = useMemo(() => {
     const p = period
-    const savedInvoices = invoices.filter(x => x.month === p)
+    const savedInvoices = invoices.filter(x => x.month && x.month.startsWith(p))
     const savedRoomIds = new Set(savedInvoices.map(x => x.roomId))
 
     const allRooms = rooms.filter(r => {
@@ -138,11 +162,54 @@ export default function Billing() {
     })
     allRooms.sort(naturalSortRoomNumber)
     return allRooms
-  }, [rooms, invoices, invMonth, dailyDate, rentalTab])
+  }, [rooms, invoices, invMonth, rentalTab])
+
+  const allEntries = useMemo(() => {
+    const entries = []
+    for (const x of invoices) {
+      if (!x.month) continue
+      const rx = rooms.find(rm => rm.id === x.roomId)
+      if (rx) entries.push({ refYm: getRefYm(x, rx), sortKey: '0|' + (x.id || ''), type: 'saved', savedId: x.id })
+    }
+    const active = rooms.filter(r => r.residentId || r.tenantName)
+    for (const r of active) {
+      const inv = calcInv(r, invMonth)
+      if (inv._saved && inv._id) continue
+      const prefix = getSortPrefix(inv, r)
+      entries.push({
+        refYm: getRefYm(inv, r),
+        sortKey: prefix + '|' + (r.roomNumber || r.number || ''),
+        type: 'unsaved', roomId: r.id,
+      })
+    }
+    entries.sort((a, b) => {
+      if (a.refYm !== b.refYm) return a.refYm.localeCompare(b.refYm)
+      return a.sortKey.localeCompare(b.sortKey)
+    })
+    return entries
+  }, [rooms, invoices, invMonth, calcInv])
 
   const roomInvoices = useMemo(() => {
-    return displayRooms.map(r => ({ room: r, inv: calcInv(r, period) }))
-  }, [displayRooms, period, calcInv])
+    const raw = displayRooms.map(r => ({ room: r, inv: calcInv(r, period) }))
+
+    const savedPos = {}
+    const unsavedPos = {}
+    allEntries.forEach((e, pos) => {
+      if (e.type === 'saved') savedPos[e.savedId] = pos + 1
+      else unsavedPos[e.roomId] = pos + 1
+    })
+
+    return raw.map((item, i) => {
+      let runningNum
+      if (item.inv._saved && item.inv._id) {
+        runningNum = savedPos[item.inv._id] || 1
+      } else {
+        runningNum = unsavedPos[item.room.id] || (allEntries.length + 1)
+      }
+      const docNumber = formatDocNumber(item.inv, item.room, activeTab, runningNum)
+      return { room: item.room, inv: item.inv, docNumber }
+    })
+  }, [displayRooms, allEntries, period, calcInv, activeTab])
 
   const residentById = useMemo(() => {
     const map = {}
@@ -226,7 +293,9 @@ export default function Billing() {
       const room = displayRooms.find(r => r.id === roomId)
       if (!room) continue
 
-      const inv = calcInv(room, period)
+      const ri = roomInvoices.find(x => x.room.id === roomId)
+      if (!ri) continue
+      const { inv, docNumber } = ri
 
       if (!inv._saved || activeTab === 'receipt') {
         try {
@@ -244,7 +313,6 @@ export default function Billing() {
         continue
       }
 
-      const docNumber = generateDocNumber(inv, invoices, rooms, activeTab)
       const invToSend = { ...inv, docNumber }
       setSendingInv(invToSend)
 
@@ -384,13 +452,13 @@ export default function Billing() {
           {/* Month Picker + Actions */}
           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 p-5 pb-0">
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-sm font-medium text-neutral-600 whitespace-nowrap">{rentalTab === 'daily' ? 'วัน:' : 'เดือน:'}</span>
+              <span className="text-sm font-medium text-neutral-600 whitespace-nowrap">เดือน:</span>
               <div className="flex-1 min-w-0">
                 <DatePickerField
-                  selected={rentalTab === 'daily' ? dailyDate : invDate}
-                  onChange={rentalTab === 'daily' ? setDailyDate : handleMonthChange}
-                  showMonthPicker={rentalTab !== 'daily'}
-                  placeholder={rentalTab === 'daily' ? 'เลือกวัน' : 'เลือกเดือน'}
+                  selected={invDate}
+                  onChange={handleMonthChange}
+                  showMonthPicker
+                  placeholder="เลือกเดือน"
                 />
               </div>
               <ReloadButton onReload={handleReload} />
@@ -413,8 +481,8 @@ export default function Billing() {
             </h3>
           </div>
 
-          {displayRooms.length === 0 ? (
-            <EmptyState icon={<svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>} title="ไม่มีข้อมูล" description="เพิ่มผู้พักในห้องก่อนจึงจะออกเอกสารได้" />
+          {displayRooms.length === 0 || (rentalTab === 'daily' && !hasDailyCheckinsInMonth) ? (
+            <EmptyState icon={<svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>} title="ไม่มีข้อมูล" description={rentalTab === 'daily' && !hasDailyCheckinsInMonth ? 'เดือนนี้ไม่มีห้องพักรายวันที่เช็คอิน' : 'เพิ่มผู้พักในห้องก่อนจึงจะออกเอกสารได้'} />
           ) : (
             <>
               <div className="px-5 pb-5">
@@ -431,52 +499,56 @@ export default function Billing() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-50">
-                      {roomInvoices.map(({ room: r, inv }) => {
+                      {roomInvoices.map(({ room: r, inv, docNumber }) => {
                           const res = residentById[r.residentId]
                           return (
                           <tr key={r.id} onClick={() => toggleSelect(r.id)} className="block md:table-row md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 cursor-pointer hover:bg-lime-50/30 active:bg-lime-100/40 transition-colors">
                             {/* Mobile card */}
                             <td colSpan={99} className="block md:hidden p-3 w-full">
-                              <div className="space-y-1.5 w-full">
+                              <div className="space-y-2 w-full">
                                 <div className="flex items-center gap-2.5">
                                   <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)}
                                     onClick={e => e.stopPropagation()}
                                     className="w-5 h-5 rounded border-neutral-300 text-lime-500 focus:ring-lime-400 shrink-0" />
-                                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm shrink-0">{inv.room}</span>
+                                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm shrink-0">{r.roomCode || inv.room}</span>
                                   <span className="font-medium text-neutral-800 truncate">{inv.tenant}</span>
+                                </div>
+                                <div className="flex items-center gap-2 bg-neutral-50 rounded-lg px-3 py-2 border border-neutral-100/50">
+                                  <span className="text-[10px] font-medium text-neutral-400 shrink-0">เลขที่เอกสาร</span>
+                                  <span className="font-mono text-[11px] text-neutral-600 truncate">{docNumber}</span>
                                 </div>
                                 {rentalTab === 'daily' ? (
                                   <div className="grid grid-cols-3 gap-1.5">
-                                    <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
-                                      <div className="text-[10px] text-neutral-400">ค่าเช่า</div>
+                                    <div className="bg-sky-50/60 rounded-lg px-2.5 py-2 border border-sky-100/40">
+                                      <div className="text-[10px] text-sky-500 font-medium">ค่าเช่า</div>
                                       <div className="font-semibold text-neutral-800">{inv.rent.toLocaleString()}</div>
                                     </div>
-                                    <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
-                                      <div className="text-[10px] text-neutral-400">เช็คอิน</div>
+                                    <div className="bg-lime-50/60 rounded-lg px-2.5 py-2 border border-lime-100/40">
+                                      <div className="text-[10px] text-lime-600 font-medium">เช็คอิน</div>
                                       <div className="font-semibold text-neutral-800 text-xs truncate">{formatTHDateShort(res?.moveInDate)}</div>
                                     </div>
-                                    <div className="bg-neutral-50 rounded-lg px-2.5 py-2">
-                                      <div className="text-[10px] text-neutral-400">เช็คเอาท์</div>
+                                    <div className="bg-amber-50/60 rounded-lg px-2.5 py-2 border border-amber-100/40">
+                                      <div className="text-[10px] text-amber-500 font-medium">เช็คเอาท์</div>
                                       <div className="font-semibold text-neutral-800 text-xs truncate">{formatTHDateShort(res?.moveOutDate)}</div>
                                     </div>
                                   </div>
                                 ) : (
                                   <div className="grid grid-cols-3 gap-1.5">
-                                    <div className="bg-amber-50/60 rounded-lg px-2.5 py-2 border border-amber-100/40">
-                                      <div className="text-[10px] text-amber-500 font-medium">ค่าเช่า</div>
+                                    <div className="bg-sky-50/60 rounded-lg px-2.5 py-2 border border-sky-100/40">
+                                      <div className="text-[10px] text-sky-500 font-medium">ค่าเช่า</div>
                                       <div className="font-semibold text-neutral-800">{inv.rent.toLocaleString()}</div>
                                     </div>
                                     <div className="bg-amber-50/60 rounded-lg px-2.5 py-2 border border-amber-100/40">
                                       <div className="text-[10px] text-amber-500 font-medium">ค่าไฟ</div>
                                       <div className="font-semibold text-neutral-800">{inv.elecCost.toLocaleString()}<span className="text-[11px] text-neutral-400 ml-0.5">({inv.elecUnits}u)</span></div>
                                     </div>
-                                    <div className="bg-amber-50/60 rounded-lg px-2.5 py-2 border border-amber-100/40">
-                                      <div className="text-[10px] text-amber-500 font-medium">ค่าน้ำ</div>
+                                    <div className="bg-cyan-50/60 rounded-lg px-2.5 py-2 border border-cyan-100/40">
+                                      <div className="text-[10px] text-cyan-600 font-medium">ค่าน้ำ</div>
                                       <div className="font-semibold text-neutral-800">{inv.waterCost.toLocaleString()}<span className="text-[11px] text-neutral-400 ml-0.5">({inv.waterUnits}u)</span></div>
                                     </div>
                                   </div>
                                 )}
-                                <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-neutral-100">
+                                <div className="flex items-center justify-between pt-2 mt-0.5 border-t border-neutral-100">
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm font-bold text-neutral-900">{inv.total.toLocaleString()} บาท</span>
                                     {rentalTab === 'daily' && (
@@ -485,7 +557,7 @@ export default function Billing() {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <StatusBadge paid={inv.paid} onClick={() => handleTogglePaid(r, inv)} />
-                                    <button onClick={e => { e.stopPropagation(); handleView(inv) }}
+                                    <button onClick={e => { e.stopPropagation(); handleView(inv, docNumber) }}
                                       className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${
                                         activeTab === 'invoice'
                                           ? 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
@@ -500,10 +572,13 @@ export default function Billing() {
                               <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 rounded border-neutral-300 text-lime-500 focus:ring-lime-400 pointer-events-none" />
                             </td>
                             <td className="hidden md:table-cell px-4 py-3.5">
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{inv.room}</span>
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-xs font-bold shadow-sm">{r.roomCode || inv.room}</span>
                             </td>
                             <td className="hidden md:table-cell px-4 py-3.5">
                               <span className="text-neutral-700 whitespace-nowrap">{inv.tenant}</span>
+                            </td>
+                            <td className="hidden md:table-cell px-4 py-3.5">
+                              <span className="font-mono text-[11px] text-neutral-500 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-100">{docNumber}</span>
                             </td>
                             {rentalTab === 'daily' && (
                               <td className="hidden md:table-cell px-4 py-3.5">
@@ -545,7 +620,7 @@ export default function Billing() {
                             </td>
                             <td className="hidden md:table-cell px-4 py-3.5">
                               <div className="flex gap-1.5">
-                                <button onClick={e => { e.stopPropagation(); handleView(inv) }} className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${
+                                <button onClick={e => { e.stopPropagation(); handleView(inv, docNumber) }} className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors border ${
                                   activeTab === 'invoice'
                                     ? 'bg-lime-50 text-lime-700 hover:bg-lime-100 border-lime-100'
                                     : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100'
