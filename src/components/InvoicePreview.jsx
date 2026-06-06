@@ -31,11 +31,11 @@ export default function InvoicePreview({ inv }) {
   ]
   const total = items.reduce((s, i) => s + i.amount, 0)
   const now = new Date()
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const d = now.getDate()
   const y = now.getFullYear() + 543
   const m = now.toLocaleDateString('th-TH', { month: 'short' })
-  const issueDate = `${lastDay} ${m} ${y}`
-  const signatureDate = `${String(lastDay).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${y}`
+  const issueDate = `${d} ${m} ${y}`
+  const signatureDate = `${String(d).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${y}`
   const invMonth = inv.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   const invoiceNo = inv.docNumber || `INV-${roomData?.roomCode || inv.room}-${invMonth.replace('-', '')}`
 
