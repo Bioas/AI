@@ -226,8 +226,8 @@ export default function ResidentModal() {
   )
 
   const renderForm = () => (
-    <div className="p-6">
-      <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
+    <div>
+      <div className="px-6 pt-6 pb-4 border-b border-neutral-100 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm"><svg className="w-5 h-5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
         <div className="flex-1">
           <h3 className="text-base font-semibold text-neutral-800">
@@ -244,7 +244,7 @@ export default function ResidentModal() {
         )}
       </div>
 
-      <div className="space-y-5">
+      <div className="px-6 py-5 space-y-5">
         {rentalType === 'daily' && !ro && (
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1.5">ประเภทผู้พัก</label>
@@ -285,32 +285,32 @@ export default function ResidentModal() {
         )}
 
         {rentalType === 'daily' && tenantType === 'company' && ro && (
-          <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-neutral-400 mb-0.5">ชื่อบริษัท</label>
-              <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{companyName || <span className="text-neutral-300 italic">—</span>}</div>
+              <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">ชื่อบริษัท</div>
+              <div className="text-sm font-medium text-neutral-800 mt-0.5">{companyName || <span className="text-neutral-300 italic">—</span>}</div>
             </div>
             <div>
-              <label className="block text-xs text-neutral-400 mb-0.5">ที่อยู่บริษัท</label>
-              <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{companyAddress || <span className="text-neutral-300 italic">—</span>}</div>
+              <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">ที่อยู่บริษัท</div>
+              <div className="text-sm font-medium text-neutral-800 mt-0.5">{companyAddress || <span className="text-neutral-300 italic">—</span>}</div>
             </div>
             <div>
-              <label className="block text-xs text-neutral-400 mb-0.5">เลขประจำตัวผู้เสียภาษี</label>
-              <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{companyTaxId || <span className="text-neutral-300 italic">—</span>}</div>
+              <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">เลขประจำตัวผู้เสียภาษี</div>
+              <div className="text-sm font-medium text-neutral-800 mt-0.5">{companyTaxId || <span className="text-neutral-300 italic">—</span>}</div>
             </div>
-          </>
+          </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {ro ? (
             <>
               <div>
-                <label className="block text-xs text-neutral-400 mb-0.5">ชื่อ-นามสกุล</label>
-                <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{name || <span className="text-neutral-300 italic">—</span>}</div>
+                <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">ชื่อ-นามสกุล</div>
+                <div className="text-sm font-medium text-neutral-800 mt-0.5">{name || <span className="text-neutral-300 italic">—</span>}</div>
               </div>
               <div>
-                <label className="block text-xs text-neutral-400 mb-0.5">เลขบัตรประชาชน</label>
-                <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{idCard || <span className="text-neutral-300 italic">—</span>}</div>
+                <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">เลขบัตรประชาชน</div>
+                <div className="text-sm font-medium text-neutral-800 mt-0.5">{idCard ? idCard.replace(/(\d{1})(\d{4})(\d{5})(\d{2})(\d{1})/, '$1-$2-$3-$4-$5') : <span className="text-neutral-300 italic">—</span>}</div>
               </div>
             </>
           ) : (
@@ -327,12 +327,12 @@ export default function ResidentModal() {
           {ro ? (
             <>
               <div>
-                <label className="block text-xs text-neutral-400 mb-0.5">เบอร์โทรศัพท์</label>
-                <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{phone || <span className="text-neutral-300 italic">—</span>}</div>
+                <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">เบอร์โทรศัพท์</div>
+                <div className="text-sm font-medium text-neutral-800 mt-0.5">{phone || <span className="text-neutral-300 italic">—</span>}</div>
               </div>
               <div>
-                <label className="block text-xs text-neutral-400 mb-0.5">อีเมล</label>
-                <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{email || <span className="text-neutral-300 italic">—</span>}</div>
+                <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">อีเมล</div>
+                <div className="text-sm font-medium text-neutral-800 mt-0.5">{email || <span className="text-neutral-300 italic">—</span>}</div>
               </div>
             </>
           ) : (
@@ -352,8 +352,8 @@ export default function ResidentModal() {
           </div>
         ) : ro ? (
           <div>
-            <label className="block text-xs text-neutral-400 mb-0.5">หมายเลขห้องพัก</label>
-            <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{selectedRoom ? `ห้อง ${selectedRoom.roomNumber || selectedRoom.number} — ค่าเช่า ${(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/${(selectedRoom.rentalType === 'daily' || selectedRoom.rentalType === 'รายวัน') ? 'วัน' : 'เดือน'}` : <span className="text-neutral-300 italic">—</span>}</div>
+            <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">หมายเลขห้องพัก</div>
+            <div className="text-sm font-medium text-neutral-800 mt-0.5">{selectedRoom ? `ห้อง ${selectedRoom.roomNumber || selectedRoom.number} — ค่าเช่า ${(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/${(selectedRoom.rentalType === 'daily' || selectedRoom.rentalType === 'รายวัน') ? 'วัน' : 'เดือน'}` : <span className="text-neutral-300 italic">—</span>}</div>
           </div>
         ) : (
           <div>
@@ -373,12 +373,12 @@ export default function ResidentModal() {
           {ro ? (
             <>
               <div>
-                <label className="block text-xs text-neutral-400 mb-0.5">{rentalType === 'daily' ? 'เช็คอิน' : 'วันที่เข้าพัก'}</label>
-                <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{moveInDate ? `${moveInDate.getDate()} ${moveInDate.toLocaleString('default', { month: 'long' })} ${moveInDate.getFullYear() + 543}` : <span className="text-neutral-300 italic">—</span>}</div>
+                <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">{rentalType === 'daily' ? 'เช็คอิน' : 'วันที่เข้าพัก'}</div>
+                <div className="text-sm font-medium text-neutral-800 mt-0.5">{moveInDate ? `${moveInDate.getDate()} ${moveInDate.toLocaleString('default', { month: 'long' })} ${moveInDate.getFullYear() + 543}` : <span className="text-neutral-300 italic">—</span>}</div>
               </div>
               <div>
-                <label className="block text-xs text-neutral-400 mb-0.5">{rentalType === 'daily' ? 'เช็คเอาท์' : 'วันหมดสัญญา'}</label>
-                <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{moveOutDate ? `${moveOutDate.getDate()} ${moveOutDate.toLocaleString('default', { month: 'long' })} ${moveOutDate.getFullYear() + 543}` : <span className="text-neutral-300 italic">—</span>}</div>
+                <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">{rentalType === 'daily' ? 'เช็คเอาท์' : 'วันหมดสัญญา'}</div>
+                <div className="text-sm font-medium text-neutral-800 mt-0.5">{moveOutDate ? `${moveOutDate.getDate()} ${moveOutDate.toLocaleString('default', { month: 'long' })} ${moveOutDate.getFullYear() + 543}` : <span className="text-neutral-300 italic">—</span>}</div>
               </div>
             </>
           ) : (
@@ -431,10 +431,16 @@ export default function ResidentModal() {
         {rentalType === 'monthly' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {ro ? (
-              <div>
-                <label className="block text-xs text-neutral-400 mb-0.5">เบอร์โทรฉุกเฉิน</label>
-                <div className="h-10 px-3.5 flex items-center bg-neutral-50 border border-neutral-100 rounded-xl text-sm text-neutral-700">{emergencyPhone || <span className="text-neutral-300 italic">—</span>}</div>
-              </div>
+              <>
+                <div>
+                  <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">เบอร์โทรฉุกเฉิน</div>
+                  <div className="text-sm font-medium text-neutral-800 mt-0.5">{emergencyPhone || <span className="text-neutral-300 italic">—</span>}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">เชื่อมโยงบัญชี LINE</div>
+                  <div className="text-sm font-medium text-neutral-800 mt-0.5">{lineName || <span className="text-neutral-300 italic">—</span>}</div>
+                </div>
+              </>
             ) : (
               <Input label="เบอร์โทรฉุกเฉิน" value={emergencyPhone} onChange={e => handleEmergencyPhone(e.target.value)}
                 placeholder="0812345678" inputMode="numeric" maxLength={10} />
@@ -471,7 +477,7 @@ export default function ResidentModal() {
         )}
       </div>
 
-      <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
+      <div className="flex gap-3 justify-end px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 rounded-b-2xl">
         {ro ? (
           <>
             <Button variant="ghost" onClick={() => setModal(null)}>ปิด</Button>
