@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { formatThaiDate, getContractStatus } from '../lib/constants'
 import Card, { CardContent } from './ui/card'
@@ -37,6 +38,7 @@ const formatDateShort = (dateStr) => {
 }
 
 export default function Resident() {
+  const navigate = useNavigate()
   const { residents, rooms, lineUsers, setEditResident, setModal, setViewOnly, deleteResident, fetchResidents, fetchLineUsers, toggleLineUser, syncLineFollowers, toast } = useApp()
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState('monthly')
@@ -198,10 +200,10 @@ export default function Resident() {
                     const isDaily = getResidentRoomType(r) === 'daily' || getResidentRoomType(r) === 'รายวัน'
                     const status = isDaily ? getDailyStatus(r) : getContractStatus(r.moveOutDate)
                     return (
-                      <tr key={r.id} className="block md:table-row md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors">
+                      <tr key={r.id} onClick={() => { const rm = rooms.find(x => x.id === r.roomId || x.roomNumber === r.roomNumber); if (rm) navigate(`/rooms/${rm.id}`) }} className="block md:table-row md:p-0 bg-white md:bg-transparent border-b md:border-b-0 border-neutral-100 last:border-b-0 hover:bg-lime-50/30 transition-colors cursor-pointer">
                         {/* Mobile card */}
                         <td colSpan={99} className="block md:hidden p-3 w-full">
-                          <div className="space-y-1.5 w-full">
+                          <div onClick={(e) => { const rm = rooms.find(x => x.id === r.roomId || x.roomNumber === r.roomNumber); if (rm) { e.stopPropagation(); navigate(`/rooms/${rm.id}`) } }} className="space-y-1.5 w-full">
                             <div className="flex items-center gap-2">
                               <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-lime-400 to-lime-500 text-neutral-900 text-[11px] font-bold shadow-sm shrink-0">{(() => { const rm = rooms.find(x => x.id === r.roomId || x.roomNumber === r.roomNumber); return rm?.roomCode || r.roomNumber || '—' })()}</span>
                               <span className="font-medium text-neutral-800 truncate">{r.name}</span>
@@ -287,9 +289,9 @@ export default function Resident() {
                         </td>
                         <td className="hidden md:table-cell px-4 py-3.5">
                           <div className="flex gap-1.5">
-                            <button onClick={() => { setEditResident({ ...r, rentalType: isDaily ? 'daily' : 'monthly' }); setViewOnly(true); setModal('resident') }}
+                            <button onClick={(e) => { e.stopPropagation(); setEditResident({ ...r, rentalType: isDaily ? 'daily' : 'monthly' }); setViewOnly(true); setModal('resident') }}
                               className="h-8 px-3.5 rounded-lg text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors border border-sky-100">ดู</button>
-                            <button onClick={() => handleDelete(r)}
+                            <button onClick={(e) => { e.stopPropagation(); handleDelete(r) }}
                               className="h-8 px-3.5 rounded-lg text-xs font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors border border-rose-100">ลบ</button>
                           </div>
                         </td>

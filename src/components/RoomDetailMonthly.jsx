@@ -456,7 +456,8 @@ export default function RoomDetailMonthly() {
             </div>
             <div className="flex-1">
               <div className="text-base font-bold text-neutral-800">{resident.name}</div>
-              <div className="text-sm text-neutral-500">{resident.phone}{lineName ? ` • LINE: ${lineName}` : ''}</div>
+              <div className="text-sm text-neutral-500">{resident.phone}</div>
+              {lineName && <div className="text-sm text-neutral-500">LINE: {lineName}</div>}
             </div>
             <Badge variant={contractStatus.variant}>{contractStatus.label}</Badge>
           </div>
