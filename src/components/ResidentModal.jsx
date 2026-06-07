@@ -225,7 +225,187 @@ export default function ResidentModal() {
     </div>
   )
 
-  const renderForm = () => (
+  const renderForm = () => {
+    if (ro) {
+      const fmtDate = (d) => d ? `${d.getDate()} ${d.toLocaleString('default', { month: 'long' })} ${d.getFullYear() + 543}` : null
+      const roomLabel = selectedRoom ? `ห้อง ${selectedRoom.roomNumber || selectedRoom.number}` : ''
+      const roomPrice = selectedRoom ? `ค่าเช่า ${(selectedRoom.rentPrice || selectedRoom.rent)?.toLocaleString()} บาท/${rentalType === 'daily' ? 'วัน' : 'เดือน'}` : ''
+      const typeLabel = rentalType === 'daily' ? 'รายวัน' : 'รายเดือน'
+      const fmtIdCard = (v) => v ? v.replace(/(\d{1})(\d{4})(\d{5})(\d{2})(\d{1})/, '$1-$2-$3-$4-$5') : null
+
+      return (
+        <div>
+          {/* Hero header */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-lime-500/10 via-lime-400/5 to-transparent" />
+            <div className="relative px-6 pt-8 pb-6">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 shadow-lg shadow-lime-200/40">
+                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-bold text-neutral-800 truncate">{name}</h2>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-lime-50 text-lime-700 border border-lime-200/50">{typeLabel}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 text-sm text-neutral-500">
+                    {roomLabel && <span>{roomLabel}</span>}
+                    {roomPrice && <><span className="text-neutral-300">•</span><span>{roomPrice}</span></>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Content sections */}
+          <div className="px-6 py-5 space-y-4">
+            {/* Contact */}
+            <div className="bg-lime-50/30 rounded-2xl p-4 border border-lime-100/40">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-lime-100 flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-lime-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <span className="text-xs font-semibold text-lime-700 tracking-wide">ข้อมูลติดต่อ</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                {phone && (
+                  <div>
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">เบอร์โทรศัพท์</div>
+                    <div className="text-sm font-medium text-neutral-800 mt-0.5">{phone}</div>
+                  </div>
+                )}
+                {email && (
+                  <div>
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">อีเมล</div>
+                    <div className="text-sm font-medium text-neutral-800 mt-0.5 break-all">{email}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Identity & Room */}
+            <div className="bg-sky-50/30 rounded-2xl p-4 border border-sky-100/40">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-sky-100 flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                </div>
+                <span className="text-xs font-semibold text-sky-700 tracking-wide">เอกสารและห้องพัก</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                {fmtIdCard(idCard) && (
+                  <div>
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">เลขบัตรประชาชน</div>
+                    <div className="text-sm font-medium text-neutral-800 mt-0.5">{fmtIdCard(idCard)}</div>
+                  </div>
+                )}
+                {selectedRoom && (
+                  <div>
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">ห้องพัก</div>
+                    <div className="text-sm font-medium text-neutral-800 mt-0.5">{roomLabel} — {roomPrice}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Dates */}
+            <div className="bg-amber-50/30 rounded-2xl p-4 border border-amber-100/40">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <span className="text-xs font-semibold text-amber-700 tracking-wide">วันที่</span>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
+                {fmtDate(moveInDate) && (
+                  <div className="flex-1">
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">{rentalType === 'daily' ? 'เช็คอิน' : 'วันที่เข้าพัก'}</div>
+                    <div className="text-sm font-semibold text-neutral-800 mt-0.5">{fmtDate(moveInDate)}</div>
+                  </div>
+                )}
+                {fmtDate(moveOutDate) && (
+                  <div className="flex-1">
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">{rentalType === 'daily' ? 'เช็คเอาท์' : 'วันหมดสัญญา'}</div>
+                    <div className="text-sm font-semibold text-neutral-800 mt-0.5">{fmtDate(moveOutDate)}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Monthly extras */}
+            {rentalType === 'monthly' && (
+              <div className="bg-violet-50/30 rounded-2xl p-4 border border-violet-100/40">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  </div>
+                  <span className="text-xs font-semibold text-violet-700 tracking-wide">ข้อมูลเพิ่มเติม</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                  <div>
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">ค่ามัดจำ</div>
+                    <div className="text-sm font-medium text-neutral-800 mt-0.5">{deposit ? `${Number(deposit).toLocaleString()} บาท` : <span className="text-neutral-300 italic">—</span>}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">ชื่อผู้ติดต่อฉุกเฉิน</div>
+                    <div className="text-sm font-medium text-neutral-800 mt-0.5">{emergencyContact || <span className="text-neutral-300 italic">—</span>}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">เบอร์โทรฉุกเฉิน</div>
+                    <div className="text-sm font-medium text-neutral-800 mt-0.5">{emergencyPhone || <span className="text-neutral-300 italic">—</span>}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">LINE</div>
+                    <div className="text-sm font-medium text-neutral-800 mt-0.5">{lineName || <span className="text-neutral-300 italic">—</span>}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Daily company info */}
+            {rentalType === 'daily' && tenantType === 'company' && (
+              <div className="bg-amber-50/30 rounded-2xl p-4 border border-amber-100/40">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                  </div>
+                  <span className="text-xs font-semibold text-amber-700 tracking-wide">ข้อมูลบริษัท</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3">
+                  {companyName && (
+                    <div>
+                      <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">ชื่อบริษัท</div>
+                      <div className="text-sm font-medium text-neutral-800 mt-0.5">{companyName}</div>
+                    </div>
+                  )}
+                  {companyAddress && (
+                    <div>
+                      <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">ที่อยู่บริษัท</div>
+                      <div className="text-sm font-medium text-neutral-800 mt-0.5">{companyAddress}</div>
+                    </div>
+                  )}
+                  {companyTaxId && (
+                    <div>
+                      <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">เลขประจำตัวผู้เสียภาษี</div>
+                      <div className="text-sm font-medium text-neutral-800 mt-0.5">{companyTaxId}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex gap-3 justify-end px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 rounded-b-2xl">
+            <Button variant="ghost" onClick={() => setModal(null)}>ปิด</Button>
+            <Button onClick={() => { setViewOnly(false); setEditResident(editResident) }}>
+              <svg className="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> แก้ไขข้อมูล
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
     <div>
       <div className="px-6 pt-6 pb-4 border-b border-neutral-100 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 flex items-center justify-center text-neutral-900 text-base shadow-sm"><svg className="w-5 h-5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
@@ -282,23 +462,6 @@ export default function ResidentModal() {
                 className="w-full h-10 px-3.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100" />
             </div>
           </>
-        )}
-
-        {rentalType === 'daily' && tenantType === 'company' && ro && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">ชื่อบริษัท</div>
-              <div className="text-sm font-medium text-neutral-800 mt-0.5">{companyName || <span className="text-neutral-300 italic">—</span>}</div>
-            </div>
-            <div>
-              <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">ที่อยู่บริษัท</div>
-              <div className="text-sm font-medium text-neutral-800 mt-0.5">{companyAddress || <span className="text-neutral-300 italic">—</span>}</div>
-            </div>
-            <div>
-              <div className="text-[11px] font-semibold text-neutral-400 tracking-wide">เลขประจำตัวผู้เสียภาษี</div>
-              <div className="text-sm font-medium text-neutral-800 mt-0.5">{companyTaxId || <span className="text-neutral-300 italic">—</span>}</div>
-            </div>
-          </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -491,7 +654,8 @@ export default function ResidentModal() {
         )}
       </div>
     </div>
-  )
+    )
+  }
 
   return (
     <Modal open={true} onClose={() => setModal(null)} maxWidth="max-w-2xl">
