@@ -528,25 +528,25 @@ export function AppProvider({ children }) {
     } catch (err) { toast('ข้อผิดพลาด: ' + err.message, true); return false }
   }, [settings.channelToken, toast])
 
-  const sendPdfToLine = useCallback(async (inv) => {
+  const sendPdfToLine = useCallback(async (inv, type = 'invoice') => {
     if (!inv.userId) { toast('ผู้พักห้องนี้ยังไม่ได้กรอก LINE User ID', true); return false }
     if (!settings.channelToken) { toast('กรุณาตั้งค่า Channel Access Token ก่อน', true); return false }
 
     try {
-      toast('กำลังส่งใบแจ้งหนี้...')
+      const label = type === 'receipt' ? 'ใบเสร็จรับเงิน' : 'ใบแจ้งหนี้'
+      toast(`กำลังส่ง${label}...`)
 
-      const items = [
-        { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
-        ...(inv.extraBed > 0 ? [{ desc: 'เตียงเสริม', detail: `${inv.extraBed} เตียง`, amount: inv.extraBedCost }] : []),
-        ...(inv.discount > 0 ? [{ desc: 'ส่วนลด', detail: '', amount: -inv.discount }] : []),
-        { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
-        { desc: 'ค่าน้ำประปา', detail: inv.waterUnits <= 4 && inv.waterUnits > 0 ? 'เหมาจ่าย' : `${inv.waterUnits} หน่วย × ${inv.rateWater} บาท`, amount: inv.waterCost },
-      ]
       const cf = Number(settings.commonFee) || 0
       const inf = Number(settings.internetFee) || 0
-      if (cf > 0) items.push({ desc: 'ค่าส่วนกลาง', detail: '', amount: cf })
-      if (inf > 0) items.push({ desc: 'ค่าอินเทอร์เน็ต', detail: '', amount: inf })
+      const items = [
+        { desc: 'ค่าเช่าห้อง', detail: `ห้อง ${inv.room}`, amount: inv.rent },
+        { desc: 'ค่าไฟฟ้า', detail: `${inv.elecUnits} หน่วย × ${inv.rateElec} บาท`, amount: inv.elecCost },
+        { desc: 'ค่าน้ำประปา', detail: inv.waterUnits <= 4 && inv.waterUnits > 0 ? 'เหมาจ่าย' : `${inv.waterUnits} หน่วย × ${inv.rateWater} บาท`, amount: inv.waterCost },
+        ...(cf > 0 ? [{ desc: 'ค่าส่วนกลาง', detail: '', amount: cf }] : []),
+        ...(inf > 0 ? [{ desc: 'ค่าอินเทอร์เน็ต', detail: '', amount: inf }] : []),
+      ]
       const total = items.reduce((s, i) => s + i.amount, 0)
+      const monthLabel = formatMonth(inv.month)
 
       const res = await fetch('/api/send-invoice', {
         method: 'POST',
@@ -554,25 +554,30 @@ export function AppProvider({ children }) {
         body: JSON.stringify({
           to: inv.userId,
           token: settings.channelToken,
+          type,
           items,
           total,
           tenantName: inv.tenant,
           roomNumber: inv.room,
-          billingMonth: formatMonth(inv.month),
+          billingMonth: monthLabel,
           dormName: settings.dormName,
           dormAddress: settings.address,
           dormPhone: settings.phone,
           logo: settings.logo || null,
           qrCode: settings.qrCode || null,
+          signature: settings.signature || null,
+          stamp: settings.stamp || null,
+          taxId: settings.taxId || null,
+          docNumber: inv.docNumber || null,
         }),
       })
 
       const data = await res.json()
-      if (res.ok) { toast('ส่ง Invoice ทาง LINE สำเร็จ!'); return true }
+      if (res.ok) { toast(`ส่ง${label}ทาง LINE สำเร็จ!`); return true }
       toast('ส่งไม่สำเร็จ: ' + (data.error || 'Unknown error'), true)
       return false
     } catch (e) {
-      toast(`ส่ง Invoice ไม่สำเร็จ: ${e.message}`, true)
+      toast(`ส่งไม่สำเร็จ: ${e.message}`, true)
       return false
     }
   }, [settings, toast])
