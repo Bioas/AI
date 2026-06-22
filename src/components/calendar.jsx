@@ -227,8 +227,8 @@ export default function Calendar() {
     const d = dateStr ? new Date(dateStr) : new Date()
     const next = new Date(d)
     next.setDate(d.getDate() + 1)
-    setFormCheckIn(d.toISOString().split('T')[0])
-    setFormCheckOut(next.toISOString().split('T')[0])
+    setFormCheckIn(d.toLocaleDateString('en-CA'))
+    setFormCheckOut(next.toLocaleDateString('en-CA'))
     setFormName('')
     setFormRoom(roomId || (dailyRooms.length > 0 ? dailyRooms[0].id : ''))
     setFormExtraBed(0)
@@ -667,14 +667,14 @@ export default function Calendar() {
                 <label className="block text-xs font-medium text-neutral-600 mb-1">วันที่เช็คอิน</label>
                 <DatePickerField
                   selected={formCheckIn ? new Date(formCheckIn + 'T00:00:00') : null}
-                  onChange={(date) => setFormCheckIn(date ? date.toISOString().split('T')[0] : '')}
+                  onChange={(date) => setFormCheckIn(date ? date.toLocaleDateString('en-CA') : '')}
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">วันที่เช็คเอาท์</label>
                 <DatePickerField
                   selected={formCheckOut ? new Date(formCheckOut + 'T00:00:00') : null}
-                  onChange={(date) => setFormCheckOut(date ? date.toISOString().split('T')[0] : '')}
+                  onChange={(date) => setFormCheckOut(date ? date.toLocaleDateString('en-CA') : '')}
                 />
               </div>
             </div>
@@ -741,14 +741,14 @@ export default function Calendar() {
                       <label className="block text-xs font-medium text-neutral-600 mb-1">เช็คอิน</label>
                       <DatePickerField
                         selected={formCheckIn ? new Date(formCheckIn + 'T00:00:00') : null}
-                        onChange={(date) => setFormCheckIn(date ? date.toISOString().split('T')[0] : '')}
+                        onChange={(date) => setFormCheckIn(date ? date.toLocaleDateString('en-CA') : '')}
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-neutral-600 mb-1">เช็คเอาท์</label>
                       <DatePickerField
                         selected={formCheckOut ? new Date(formCheckOut + 'T00:00:00') : null}
-                        onChange={(date) => setFormCheckOut(date ? date.toISOString().split('T')[0] : '')}
+                        onChange={(date) => setFormCheckOut(date ? date.toLocaleDateString('en-CA') : '')}
                       />
                     </div>
                   </div>
