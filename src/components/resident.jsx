@@ -40,6 +40,7 @@ export default function Resident() {
   const { residents, rooms, lineUsers, setEditResident, setModal, setViewOnly, deleteResident, fetchResidents, fetchLineUsers, toggleLineUser, syncLineFollowers, toast } = useApp()
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState('monthly')
+  const [dailyStatusFilter, setDailyStatusFilter] = useState('all')
 
   const [lineSearch, setLineSearch] = useState('')
   const [lineFilter, setLineFilter] = useState('all')
@@ -58,6 +59,19 @@ export default function Resident() {
     let result = residents
     if (activeTab === 'daily') {
       result = result.filter(r => r.rentalType === 'รายวัน' || r.rentalType === 'daily')
+      if (dailyStatusFilter === 'active') {
+        result = result.filter(r => {
+          const s = getDailyStatus(r).label
+          return s === 'เช็คอิน' || s === 'จอง'
+        })
+      } else if (dailyStatusFilter === 'checked_out') {
+        result = result.filter(r => getDailyStatus(r).label === 'เช็คเอาท์แล้ว')
+      }
+      result.sort((a, b) => {
+        const dateA = new Date(a.moveInDate)
+        const dateB = new Date(b.moveInDate)
+        return dateB - dateA
+      })
     } else {
       result = result.filter(r => r.rentalType !== 'รายวัน' && r.rentalType !== 'daily')
     }
@@ -71,7 +85,7 @@ export default function Resident() {
       )
     }
     return result
-  }, [residents, search, activeTab])
+  }, [residents, search, activeTab, dailyStatusFilter])
 
   const monthlyCount = useMemo(() => residents.filter(r => r.rentalType !== 'รายวัน' && r.rentalType !== 'daily').length, [residents])
 
@@ -172,6 +186,16 @@ export default function Resident() {
                 placeholder="ค้นหาชื่อ ห้อง เบอร์โทร..."
                 className="w-full h-10 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
             </div>
+            {activeTab === 'daily' && (
+              <div className="w-[140px] shrink-0">
+                <Select value={dailyStatusFilter} onChange={setDailyStatusFilter}
+                  options={[
+                    { value: 'all', label: 'ทั้งหมด' },
+                    { value: 'active', label: 'เช็คอิน/จอง' },
+                    { value: 'checked_out', label: 'เช็คเอาท์' },
+                  ]} />
+              </div>
+            )}
             <ReloadButton onReload={handleReload} className="shrink-0" />
           </div>
           <div className="text-xs text-neutral-400 text-center">{filtered.length} รายการ</div>

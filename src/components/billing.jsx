@@ -94,7 +94,7 @@ const BulkActions = ({ onLine, onSave, disabledLine, disabledSave, loading, clas
   </div>
 )
 
-const DAILY_HEADERS = ['ห้อง', 'ผู้พัก', 'เลขที่เอกสาร', 'ประเภทผู้พัก', 'ค่าเช่า', 'วันเช็คอิน', 'วันเช็คเอาท์', 'จำนวนคืน', 'ยอดรวม', 'สถานะ', 'จัดการ']
+const DAILY_HEADERS = ['ห้อง', 'ผู้พัก', 'เลขที่เอกสาร', 'ประเภทผู้พัก', 'วันเช็คอิน', 'วันเช็คเอาท์', 'จำนวนคืน', 'ยอดรวม', 'สถานะ', 'จัดการ']
 const MONTHLY_HEADERS = ['ห้อง', 'ผู้พัก', 'เลขที่เอกสาร', 'ค่าเช่า', 'ค่าไฟ', 'ค่าน้ำ', 'ยอดรวม', 'สถานะ', 'จัดการ']
 
 export default function Billing() {
@@ -518,11 +518,7 @@ export default function Billing() {
                                   <span className="font-mono text-[11px] text-neutral-600 truncate">{docNumber}</span>
                                 </div>
                                 {rentalTab === 'daily' ? (
-                                  <div className="grid grid-cols-3 gap-1.5">
-                                    <div className="bg-sky-50/60 rounded-lg px-2.5 py-2 border border-sky-100/40">
-                                      <div className="text-[10px] text-sky-500 font-medium">ค่าเช่า</div>
-                                      <div className="font-semibold text-neutral-800">{inv.rent.toLocaleString()}</div>
-                                    </div>
+                                  <div className="grid grid-cols-2 gap-1.5">
                                     <div className="bg-lime-50/60 rounded-lg px-2.5 py-2 border border-lime-100/40">
                                       <div className="text-[10px] text-lime-600 font-medium">เช็คอิน</div>
                                       <div className="font-semibold text-neutral-800 text-xs truncate">{formatTHDateShort(res?.moveInDate)}</div>
@@ -587,16 +583,18 @@ export default function Billing() {
                                 </Badge>
                               </td>
                             )}
-                            <td className="hidden md:table-cell px-4 py-3.5">
-                              <span className="text-neutral-700 whitespace-nowrap">{inv.rent.toLocaleString()}</span>
-                            </td>
+                            {rentalTab !== 'daily' && (
+                              <td className="hidden md:table-cell px-4 py-3.5">
+                                <span className="text-neutral-700 whitespace-nowrap">{inv.rent.toLocaleString()}</span>
+                              </td>
+                            )}
                             {rentalTab === 'daily' ? (
                               <>
                                 <td className="hidden md:table-cell px-4 py-3.5">
-                                  <span className="text-neutral-700 whitespace-nowrap">{formatTHDate(res?.moveInDate)}</span>
+                                  <span className="text-neutral-700 whitespace-nowrap">{formatTHDateShort(res?.moveInDate)}</span>
                                 </td>
                                 <td className="hidden md:table-cell px-4 py-3.5">
-                                  <span className="text-neutral-700 whitespace-nowrap">{formatTHDate(res?.moveOutDate)}</span>
+                                  <span className="text-neutral-700 whitespace-nowrap">{formatTHDateShort(res?.moveOutDate)}</span>
                                 </td>
                                 <td className="hidden md:table-cell px-4 py-3.5">
                                   <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 text-xs font-semibold">{inv.days || 1} คืน</span>

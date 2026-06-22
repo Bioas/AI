@@ -56,10 +56,15 @@ export default function Calendar() {
     [rooms]
   )
 
-  const dailyResidents = useMemo(() =>
-    residents.filter(r => r.rentalType === 'daily' || r.rentalType === 'รายวัน'),
-    [residents]
-  )
+  const dailyResidents = useMemo(() => {
+    const filtered = residents.filter(r => r.rentalType === 'daily' || r.rentalType === 'รายวัน')
+    const seen = new Set()
+    return filtered.filter(r => {
+      if (seen.has(r.id)) return false
+      seen.add(r.id)
+      return true
+    })
+  }, [residents])
 
   const roomLabel = useCallback((room) => room?.roomNumber || room?.number || '', [])
 
