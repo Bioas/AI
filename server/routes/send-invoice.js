@@ -280,7 +280,7 @@ function buildReceiptHtml(data) {
   <div style="display:flex;justify-content:space-between;padding-top:32px;margin-top:16px;">
     <div style="text-align:center;display:flex;flex-direction:column;justify-content:flex-end;min-height:80px;">
       <div style="border-bottom:1px dashed #d1d5db;width:160px;margin:0 auto 2px;">&nbsp;</div>
-      <div style="font-size:12px;color:#6b7280;">ผู้รับเงิน</div>
+      <div style="font-size:12px;color:#6b7280;">ผู้ชำระเงิน</div>
       <div style="font-size:12px;color:#9ca3af;margin-top:2px;">วันที่ ${issueDate}</div>
     </div>
     <div style="text-align:center;display:flex;flex-direction:column;justify-content:flex-end;min-height:80px;">
@@ -291,7 +291,7 @@ function buildReceiptHtml(data) {
       </div>` : stamp ? `
       <div><img src="${stamp}" alt="ตรายาง" style="width:130px;height:130px;object-fit:contain;display:block;margin:0 auto;" /></div>` : `
       <div style="border-bottom:1px dashed #d1d5db;width:160px;margin:0 auto 2px;">&nbsp;</div>`}
-      <div style="font-size:12px;color:#6b7280;">ผู้อนุมัติ</div>
+      <div style="font-size:12px;color:#6b7280;">ผู้รับเงิน</div>
       <div style="font-size:12px;color:#9ca3af;margin-top:2px;">วันที่ ${issueDate}</div>
     </div>
   </div>

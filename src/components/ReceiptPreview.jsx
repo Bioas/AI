@@ -165,7 +165,7 @@ export default function ReceiptPreview({ inv }) {
       <div className="flex justify-between pt-8 mt-4">
         <div className="text-center flex flex-col justify-end min-h-[80px]">
           <div className="border-b border-dotted border-neutral-300 w-40 mb-0.5">&nbsp;</div>
-          <div className="text-[12px] text-neutral-500">ผู้รับเงิน</div>
+          <div className="text-[12px] text-neutral-500">ผู้ชำระเงิน</div>
           <div className="text-[12px] text-neutral-400 mt-0.5">วันที่ {receiptDate}</div>
         </div>
         <div className="text-center flex flex-col justify-end min-h-[80px]">
@@ -179,7 +179,7 @@ export default function ReceiptPreview({ inv }) {
           ) : (
             <div className="border-b border-dotted border-neutral-300 w-40 mb-0.5">&nbsp;</div>
           )}
-          <div className="text-[12px] text-neutral-500">ผู้อนุมัติ</div>
+          <div className="text-[12px] text-neutral-500">ผู้รับเงิน</div>
           <div className="text-[12px] text-neutral-400 mt-0.5">วันที่ {receiptDate}</div>
         </div>
       </div>
