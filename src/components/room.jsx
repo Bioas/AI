@@ -233,14 +233,14 @@ export default function Room() {
                         ? new Date(res.moveInDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
                         : ''
                       return (
-                        <div className="flex items-center gap-2.5 mb-4 p-2.5 rounded-xl bg-amber-50/50 border border-amber-100/50">
+                        <div className="flex items-center gap-2.5 mb-3 p-2.5 rounded-xl min-h-[64px] bg-amber-50/50 border border-amber-100/50">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white shadow-sm shrink-0">
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                           </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                             <div className="text-xs font-medium text-neutral-700 truncate">{residentName}</div>
                             <div className="text-[10px] text-amber-600">กำลังจะมีผู้เข้าพัก {checkInDate}</div>
-                            {r.note && <div className="text-[10px] text-neutral-500 mt-1 line-clamp-2">{r.note}</div>}
+                            {r.note && <div className="text-[10px] text-neutral-500 line-clamp-2">{r.note}</div>}
                           </div>
                         </div>
                       )
@@ -251,7 +251,7 @@ export default function Room() {
                       const nextUpcoming = isDailyR ? getUpcomingResidents(r)[0] : null
                       return (
                         <>
-                        <div className="flex items-start gap-2.5 mb-2 p-2.5 rounded-xl bg-lime-50/50 border border-lime-100/50">
+                        <div className="flex items-center gap-2.5 mb-3 p-2.5 rounded-xl min-h-[64px] bg-lime-50/50 border border-lime-100/50">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                           </div>
@@ -264,7 +264,7 @@ export default function Room() {
                                 </span>
                               ) : null}
                             </div>
-                            {r.note && <div className="text-[10px] text-neutral-500 mt-1 line-clamp-2">{r.note}</div>}
+                            {r.note && <div className="text-[10px] text-neutral-500 line-clamp-2">{r.note}</div>}
                           </div>
                         </div>
                         {nextUpcoming ? (
@@ -279,12 +279,12 @@ export default function Room() {
                       )
                     }
                     return (
-                      <div className="flex items-center gap-2 mb-4 p-2.5 rounded-xl bg-neutral-50 border border-neutral-100">
-                        <div className="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-400 text-xs">
+                      <div className="flex items-center gap-2.5 mb-3 p-2.5 rounded-xl min-h-[64px] bg-neutral-50 border border-neutral-100">
+                        <div className="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-400 text-xs shrink-0">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         </div>
                         <span className="text-xs text-neutral-400">ยังไม่มีผู้พัก</span>
-                      </div>
+                      </div>                    
                     )
                   })()}
                   <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
