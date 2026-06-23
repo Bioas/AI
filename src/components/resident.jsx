@@ -51,6 +51,18 @@ export default function Resident() {
   const [confirmToggleLine, setConfirmToggleLine] = useState(null)
   const [confirmSyncLine, setConfirmSyncLine] = useState(false)
 
+  const getDailyStatus = (resident) => {
+    if (!resident.moveOutDate) return { label: 'เช็คอิน', variant: 'success' }
+    const now = new Date()
+    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const inBkk = new Date(resident.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    if (inBkk > todayBkk) return { label: 'จอง', variant: 'warning' }
+    const outBkk = new Date(resident.moveOutDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+    const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
+    if (outBkk > todayBkk || (outBkk === todayBkk && bkkHour < 12)) return { label: 'เช็คอิน', variant: 'success' }
+    return { label: 'เช็คเอาท์แล้ว', variant: 'default' }
+  }
+
   const handleReload = async () => {
     await fetchResidents(search.trim())
   }
@@ -162,18 +174,6 @@ export default function Resident() {
     if (!resident.roomId) return 'รายเดือน'
     const room = rooms.find(r => r.id === resident.roomId)
     return room?.rentalType || 'monthly'
-  }
-
-  const getDailyStatus = (resident) => {
-    if (!resident.moveOutDate) return { label: 'เช็คอิน', variant: 'success' }
-    const now = new Date()
-    const todayBkk = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
-    const inBkk = new Date(resident.moveInDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
-    if (inBkk > todayBkk) return { label: 'จอง', variant: 'warning' }
-    const outBkk = new Date(resident.moveOutDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
-    const bkkHour = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit' }))
-    if (outBkk > todayBkk || (outBkk === todayBkk && bkkHour < 12)) return { label: 'เช็คอิน', variant: 'success' }
-    return { label: 'เช็คเอาท์แล้ว', variant: 'default' }
   }
 
   const renderResidentTab = () => (

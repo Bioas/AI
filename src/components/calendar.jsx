@@ -29,6 +29,7 @@ export default function Calendar() {
   const [formCheckOut, setFormCheckOut] = useState('')
   const [formExtraBed, setFormExtraBed] = useState(0)
   const [formDiscount, setFormDiscount] = useState(0)
+  const [formNote, setFormNote] = useState('')
   const [formPhone, setFormPhone] = useState('')
   const [formTenantType, setFormTenantType] = useState('individual')
   const [saving, setSaving] = useState(false)
@@ -238,6 +239,7 @@ export default function Calendar() {
     setFormRoom(roomId || (dailyRooms.length > 0 ? dailyRooms[0].id : ''))
     setFormExtraBed(0)
     setFormDiscount(0)
+    setFormNote('')
     setFormPhone('')
     setFormTenantType('individual')
     setShowAdd(true)
@@ -269,7 +271,7 @@ export default function Calendar() {
         id: formRoom, roomNumber: room.roomNumber, roomCode: room.roomCode || '',
         rentPrice: room.rentPrice, rentalType: 'daily', roomType: room.roomType,
         prevElecMeter: room.prevElecMeter || 0, prevWaterMeter: room.prevWaterMeter || 0,
-        extraBed: formExtraBed, discount: formDiscount, note: room.note || '',
+        extraBed: formExtraBed, discount: formDiscount, note: formNote,
         residentId: res.id,
       })
       await Promise.all([fetchRooms(), fetchResidents()])
@@ -297,7 +299,7 @@ export default function Calendar() {
           id: detailRoomId, roomNumber: room.roomNumber, roomCode: room.roomCode || '',
           rentPrice: room.rentPrice, rentalType: 'daily', roomType: room.roomType,
           prevElecMeter: room.prevElecMeter || 0, prevWaterMeter: room.prevWaterMeter || 0,
-          extraBed: formExtraBed, discount: formDiscount, note: room.note || '',
+          extraBed: formExtraBed, discount: formDiscount, note: formNote,
           residentId: detailResidentId,
         })
       }
@@ -700,6 +702,12 @@ export default function Calendar() {
                   className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
               </div>
             </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">หมายเหตุ</label>
+              <textarea value={formNote} onChange={e => setFormNote(e.target.value)}
+                placeholder="หมายเหตุ (ถ้ามี)"
+                className="w-full h-20 px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all resize-none" />
+            </div>
           </div>
           <div className="flex gap-3 justify-end mt-5 pt-4 border-t border-neutral-100">
             <button onClick={() => setShowAdd(false)} disabled={saving}
@@ -774,6 +782,12 @@ export default function Calendar() {
                         className="w-full h-9 sm:h-10 px-3 rounded-xl border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all" />
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">หมายเหตุ</label>
+                    <textarea value={formNote} onChange={e => setFormNote(e.target.value)}
+                      placeholder="หมายเหตุ (ถ้ามี)"
+                      className="w-full h-20 px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 transition-all resize-none" />
+                  </div>
                 </div>
               )
             }
@@ -813,6 +827,12 @@ export default function Calendar() {
                     <dd className="text-xs sm:text-sm font-medium text-rose-600">{room.discount.toLocaleString()} บาท</dd>
                   </div>
                 )}
+                {room.note && (
+                  <div className="py-2.5 sm:py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <dt className="text-xs sm:text-sm text-neutral-500">หมายเหตุ</dt>
+                    <dd className="text-xs sm:text-sm text-neutral-700 whitespace-pre-wrap">{room.note}</dd>
+                  </div>
+                )}
               </dl>
             )
           })()}
@@ -838,6 +858,7 @@ export default function Calendar() {
                     setFormCheckOut(rs.moveOutDate ? rs.moveOutDate.split('T')[0] : '')
                     setFormExtraBed(rm.extraBed || 0)
                     setFormDiscount(rm.discount || 0)
+                    setFormNote(rm.note || '')
                   }
                   setIsEditingDetail(true)
                 }}

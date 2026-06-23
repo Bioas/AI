@@ -105,7 +105,7 @@ async function runAutoCheckout() {
           if (room.residentId === resident.id) {
             await db.collection('rooms').updateOne(
               { id: room.id },
-              { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, updatedAt: now.toISOString() } }
+              { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, note: '', updatedAt: now.toISOString() } }
             )
           }
           console.log(`Auto-checkout: Room ${room.roomNumber} resident ${resident.name} moved out`)

@@ -237,9 +237,10 @@ export default function Room() {
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white shadow-sm shrink-0">
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                           </div>
-                          <div className="min-w-0">
+                        <div className="min-w-0">
                             <div className="text-xs font-medium text-neutral-700 truncate">{residentName}</div>
                             <div className="text-[10px] text-amber-600">กำลังจะมีผู้เข้าพัก {checkInDate}</div>
+                            {r.note && <div className="text-[10px] text-neutral-500 mt-1 line-clamp-2">{r.note}</div>}
                           </div>
                         </div>
                       )
@@ -250,18 +251,21 @@ export default function Room() {
                       const nextUpcoming = isDailyR ? getUpcomingResidents(r)[0] : null
                       return (
                         <>
-                        <div className="flex items-center gap-2.5 mb-2 p-2.5 rounded-xl bg-lime-50/50 border border-lime-100/50">
+                        <div className="flex items-start gap-2.5 mb-2 p-2.5 rounded-xl bg-lime-50/50 border border-lime-100/50">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="text-xs font-medium text-neutral-700 truncate">{residentName}</div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-xs font-medium text-neutral-700 truncate">{residentName}</div>
+                              {isDailyR && currentRes?.tenantType ? (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${currentRes.tenantType === 'company' ? 'bg-amber-50 text-amber-600' : 'bg-sky-50 text-sky-600'}`}>
+                                  {currentRes.tenantType === 'company' ? 'บริษัท' : 'ทั่วไป'}
+                                </span>
+                              ) : null}
+                            </div>
+                            {r.note && <div className="text-[10px] text-neutral-500 mt-1 line-clamp-2">{r.note}</div>}
                           </div>
-                          {isDailyR && currentRes?.tenantType ? (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${currentRes.tenantType === 'company' ? 'bg-amber-50 text-amber-600' : 'bg-sky-50 text-sky-600'}`}>
-                              {currentRes.tenantType === 'company' ? 'บริษัท' : 'ทั่วไป'}
-                            </span>
-                          ) : null}
                         </div>
                         {nextUpcoming ? (
                           <div className="flex items-center gap-2 mb-4 pl-2.5">
@@ -283,7 +287,6 @@ export default function Room() {
                       </div>
                     )
                   })()}
-
                   <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
                     <div className="flex items-center gap-1.5">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${(r.rentalType === 'daily' || r.rentalType === 'รายวัน') ? 'bg-sky-50 text-sky-600 border border-sky-100' : 'bg-lime-50 text-lime-600 border border-lime-100'}`}>

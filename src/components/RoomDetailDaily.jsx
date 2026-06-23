@@ -278,7 +278,7 @@ export default function RoomDetailDaily() {
         prevWaterMeter: room.prevWaterMeter || 0,
         extraBed: 0,
         discount: 0,
-        note: room.note || '',
+        note: '',
         residentId: null,
       })
       await fetchRooms()
