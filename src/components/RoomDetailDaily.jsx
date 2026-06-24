@@ -176,7 +176,6 @@ export default function RoomDetailDaily() {
         prevWaterMeter: room.prevWaterMeter || 0,
         extraBed: assignExtraBed,
         discount: assignDiscount,
-        note: room.note || '',
         residentId: r.id,
       })
       await fetchRooms()
@@ -278,7 +277,6 @@ export default function RoomDetailDaily() {
         prevWaterMeter: room.prevWaterMeter || 0,
         extraBed: 0,
         discount: 0,
-        note: '',
         residentId: null,
       })
       await fetchRooms()
@@ -369,10 +367,10 @@ export default function RoomDetailDaily() {
             <dt className="text-sm text-neutral-500">สถานะ</dt>
             <dd><Badge variant={status.variant}>{status.label}</Badge></dd>
           </div>
-          {room.note && (
+          {resident?.note && (
             <div className="py-3 flex justify-between">
               <dt className="text-sm text-neutral-500">หมายเหตุ</dt>
-              <dd className="text-sm text-neutral-700">{room.note}</dd>
+              <dd className="text-sm text-neutral-700">{resident.note}</dd>
             </div>
           )}
         </dl>

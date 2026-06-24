@@ -106,6 +106,7 @@ router.post('/', async (req, res) => {
       companyName: req.body.companyName?.trim() || '',
       companyAddress: req.body.companyAddress?.trim() || '',
       companyTaxId: req.body.companyTaxId || '',
+      note: req.body.note?.trim() || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -175,13 +176,14 @@ router.put('/', async (req, res) => {
       companyName: (data.companyName || '').trim(),
       companyAddress: (data.companyAddress || '').trim(),
       companyTaxId: data.companyTaxId || '',
+      note: data.note?.trim() || '',
       updatedAt: new Date().toISOString(),
     }
 
     if (oldResident?.roomId && oldResident.roomId !== newRoomId) {
       await db.collection('rooms').updateOne(
         { id: oldResident.roomId },
-        { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, note: '', updatedAt: new Date().toISOString() } }
+        { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, updatedAt: new Date().toISOString() } }
       )
     }
     if (newRoomId && oldResident?.roomId !== newRoomId) {
@@ -221,7 +223,7 @@ router.delete('/', async (req, res) => {
     if (resident?.roomId) {
       await db.collection('rooms').updateOne(
         { id: resident.roomId },
-        { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, note: '', updatedAt: new Date().toISOString() } }
+        { $set: { residentId: null, status: 'ว่าง', extraBed: 0, discount: 0, updatedAt: new Date().toISOString() } }
       )
     }
     await db.collection('residents').deleteOne({ id: req.body.id })

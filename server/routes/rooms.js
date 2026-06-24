@@ -26,7 +26,6 @@ router.get('/', async (req, res) => {
       query.$or = [
         { roomNumber: { $regex: s, $options: 'i' } },
         { roomCode: { $regex: s, $options: 'i' } },
-        { note: { $regex: s, $options: 'i' } },
       ]
     }
     if (status === 'ว่าง') query.status = 'ว่าง'
@@ -46,8 +45,18 @@ router.get('/', async (req, res) => {
         tenantName: resident?.name || '',
         tenantPhone: resident?.phone || '',
         tenantUserId: resident?.lineUserId || '',
+        note: resident?.note || room.note || '',
       }
     })
+
+    if (search?.trim()) {
+      const s = search.trim().toLowerCase()
+      rooms = rooms.filter(r =>
+        (r.roomNumber || '').toLowerCase().includes(s) ||
+        (r.roomCode || '').toLowerCase().includes(s) ||
+        (r.note || '').toLowerCase().includes(s)
+      )
+    }
 
     res.status(200).json(rooms)
   } catch (e) {
@@ -85,7 +94,6 @@ router.post('/', async (req, res) => {
       prevWaterMeter: Number(req.body.prevWaterMeter) || 0,
       extraBed: Number(req.body.extraBed) || 0,
       discount: Number(req.body.discount) || 0,
-      note: req.body.note?.trim() || '',
       status: residentId ? 'มีผู้เช่า' : 'ว่าง',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -133,7 +141,6 @@ router.put('/', async (req, res) => {
       prevWaterMeter: Number(data.prevWaterMeter) || 0,
       extraBed: Number(data.extraBed) || 0,
       discount: Number(data.discount) || 0,
-      note: data.note?.trim() || '',
       status: residentId ? 'มีผู้เช่า' : 'ว่าง',
       updatedAt: new Date().toISOString(),
     }

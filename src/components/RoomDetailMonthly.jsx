@@ -200,7 +200,6 @@ export default function RoomDetailMonthly() {
         roomType: room.roomType,
         prevElecMeter: room.prevElecMeter || 0,
         prevWaterMeter: room.prevWaterMeter || 0,
-        note: room.note || '',
         residentId: null,
       })
       await fetchRooms()
@@ -350,10 +349,10 @@ export default function RoomDetailMonthly() {
             <dt className="text-sm text-neutral-500">มิเตอร์น้ำ (ก่อนหน้า)</dt>
             <dd className="text-sm font-medium text-neutral-800">{room.prevWaterMeter || 0}</dd>
           </div>
-          {room.note && (
+          {resident?.note && (
             <div className="py-3 flex justify-between">
               <dt className="text-sm text-neutral-500">หมายเหตุ</dt>
-              <dd className="text-sm text-neutral-700">{room.note}</dd>
+              <dd className="text-sm text-neutral-700">{resident.note}</dd>
             </div>
           )}
         </dl>

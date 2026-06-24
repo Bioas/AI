@@ -55,6 +55,8 @@ export default function ResidentModal() {
   const [moveInDate, setMoveInDate] = useState(parseDate(editResident?.moveInDate))
   const [moveOutDate, setMoveOutDate] = useState(parseDate(editResident?.moveOutDate))
 
+  const [note, setNote] = useState(editResident?.note || '')
+
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
 
@@ -164,6 +166,7 @@ export default function ResidentModal() {
       companyName: companyName.trim(),
       companyAddress: companyAddress.trim(),
       companyTaxId,
+      note: note.trim(),
     }
     await saveResident(data)
     setSaving(false)
@@ -358,6 +361,18 @@ export default function ResidentModal() {
                     <div className="text-sm font-medium text-neutral-800 mt-0.5">{lineName || <span className="text-neutral-300 italic">—</span>}</div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {note && (
+              <div className="bg-neutral-50/30 rounded-2xl p-4 border border-neutral-100/40">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-lg bg-neutral-100 flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5 text-neutral-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  </div>
+                  <span className="text-xs font-semibold text-neutral-700 tracking-wide">หมายเหตุ</span>
+                </div>
+                <div className="text-sm text-neutral-700 whitespace-pre-wrap">{note}</div>
               </div>
             )}
 
@@ -636,6 +651,16 @@ export default function ResidentModal() {
             </div>
             <Input label="ทะเบียนรถ" value={licensePlate} onChange={e => setLicensePlate(e.target.value)}
               placeholder="กข 1234 กรุงเทพมหานคร" />
+          </div>
+        )}
+
+        {!ro && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">หมายเหตุ</label>
+            <textarea value={note} onChange={e => setNote(e.target.value)}
+              placeholder="หมายเหตุเพิ่มเติม..."
+              rows={3}
+              className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 resize-none" />
           </div>
         )}
       </div>

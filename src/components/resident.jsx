@@ -47,9 +47,11 @@ export default function Resident() {
   const [lineMappedFilter, setLineMappedFilter] = useState('all')
   const [lineDetailUser, setLineDetailUser] = useState(null)
   const [lineReloading, setLineReloading] = useState(false)
+  const [page, setPage] = useState(1)
   const [confirmDeleteResident, setConfirmDeleteResident] = useState(null)
   const [confirmToggleLine, setConfirmToggleLine] = useState(null)
   const [confirmSyncLine, setConfirmSyncLine] = useState(false)
+  const PAGE_SIZE = 10
 
   const getDailyStatus = (resident) => {
     if (!resident.moveOutDate) return { label: 'เช็คอิน', variant: 'success' }
@@ -120,6 +122,17 @@ export default function Resident() {
     }
     return result
   }, [lineUsers, lineSearch, lineFilter, lineMappedFilter])
+
+  const paginated = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE
+    return filtered.slice(start, start + PAGE_SIZE)
+  }, [filtered, page, PAGE_SIZE])
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)), [filtered.length, PAGE_SIZE])
+
+  useEffect(() => {
+    setPage(1)
+  }, [search, activeTab, dailyStatusFilter])
 
   useEffect(() => {
     fetchLineUsers()
@@ -198,7 +211,11 @@ export default function Resident() {
             )}
             <ReloadButton onReload={handleReload} className="shrink-0" />
           </div>
-          <div className="text-xs text-neutral-400 text-center">{filtered.length} รายการ</div>
+          <div className="text-xs text-neutral-400 text-center">
+            {filtered.length > PAGE_SIZE
+              ? `หน้าที่ ${page}/${totalPages} — ${filtered.length} รายการ`
+              : `${filtered.length} รายการ`}
+          </div>
       </div>
 
       <Card>
@@ -212,13 +229,13 @@ export default function Resident() {
               <table className="w-full text-sm">
                 <thead className="hidden md:table-header-group">
                   <tr className="bg-neutral-50/80">
-                    {['ชื่อผู้พักอาศัย', 'หมายเลขห้อง', 'เบอร์โทร', activeTab !== 'daily' ? 'LINE' : null, activeTab === 'daily' ? 'ประเภทผู้พัก' : null, activeTab === 'daily' ? 'เช็คอิน' : 'วันที่เข้าพัก', activeTab === 'daily' ? 'เช็คเอาท์' : 'วันหมดสัญญา', activeTab === 'daily' ? 'สถานะ' : 'สถานะสัญญา', 'จัดการ'].filter(Boolean).map(h => (
+                    {['ชื่อผู้พักอาศัย', 'หมายเลขห้อง', 'เบอร์โทร', activeTab !== 'daily' ? 'LINE' : null, activeTab === 'daily' ? 'ประเภทผู้พัก' : null, activeTab === 'daily' ? 'เช็คอิน' : 'วันที่เข้าพัก', activeTab === 'daily' ? 'เช็คเอาท์' : 'วันหมดสัญญา', activeTab === 'daily' ? 'สถานะ' : 'สถานะสัญญา', 'หมายเหตุ', 'จัดการ'].filter(Boolean).map(h => (
                       <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-neutral-500 tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
-                  {filtered.map(r => {
+                  {paginated.map(r => {
                     const isDaily = getResidentRoomType(r) === 'daily' || getResidentRoomType(r) === 'รายวัน'
                     const status = isDaily ? getDailyStatus(r) : getContractStatus(r.moveOutDate)
                     return (
@@ -261,6 +278,9 @@ export default function Resident() {
                                   className="h-8 px-3 rounded-lg text-xs font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors border border-rose-100">ลบ</button>
                               </div>
                             </div>
+                            {r.note && (
+                              <div className="text-[11px] text-neutral-400 truncate pt-1">{r.note}</div>
+                            )}
                           </div>
                         </td>
                         {/* Desktop cells */}
@@ -310,6 +330,13 @@ export default function Resident() {
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </td>
                         <td className="hidden md:table-cell px-4 py-3.5">
+                          {r.note ? (
+                            <span className="text-xs text-neutral-500 max-w-[120px] truncate block" title={r.note}>{r.note}</span>
+                          ) : (
+                            <span className="text-neutral-200">—</span>
+                          )}
+                        </td>
+                        <td className="hidden md:table-cell px-4 py-3.5">
                           <div className="flex gap-1.5">
                             <button onClick={(e) => { e.stopPropagation(); setEditResident({ ...r, rentalType: isDaily ? 'daily' : 'monthly' }); setViewOnly(true); setModal('resident') }}
                               className="h-8 px-3.5 rounded-lg text-xs font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors border border-sky-100">ดู</button>
@@ -322,6 +349,51 @@ export default function Resident() {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+          {filtered.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between pt-4 border-t border-neutral-100 mt-4">
+              <span className="text-xs text-neutral-400">
+                แสดง {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} จาก {filtered.length} รายการ
+              </span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setPage(1)} disabled={page === 1}
+                  className="h-8 px-2 rounded-lg text-xs font-medium text-neutral-500 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+                </button>
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                  className="h-8 px-2.5 rounded-lg text-xs font-medium text-neutral-500 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                {(() => {
+                  const pages = []
+                  const start = Math.max(1, page - 2)
+                  const end = Math.min(totalPages, page + 2)
+                  if (start > 1) pages.push('...')
+                  for (let i = start; i <= end; i++) {
+                    pages.push(i)
+                  }
+                  if (end < totalPages) pages.push('...')
+                  return pages.map((p, idx) =>
+                    typeof p === 'string'
+                      ? <span key={`ellipsis-${idx}`} className="px-1.5 text-xs text-neutral-300">...</span>
+                      : <button key={p} onClick={() => setPage(p)}
+                          className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-colors ${
+                            p === page
+                              ? 'bg-lime-500 text-white shadow-sm'
+                              : 'text-neutral-500 hover:bg-neutral-100'
+                          }`}>{p}</button>
+                  )
+                })()}
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                  className="h-8 px-2.5 rounded-lg text-xs font-medium text-neutral-500 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <button onClick={() => setPage(totalPages)} disabled={page === totalPages}
+                  className="h-8 px-2 rounded-lg text-xs font-medium text-neutral-500 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+                </button>
+              </div>
             </div>
           )}
         </CardContent>

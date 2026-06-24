@@ -266,12 +266,13 @@ export default function Calendar() {
         roomId: formRoom, moveInDate: formCheckIn, moveOutDate: formCheckOut,
         deposit: 0, licensePlate: '', emergencyContact: '', emergencyPhone: '',
         lineUserId: '', rentalType: 'daily', tenantType: formTenantType,
+        note: formNote,
       })
       await api('/api/rooms', 'PUT', {
         id: formRoom, roomNumber: room.roomNumber, roomCode: room.roomCode || '',
         rentPrice: room.rentPrice, rentalType: 'daily', roomType: room.roomType,
         prevElecMeter: room.prevElecMeter || 0, prevWaterMeter: room.prevWaterMeter || 0,
-        extraBed: formExtraBed, discount: formDiscount, note: formNote,
+        extraBed: formExtraBed, discount: formDiscount,
         residentId: res.id,
       })
       await Promise.all([fetchRooms(), fetchResidents()])
@@ -292,6 +293,7 @@ export default function Calendar() {
         id: detailResidentId, name: formName.trim(),
         moveInDate: formCheckIn, moveOutDate: formCheckOut,
         roomId: detailRoomId, rentalType: 'daily',
+        note: formNote,
       })
       const room = rooms.find(r => r.id === detailRoomId)
       if (room) {
@@ -299,7 +301,7 @@ export default function Calendar() {
           id: detailRoomId, roomNumber: room.roomNumber, roomCode: room.roomCode || '',
           rentPrice: room.rentPrice, rentalType: 'daily', roomType: room.roomType,
           prevElecMeter: room.prevElecMeter || 0, prevWaterMeter: room.prevWaterMeter || 0,
-          extraBed: formExtraBed, discount: formDiscount, note: formNote,
+          extraBed: formExtraBed, discount: formDiscount,
           residentId: detailResidentId,
         })
       }
@@ -827,10 +829,10 @@ export default function Calendar() {
                     <dd className="text-xs sm:text-sm font-medium text-rose-600">{room.discount.toLocaleString()} บาท</dd>
                   </div>
                 )}
-                {room.note && (
+                {resident?.note && (
                   <div className="py-2.5 sm:py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
                     <dt className="text-xs sm:text-sm text-neutral-500">หมายเหตุ</dt>
-                    <dd className="text-xs sm:text-sm text-neutral-700 whitespace-pre-wrap">{room.note}</dd>
+                    <dd className="text-xs sm:text-sm text-neutral-700 whitespace-pre-wrap">{resident.note}</dd>
                   </div>
                 )}
               </dl>
@@ -858,7 +860,7 @@ export default function Calendar() {
                     setFormCheckOut(rs.moveOutDate ? rs.moveOutDate.split('T')[0] : '')
                     setFormExtraBed(rm.extraBed || 0)
                     setFormDiscount(rm.discount || 0)
-                    setFormNote(rm.note || '')
+                    setFormNote(rs?.note || '')
                   }
                   setIsEditingDetail(true)
                 }}

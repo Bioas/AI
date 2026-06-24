@@ -22,7 +22,6 @@ export default function RoomModal() {
   const [prevWaterMeter, setPrevWaterMeter] = useState(editRoom?.prevWaterMeter?.toString() || '')
   const [extraBed, setExtraBed] = useState(editRoom?.extraBed ? String(editRoom.extraBed) : '0')
   const [discount, setDiscount] = useState((editRoom?.discount || '').toString())
-  const [note, setNote] = useState(editRoom?.note || '')
  
   const [errors, setErrors] = useState({})
   const [confirmRemoveResident, setConfirmRemoveResident] = useState(false)
@@ -60,7 +59,6 @@ export default function RoomModal() {
       prevWaterMeter: (rentalType === 'daily' || rentalType === 'รายวัน') ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
       extraBed: Number(extraBed) || 0,
       discount: Number(discount) || 0,
-      note: note.trim(),
       residentId: editRoom?.residentId || null,
     })
   }
@@ -80,7 +78,6 @@ export default function RoomModal() {
       prevWaterMeter: rentalType === 'daily' || rentalType === 'รายวัน' ? 0 : (prevWaterMeter ? Number(prevWaterMeter) : 0),
       extraBed: Number(extraBed) || 0,
       discount: Number(discount) || 0,
-      note: note.trim(),
       residentId: null,
     })
   }
@@ -189,13 +186,6 @@ export default function RoomModal() {
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1.5">หมายเหตุ</label>
-            <textarea value={note} onChange={e => setNote(e.target.value)}
-              placeholder="หมายเหตุเพิ่มเติม..."
-              rows={3}
-              className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:border-lime-400 focus:ring-2 focus:ring-lime-100 resize-none" />
-          </div>
         </div>
 
         <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-neutral-100">
